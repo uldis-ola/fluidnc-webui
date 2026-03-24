@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FluidNC CNC WebUI</title>
+  <title>FluidNC Industrial WebUI</title>
   <style>
     :root {
       --bg: #0b0f14;
@@ -18,16 +19,41 @@
       --danger: #ff595e;
       --btn: #233142;
       --btn-hover: #2d4157;
+      --bg: #0b1016;
+      --panel: #111924;
+      --panel-2: #0f151e;
+      --line: #243447;
+      --line-2: #30465f;
+      --text: #d7e3ef;
+      --muted: #8da3ba;
+      --accent: #39d0ff;
+      --good: #59e08f;
+      --warn: #ffc14d;
+      --bad: #ff5a73;
+      --amber: #ffbf4a;
+      --cyan: #57dfff;
+      --green: #67f3a5;
+      --red: #ff4f66;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      --shadow: 0 10px 28px rgba(0, 0, 0, .35);
     }
 
     * { box-sizing: border-box; }
 
     body {
+    html, body {
+      width: 100%;
+      height: 100%;
       margin: 0;
       background: radial-gradient(circle at top, #111a24 0%, var(--bg) 50%);
+      padding: 0;
+      background: radial-gradient(circle at 15% 0%, #172435 0%, #0a0f15 40%, #070b11 100%);
       color: var(--text);
       font-family: Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
       min-height: 100vh;
+      font-family: var(--sans);
+      overflow: hidden;
     }
 
     .wrap {
@@ -37,6 +63,9 @@
       display: grid;
       grid-template-columns: 1.15fr 1fr;
       gap: 16px;
+    button, input, select, textarea {
+      font-family: inherit;
+      color: var(--text);
     }
 
     .card {
@@ -45,6 +74,13 @@
       border-radius: 12px;
       box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
       padding: 16px;
+    .app {
+      display: grid;
+      grid-template-rows: 58px 1fr 56px;
+      width: 100vw;
+      height: 100vh;
+      gap: 8px;
+      padding: 8px;
     }
 
     h1 {
@@ -52,34 +88,88 @@
       font-size: 1.4rem;
       letter-spacing: 0.04em;
       color: var(--accent);
+    .header {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: linear-gradient(180deg, #152131, #0f1723);
+      display: grid;
+      grid-template-columns: 230px 220px 1fr 260px 280px 220px;
+      gap: 8px;
+      align-items: center;
+      padding: 6px 10px;
+      box-shadow: var(--shadow);
+      min-width: 0;
     }
 
     h2 {
       margin: 0 0 10px;
       font-size: 1rem;
       color: var(--muted);
+    .brand h1 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: .7px;
       text-transform: uppercase;
       letter-spacing: 0.08em;
     }
+    .brand small { color: var(--muted); font-family: var(--mono); font-size: 11px; }
 
     .row {
+    .badge-row, .wcs-row, .conn-row, .status-row {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       align-items: center;
+      gap: 6px;
+      min-width: 0;
     }
 
     .connection {
       margin-bottom: 12px;
+    .badge {
+      border: 1px solid var(--line-2);
+      background: #101a27;
+      padding: 3px 8px;
+      border-radius: 99px;
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+      font-family: var(--mono);
     }
 
     .status {
       margin-left: auto;
       font-size: 0.9rem;
       color: var(--muted);
+    .wcs-btn, .btn {
+      border: 1px solid #34506a;
+      background: linear-gradient(180deg, #1a2d42, #122233);
+      color: #cde6ff;
+      border-radius: 6px;
+      font-size: 12px;
+      padding: 6px 9px;
+      cursor: pointer;
+      font-weight: 600;
+      letter-spacing: .3px;
     }
 
     .dot {
+    .wcs-btn.active { border-color: var(--cyan); color: #e9fbff; box-shadow: 0 0 0 1px rgba(87,223,255,.2) inset; }
+
+    .btn:hover, .wcs-btn:hover { filter: brightness(1.08); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+
+    .input {
+      width: 100%;
+      border: 1px solid var(--line-2);
+      background: #0a121b;
+      border-radius: 6px;
+      padding: 7px 8px;
+      font-size: 12px;
+      color: #d7e9f8;
+    }
+
+    .state-dot {
       width: 10px;
       height: 10px;
       border-radius: 50%;
@@ -88,12 +178,18 @@
       background: var(--danger);
       box-shadow: 0 0 8px rgba(255, 89, 94, 0.6);
       vertical-align: middle;
+      background: #556;
+      box-shadow: 0 0 0 2px rgba(0,0,0,.35);
     }
 
     .dot.connected {
       background: var(--ok);
       box-shadow: 0 0 8px rgba(61, 220, 132, 0.8);
     }
+    .state-idle .state-dot { background: var(--good); box-shadow: 0 0 8px rgba(89,224,143,.8); }
+    .state-run .state-dot { background: var(--cyan); box-shadow: 0 0 8px rgba(87,223,255,.8); }
+    .state-hold .state-dot { background: var(--amber); box-shadow: 0 0 8px rgba(255,191,74,.8); }
+    .state-alarm .state-dot { background: var(--bad); box-shadow: 0 0 8px rgba(255,90,115,.9); }
 
     button {
       border: 1px solid var(--border);
@@ -104,16 +200,36 @@
       font-size: 0.95rem;
       cursor: pointer;
       transition: all 0.15s ease;
+    .main {
+      display: grid;
+      grid-template-columns: 370px 1fr 380px;
+      gap: 8px;
+      min-height: 0;
     }
 
     button:hover:not(:disabled) {
       background: var(--btn-hover);
       border-color: #4e6a84;
+    .col {
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
     button:disabled {
       opacity: 0.55;
       cursor: not-allowed;
+    .panel {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, #121b28, #0f1621);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
 
     button.primary { border-color: #2a7fb6; background: #1f4f72; }
@@ -124,25 +240,57 @@
     button.warn:hover:not(:disabled) { background: #8b6d1a; }
     button.danger { border-color: #9b2e34; background: #6a2024; }
     button.danger:hover:not(:disabled) { background: #8a2a30; }
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      font-weight: 700;
+      color: #bcd4ec;
+      background: #0d1520;
+    }
 
     .cmd-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    .panel-body {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
       gap: 8px;
       margin-bottom: 14px;
+      min-height: 0;
+      overflow: auto;
     }
 
     .jog-wrap {
       margin-top: 8px;
+    .dro-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
+      gap: 8px;
     }
 
     .jog-grid {
+    .dro-card {
+      border: 1px solid var(--line-2);
+      border-radius: 6px;
+      background: #0b121b;
+      padding: 8px;
+    }
+
+    .dro-title { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+    .dro-values {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
+      gap: 4px;
+      margin-top: 6px;
     }
 
     .jog-grid button,
@@ -150,12 +298,29 @@
       min-height: 44px;
       font-size: 1rem;
       font-weight: 600;
+    .axis {
+      border: 1px solid #264258;
+      border-radius: 4px;
+      background: #071018;
+      padding: 6px;
+      text-align: center;
+      font-family: var(--mono);
     }
+    .axis label { display:block; color:#79a2c8; font-size:11px; margin-bottom:2px; }
+    .axis strong { font-size: 20px; color: #dff5ff; letter-spacing:.5px; }
 
     .z-jog {
       display: grid;
       gap: 8px;
       align-content: start;
+    .alarm-banner {
+      border: 1px solid #5a202a;
+      color: #ffc6cf;
+      background: linear-gradient(180deg, #48131d, #311017);
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-family: var(--mono);
     }
 
     .send-row {
@@ -163,6 +328,14 @@
       display: grid;
       grid-template-columns: 1fr auto;
       gap: 8px;
+    .state-banner {
+      border: 1px solid #214565;
+      color: #d9f1ff;
+      background: linear-gradient(180deg, #0e2437, #0c1a29);
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-family: var(--mono);
     }
 
     input[type="text"] {
@@ -174,18 +347,66 @@
       color: var(--text);
       font-size: 0.95rem;
       outline: none;
+    .btn-grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+    .btn-grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+    .btn-grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:6px; }
+
+    .meter-row { display:flex; align-items:center; gap:8px; }
+    .meter-label { width:92px; font-size:11px; color:var(--muted); text-transform:uppercase; }
+    .meter {
+      flex:1;
+      height:12px;
+      border:1px solid var(--line-2);
+      border-radius:999px;
+      background:#0a121b;
+      overflow:hidden;
+    }
+    .meter > span {
+      display:block; height:100%; width:0%;
+      background: linear-gradient(90deg, #1db6ff, #6cf1ff);
+      box-shadow: 0 0 12px rgba(93,231,255,.45);
     }
 
     input[type="text"]:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 2px rgba(53, 176, 255, 0.15);
+    .jog {
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:6px;
+      align-items: stretch;
     }
+    .jog button { padding: 10px 6px; }
+    .jog button.active { border-color: var(--cyan); }
 
     .hint {
       margin-top: 6px;
       color: var(--muted);
       font-size: 0.85rem;
+    .slider-wrap { display:flex; align-items:center; gap:8px; }
+    .slider-wrap input[type="range"] { flex:1; }
+    .small { font-size:11px; color:var(--muted); }
+
+    .io-grid {
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:6px;
     }
+    .io-item {
+      border:1px solid var(--line-2);
+      background:#0a1119;
+      border-radius:6px;
+      padding:6px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      font-size:12px;
+      text-transform:uppercase;
+    }
+    .lamp {
+      width:10px; height:10px; border-radius:50%; background:#556;
+    }
+    .lamp.on { background:var(--good); box-shadow:0 0 8px rgba(89,224,143,.8); }
 
     .log {
       margin-top: 10px;
@@ -198,7 +419,22 @@
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: 0.85rem;
       line-height: 1.45;
+    .viewer-wrap { display:flex; flex-direction:column; min-height:0; flex:1; }
+    .viewer-tabs, .right-tabs {
+      display:flex;
+      border-bottom:1px solid var(--line);
+      background:#0f1723;
     }
+    .tab {
+      padding:10px 12px;
+      border-right:1px solid var(--line);
+      cursor:pointer;
+      font-size:12px;
+      text-transform:uppercase;
+      color:#9ab3cc;
+      user-select:none;
+    }
+    .tab.active { color:#dff7ff; background:#162437; box-shadow: inset 0 -2px 0 var(--cyan); }
 
     .line {
       margin: 0;
@@ -206,21 +442,125 @@
       white-space: pre-wrap;
       word-break: break-word;
       border-bottom: 1px dashed rgba(139, 162, 184, 0.15);
+    .viewer-toolbar {
+      display:flex;
+      align-items:center;
+      gap:6px;
+      padding:8px;
+      border-bottom:1px solid var(--line);
+      background:#0b121b;
+    }
+
+    .viewer-main {
+      position:relative;
+      min-height:0;
+      flex:1;
+      background:#070d14;
+    }
+    #viewerCanvas {
+      width:100%; height:100%; display:block;
+      cursor: grab;
     }
 
     .line.rx { color: #9fd4ff; }
     .line.tx { color: #c7ffb0; }
     .line.sys { color: #ffd97a; }
     .line.err { color: #ff9fa2; }
+    .viewer-info {
+      border-top:1px solid var(--line);
+      padding:7px 8px;
+      font-size:11px;
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      color:#9eb5ca;
+      font-family:var(--mono);
+      background:#0d141f;
+    }
 
     @media (max-width: 900px) {
       .wrap {
         grid-template-columns: 1fr;
       }
+    .heartbeat {
+      height:48px;
+      border-top:1px solid var(--line);
+      background:#090f16;
+      padding:6px 8px;
+    }
+    #pulseCanvas { width:100%; height:100%; display:block; }
 
       .log {
         height: 320px;
       }
+    .right-body { flex:1; min-height:0; overflow:hidden; display:flex; }
+    .tab-page { display:none; flex-direction:column; min-height:0; width:100%; }
+    .tab-page.active { display:flex; }
+
+    .drop-zone {
+      border:2px dashed #2f4e66;
+      border-radius:8px;
+      background:#0b141f;
+      padding:20px;
+      text-align:center;
+      color:#9ec6e7;
+      font-size:13px;
+    }
+    .drop-zone.drag { border-color: var(--cyan); background:#0f2032; }
+
+    .kv { display:grid; grid-template-columns:130px 1fr; gap:6px; align-items:center; font-size:12px; }
+    .kv label { color:var(--muted); }
+    .kv strong { font-family:var(--mono); color:#d9edff; }
+
+    .log {
+      border:1px solid var(--line-2);
+      background:#060b11;
+      border-radius:6px;
+      padding:8px;
+      min-height:160px;
+      overflow:auto;
+      font-family:var(--mono);
+      font-size:12px;
+      white-space:pre-wrap;
+    }
+
+    .mdi-history {
+      border:1px solid var(--line-2);
+      border-radius:6px;
+      background:#080f18;
+      padding:6px;
+      min-height:90px;
+      overflow:auto;
+      font-family:var(--mono);
+      font-size:12px;
+    }
+
+    .emergency {
+      border:1px solid #5a252e;
+      border-radius:8px;
+      background: linear-gradient(180deg, #250d12, #1a080c);
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:8px;
+      padding:8px;
+      box-shadow: var(--shadow);
+    }
+    .emergency button {
+      font-size:16px;
+      font-weight:800;
+      letter-spacing:.8px;
+      border-radius:8px;
+      border:1px solid #6a2e3a;
+      padding:10px;
+      cursor:pointer;
+    }
+    .estop { background:linear-gradient(180deg, #b11931, #6c1020); color:#fff; border-color:#ff4f6a !important; }
+    .hold { background:linear-gradient(180deg, #946f19, #674f14); color:#fff7d8; }
+    .start { background:linear-gradient(180deg, #0f6d3c, #0d4e2e); color:#d7ffe8; }
+
+    @media (max-width: 1520px) {
+      .header { grid-template-columns: 200px 180px 1fr 220px 240px 180px; }
+      .main { grid-template-columns: 330px 1fr 350px; }
     }
   </style>
 </head>
@@ -257,24 +597,137 @@
           <div></div>
           <button data-cmd="G91 G0 Y-1 G90">Y-</button>
           <div></div>
+<div class="app">
+  <header class="header" id="headerState">
+    <div class="brand">
+      <h1>FluidNC Industrial</h1>
+      <small>Machine Operator Console</small>
+    </div>
+    <div class="badge-row">
+      <span class="badge" id="fwBadge">FW: --</span>
+      <span class="badge" id="chipBadge">CHIP: --</span>
+      <span class="badge" id="tempBadge">TMP: --</span>
+    </div>
+    <div class="wcs-row" id="wcsRow">
+      <button class="wcs-btn active" data-wcs="G54">G54</button><button class="wcs-btn" data-wcs="G55">G55</button><button class="wcs-btn" data-wcs="G56">G56</button><button class="wcs-btn" data-wcs="G57">G57</button>
+    </div>
+    <div class="conn-row">
+      <input class="input" id="hostInput" value="192.168.0.10" placeholder="host/ip" />
+      <button class="btn" id="connectBtn">CONNECT</button>
+      <button class="btn" id="disconnectBtn" disabled>DISCONNECT</button>
+      <button class="btn" id="usbBtn">USB</button>
+    </div>
+    <div class="status-row">
+      <div class="state-dot"></div>
+      <strong id="machineState">DISCONNECTED</strong>
+      <span class="small" id="connState">offline</span>
+    </div>
+    <div style="display:flex;justify-content:flex-end">
+      <button class="btn">SETTINGS</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="col" id="leftCol">
+      <article class="panel" style="flex:1.4">
+        <div class="panel-header"><span>Position / DRO</span><span id="activeWcs">G54</span></div>
+        <div class="panel-body">
+          <div class="dro-grid">
+            <div class="dro-card"><div class="dro-title">Work (WPos)</div><div class="dro-values" id="wposGrid"></div></div>
+            <div class="dro-card"><div class="dro-title">Machine (MPos)</div><div class="dro-values" id="mposGrid"></div></div>
+          </div>
+          <div class="state-banner" id="stateBanner">STATE: DISCONNECTED</div>
+          <div class="alarm-banner" id="alarmBanner" style="display:none">ALARM: --</div>
+          <div class="btn-grid-4">
+            <button class="btn" data-zero="X">ZERO X</button><button class="btn" data-zero="Y">ZERO Y</button><button class="btn" data-zero="Z">ZERO Z</button><button class="btn" data-zero="ALL">ZERO ALL</button>
+          </div>
+          <div class="btn-grid-3">
+            <button class="btn" id="probeZBtn">PROBE Z</button><button class="btn" id="setParkA">SET PARK</button><button class="btn" id="goParkA">GO PARK</button>
+          </div>
         </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header">Feed / Speed</div>
+        <div class="panel-body">
+          <div class="kv"><label>Actual Feed</label><strong id="actFeed">0 mm/min</strong></div>
+          <div class="meter-row"><span class="meter-label">Feed</span><div class="meter"><span id="feedBar"></span></div></div>
+          <div class="kv"><label>Actual RPM</label><strong id="actRpm">0 rpm</strong></div>
+          <div class="meter-row"><span class="meter-label">Spindle</span><div class="meter"><span id="rpmBar"></span></div></div>
+        </div>
+      </article>
+
+      <article class="panel" style="flex:1.2">
+        <div class="panel-header">Jog</div>
+        <div class="panel-body">
+          <div class="jog" id="jogPad">
+            <button class="btn" data-jog="X- Y+">↖</button><button class="btn" data-jog="Y+">↑</button><button class="btn" data-jog="X+ Y+">↗</button>
+            <button class="btn" data-jog="X-">←</button><button class="btn" id="jogStop">■</button><button class="btn" data-jog="X+">→</button>
+            <button class="btn" data-jog="X- Y-">↙</button><button class="btn" data-jog="Y-">↓</button><button class="btn" data-jog="X+ Y-">↘</button>
+          </div>
+          <div class="btn-grid-2">
+            <button class="btn" data-jog="Z+">Z+</button>
+            <button class="btn" data-jog="Z-">Z-</button>
+          </div>
+          <div class="btn-grid-3" id="stepBtns">
+            <button class="btn active" data-step="0.1">0.1</button><button class="btn" data-step="0.5">0.5</button><button class="btn" data-step="1">1</button><button class="btn" data-step="10">10</button><button class="btn" data-step="100">100</button><button class="btn" data-step="1000">1000</button>
+          </div>
+          <div class="slider-wrap"><span class="small">Jog Speed</span><input id="jogSpeed" type="range" min="100" max="8000" value="1200" /><strong id="jogSpeedVal" class="small">1200</strong></div>
+        </div>
+      </article>
 
         <div class="z-jog">
           <button data-cmd="G91 G0 Z1 G90">Z+</button>
           <button data-cmd="G91 G0 Z-1 G90">Z-</button>
+      <article class="panel">
+        <div class="panel-header">Zero / Homing</div>
+        <div class="panel-body">
+          <div class="btn-grid-4">
+            <button class="btn" data-zero="X">SET X=0</button><button class="btn" data-zero="Y">SET Y=0</button><button class="btn" data-zero="Z">SET Z=0</button><button class="btn" data-zero="ALL">SET ALL=0</button>
+          </div>
+          <div class="btn-grid-3">
+            <select class="input" id="axisSelect"><option>X</option><option>Y</option><option>Z</option></select>
+            <input class="input" id="axisValue" value="0" />
+            <button class="btn" id="setAxisValue">SET VAL</button>
+          </div>
+          <div class="btn-grid-4">
+            <button class="btn" data-cmd="$H">HOME ALL</button><button class="btn" data-cmd="$HX">HX</button><button class="btn" data-cmd="$HY">HY</button><button class="btn" data-cmd="$HZ">HZ</button>
+          </div>
+          <div class="btn-grid-4">
+            <button class="btn" data-cmd="$X">UNLOCK</button><button class="btn" id="setParkB">SET PARK</button><button class="btn" id="goParkB">PARK</button><button class="btn" data-cmd="G28">G28</button>
+          </div>
         </div>
       </div>
+      </article>
 
       <div class="send-row">
         <input id="gcodeInput" type="text" placeholder="Enter G-code (e.g., G1 X10 F500)" />
         <button id="sendBtn" class="good">Send</button>
       </div>
       <div class="hint">WebSocket target: <code>ws://192.168.0.1:81</code></div>
+      <article class="panel" style="flex:1">
+        <div class="panel-header">I/O</div>
+        <div class="panel-body">
+          <div class="io-grid" id="ioGrid"></div>
+        </div>
+      </article>
     </section>
 
     <section class="card">
       <h2>Console Log</h2>
       <div id="log" class="log" aria-live="polite"></div>
+    <section class="col">
+      <article class="panel viewer-wrap" style="flex:1">
+        <div class="viewer-tabs" id="viewerTabs"><div class="tab active" data-view="xy">2D XY</div><div class="tab" data-view="xz">XZ</div><div class="tab" data-view="3d">3D</div></div>
+        <div class="viewer-toolbar">
+          <button class="btn" id="fitBtn">FIT</button><button class="btn" id="zoomInBtn">+</button><button class="btn" id="zoomOutBtn">-</button>
+          <button class="btn" id="rapidsBtn">RAPIDS ON</button><button class="btn" id="depthBtn">DEPTH OFF</button>
+          <span class="small" id="fileInfo">No file loaded</span>
+        </div>
+        <div class="viewer-main"><canvas id="viewerCanvas"></canvas></div>
+        <div class="viewer-info"><span id="boundsInfo">Bounds: --</span><span id="moveInfo">Moves: 0</span><span id="cursorInfo">Tool: X0 Y0 Z0</span></div>
+        <div class="heartbeat"><canvas id="pulseCanvas"></canvas></div>
+      </article>
     </section>
   </div>
 
@@ -314,6 +767,22 @@
           statusText.innerHTML = '<span class="dot" id="statusDot"></span>Disconnected';
         }
       }
+    <section class="col">
+      <article class="panel" style="flex:1; min-height:0;">
+        <div class="right-tabs" id="rightTabs"><div class="tab active" data-page="run">RUN</div><div class="tab" data-page="sd">SD</div><div class="tab" data-page="ctrl">CTRL</div><div class="tab" data-page="log">LOG</div></div>
+        <div class="right-body">
+          <div class="tab-page active" id="page-run">
+            <div class="panel-body">
+              <div class="drop-zone" id="dropZone">Drag & drop G-code file here or <button class="btn" id="openFileBtn">Browse</button><input type="file" id="fileInput" accept=".nc,.gcode,.tap,.txt" hidden /></div>
+              <div class="kv"><label>File</label><strong id="runFileName">--</strong></div>
+              <div class="kv"><label>Progress</label><strong id="runProgress">0%</strong></div>
+              <div class="kv"><label>Lines</label><strong id="runLines">0 / 0</strong></div>
+              <div class="btn-grid-4"><button class="btn" id="startBtn">START</button><button class="btn" id="holdBtn">HOLD</button><button class="btn" id="resumeBtn">RESUME</button><button class="btn" id="stopBtn">STOP</button></div>
+              <div class="btn-grid-3"><button class="btn" id="m3Btn">M3 CW</button><button class="btn" id="m4Btn">M4 CCW</button><button class="btn" id="m5Btn">M5 STOP</button></div>
+              <div class="slider-wrap"><span class="small">RPM</span><input type="range" id="rpmSlider" min="0" max="24000" value="12000" /><strong class="small" id="rpmVal">12000</strong></div>
+              <div class="kv"><label>Runtime</label><strong id="runtime">00:00:00</strong></div>
+            </div>
+          </div>
 
       function connect() {
         if (ws && ws.readyState === WebSocket.OPEN) {
@@ -347,6 +816,17 @@
           log(`Connection failed: ${error.message}`, "err");
         }
       }
+          <div class="tab-page" id="page-sd">
+            <div class="panel-body">
+              <div class="btn-grid-2"><button class="btn" id="sdRefreshBtn">REFRESH</button><button class="btn" id="sdUploadPickBtn">SELECT UPLOAD</button><input id="sdUploadInput" type="file" hidden /></div>
+              <div class="log" id="sdList"></div>
+              <div class="kv"><label>Selected</label><strong id="sdSelected">--</strong></div>
+              <div class="btn-grid-2"><button class="btn" id="sdLoadBtn">LOAD + VISUALIZE</button><button class="btn" id="sdRunBtn">RUN SD</button></div>
+              <div class="btn-grid-2"><button class="btn" id="sdDownloadBtn">DOWNLOAD</button><button class="btn" id="sdUploadBtn">UPLOAD</button></div>
+              <div class="kv"><label>Upload Status</label><strong id="sdUploadStatus">Idle</strong></div>
+              <div class="small" id="sdSupportInfo">SD support unknown (awaiting capabilities).</div>
+            </div>
+          </div>
 
       function disconnect() {
         if (ws) {
@@ -355,42 +835,769 @@
           log("No active connection.", "sys");
         }
       }
+          <div class="tab-page" id="page-ctrl">
+            <div class="panel-body">
+              <div class="slider-wrap"><span class="small">Feed Override</span><input type="range" id="feedOv" min="10" max="200" value="100" /><strong class="small" id="feedOvVal">100%</strong></div>
+              <div class="slider-wrap"><span class="small">Spindle Override</span><input type="range" id="spindleOv" min="10" max="200" value="100" /><strong class="small" id="spindleOvVal">100%</strong></div>
+              <button class="btn" id="resetOvBtn">RESET OVERRIDE</button>
+              <div class="btn-grid-2"><input class="input" id="mdiInput" placeholder="MDI command" /><button class="btn" id="mdiSendBtn">MDI SEND</button></div>
+              <div class="mdi-history" id="mdiHistory"></div>
+              <div class="btn-grid-5" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">
+                <button class="btn" data-cmd="$H">$H</button><button class="btn" data-cmd="$HX">$HX</button><button class="btn" data-cmd="$HY">$HY</button><button class="btn" data-cmd="$HZ">$HZ</button><button class="btn" data-cmd="$I">$I</button>
+                <button class="btn" data-cmd="$$">$$</button><button class="btn" data-cmd="$X">$X</button><button class="btn" data-cmd="G28">G28</button><button class="btn" data-cmd="G28.1">G28.1</button><button class="btn" id="probeCtrlBtn">PROBE Z</button>
+              </div>
+              <div class="btn-grid-3">
+                <input class="input probe-field" data-probe="thickness" id="probeThickness" value="15.0" placeholder="Plate Thickness" />
+                <input class="input probe-field" data-probe="feed" id="probeFeed" value="100" placeholder="Probe Feed" />
+                <input class="input probe-field" data-probe="maxDepth" id="probeDepth" value="-25" placeholder="Max Depth" />
+              </div>
+            </div>
+          </div>
 
       function sendCommand(raw) {
         const cmd = raw.trim();
         if (!cmd) return;
+          <div class="tab-page" id="page-log">
+            <div class="panel-body">
+              <div class="log" id="consoleLog"></div>
+              <div class="btn-grid-2"><input class="input" id="logCmdInput" placeholder="Send command" /><button class="btn" id="logSendBtn">SEND</button></div>
+              <div class="btn-grid-2"><button class="btn" id="pingBtn">PING ?</button><button class="btn" id="clearLogBtn">CLEAR LOG</button></div>
+              <div class="kv"><label>Ping</label><strong id="pingDisplay">-- ms</strong></div>
+              <div class="kv"><label>Work Time</label><strong id="workTime">00:00:00</strong></div>
+              <div class="kv"><label>Job Done</label><strong id="jobDone">0%</strong></div>
+              <div class="kv"><label>Feed</label><strong id="statFeed">0</strong></div>
+              <div class="kv"><label>RPM</label><strong id="statRpm">0</strong></div>
+              <div class="kv"><label>Lines</label><strong id="statLines">0/0</strong></div>
+              <div class="kv"><label>Estimated Time</label><strong id="estTime">--:--:--</strong></div>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
 
         if (!ws || ws.readyState !== WebSocket.OPEN) {
           log("Cannot send. WebSocket is not connected.", "err");
           return;
         }
+  <footer class="emergency">
+    <button class="estop" id="estopBtn">E-STOP</button>
+    <button class="hold" id="feedHoldBtn">FEED HOLD</button>
+    <button class="start" id="cycleStartBtn">CYCLE START</button>
+  </footer>
+</div>
 
         ws.send(cmd + "\n");
         log(`TX: ${cmd}`, "tx");
       }
+<script>
+(() => {
+  "use strict";
 
       connectBtn.addEventListener("click", connect);
       disconnectBtn.addEventListener("click", disconnect);
+  // globals
+  const state = {
+    ws: null,
+    wsUrl: "",
+    serialPort: null,
+    connected: false,
+    controllerState: "DISCONNECTED",
+    firmware: "--",
+    chipId: "--",
+    temp: "--",
+    mpos: {x:0,y:0,z:0},
+    wpos: {x:0,y:0,z:0},
+    wco: {x:0,y:0,z:0},
+    fs: {f:0,s:0},
+    ov: {f:100,r:100,s:100},
+    pins: new Set(),
+    outputs: {spindle:false,flood:false,mist:false,coolant:false},
+    alarmText: "",
+    activeWcs: "G54",
+    jogStep: 0.1,
+    jogFeed: 1200,
+    rapidsVisible: true,
+    depthColor: false,
+    viewerMode: "xy",
+    path: [],
+    pathBounds: null,
+    fileName: "",
+    fileLines: [],
+    stream: {
+      queue: [],
+      inflight: [],
+      sent: 0,
+      acked: 0,
+      errors: 0,
+      running: false,
+      paused: false,
+      stopped: false,
+      startedAt: 0
+    },
+    capabilities: {sd:false, reason:"Unknown"},
+    sdFiles: [],
+    sdSelected: "",
+    mdiHistory: [],
+    pingSentAt: 0,
+    pulse: new Array(240).fill(0),
+    probe: {thickness:15, feed:100, maxDepth:-25},
+    park: {x:0,y:0,z:0}
+  };
 
       sendBtn.addEventListener("click", () => {
         sendCommand(gcodeInput.value);
         gcodeInput.value = "";
         gcodeInput.focus();
       });
+  const ui = {};
 
       gcodeInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
           sendBtn.click();
         }
       });
+  const fmt = n => (Number(n)||0).toFixed(3);
+  const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
+
+  function $(id){return document.getElementById(id);}
 
       cmdButtons.forEach(btn => {
         btn.addEventListener("click", () => sendCommand(btn.dataset.cmd));
+  function initRefs(){
+    ["fwBadge","chipBadge","tempBadge","hostInput","connectBtn","disconnectBtn","usbBtn","machineState","connState","headerState","activeWcs","stateBanner","alarmBanner","actFeed","actRpm","feedBar","rpmBar","jogSpeed","jogSpeedVal","axisSelect","axisValue","setAxisValue","ioGrid","viewerCanvas","pulseCanvas","fileInfo","boundsInfo","moveInfo","cursorInfo","runFileName","runProgress","runLines","runtime","rpmSlider","rpmVal","dropZone","fileInput","openFileBtn","startBtn","holdBtn","resumeBtn","stopBtn","m3Btn","m4Btn","m5Btn","sdRefreshBtn","sdUploadPickBtn","sdUploadInput","sdList","sdSelected","sdLoadBtn","sdRunBtn","sdDownloadBtn","sdUploadBtn","sdUploadStatus","sdSupportInfo","feedOv","spindleOv","feedOvVal","spindleOvVal","resetOvBtn","mdiInput","mdiSendBtn","mdiHistory","probeThickness","probeFeed","probeDepth","consoleLog","logCmdInput","logSendBtn","pingBtn","clearLogBtn","pingDisplay","workTime","jobDone","statFeed","statRpm","statLines","estTime","fitBtn","zoomInBtn","zoomOutBtn","rapidsBtn","depthBtn","estopBtn","feedHoldBtn","cycleStartBtn","probeZBtn","probeCtrlBtn","setParkA","setParkB","goParkA","goParkB","jogStop"].forEach(id=>ui[id]=$(id));
+  }
+
+  function buildDro(){
+    const make = (container, key) => {
+      container.innerHTML = "";
+      ["X","Y","Z"].forEach(ax=>{
+        const el = document.createElement("div");
+        el.className="axis";
+        el.innerHTML = `<label>${ax}</label><strong id="${key}${ax}">0.000</strong>`;
+        container.appendChild(el);
       });
+    };
+    make($("wposGrid"), "w");
+    make($("mposGrid"), "m");
+  }
+
+  function buildIo(){
+    const keys = ["x_limit","y_limit","z_limit","probe","door","hold","reset","safety","spindle","flood","mist","coolant"];
+    ui.ioGrid.innerHTML = "";
+    keys.forEach(k=>{
+      const row=document.createElement("div"); row.className="io-item";
+      row.innerHTML=`<span>${k.replace("_"," ")}</span><span class="lamp" id="io_${k}"></span>`;
+      ui.ioGrid.appendChild(row);
+    });
+  }
+
+  // transport
+  function logLine(s, cls=""){ const d=document.createElement("div"); d.textContent=s; if(cls)d.style.color=cls; ui.consoleLog.appendChild(d); ui.consoleLog.scrollTop=ui.consoleLog.scrollHeight; }
+
+  function connect(){
+    const host=ui.hostInput.value.trim() || "127.0.0.1";
+    state.wsUrl = `ws://${host}:81`;
+    try {
+      state.ws = new WebSocket(state.wsUrl);
+      state.ws.onopen=()=>{ state.connected=true; onConnState("CONNECTED","online"); ui.connectBtn.disabled=true; ui.disconnectBtn.disabled=false; logLine(`[ws] connected ${state.wsUrl}`, "#7ff"); sendLine("?"); sendLine("$I");};
+      state.ws.onclose=()=>{ state.connected=false; onConnState("DISCONNECTED","offline"); ui.connectBtn.disabled=false; ui.disconnectBtn.disabled=true; logLine("[ws] disconnected", "#f99");};
+      state.ws.onerror=()=>logLine("[ws] error","#f99");
+      state.ws.onmessage=(ev)=>handleIncoming(ev.data);
+    } catch(e) { logLine(`[ws] ${e.message}`,"#f99"); }
+  }
+
+  function disconnect(){ if(state.ws){state.ws.close(); state.ws=null;} }
+
+  function sendRawRealtime(ch){
+    if(state.connected && state.ws?.readyState===1) state.ws.send(ch);
+    logLine(`>RT ${JSON.stringify(ch)}`,"#fc9");
+  }
+
+  function sendLine(line){
+    if(!line) return;
+    if(state.connected && state.ws?.readyState===1){ state.ws.send(line+"\n"); }
+    logLine(`> ${line}`,"#9dc");
+  }
+
+  async function connectUsb(){
+    if(!('serial' in navigator)){ alert('Web Serial unsupported'); return; }
+    try {
+      const port=await navigator.serial.requestPort();
+      await port.open({baudRate:115200});
+      state.serialPort=port;
+      logLine("[usb] serial opened","#7ff");
+    } catch(e){ logLine(`[usb] ${e.message}`,"#f99"); }
+  }
+
+  // parser
+  function handleIncoming(raw){
+    String(raw).split(/\r?\n/).filter(Boolean).forEach(line=>{
+      logLine(`< ${line}`,"#cfe");
+      parseLine(line.trim());
+    });
+    refreshUi();
+  }
+
+  function parseLine(line){
+    if(line.startsWith('<') && line.endsWith('>')) parseStatus(line.slice(1,-1));
+    else if(line.toLowerCase()==='ok') onAck(true);
+    else if(line.toLowerCase().startsWith('error')) { state.alarmText=line; onAck(false); }
+    else if(/^ALARM/i.test(line)) { state.controllerState="ALARM"; state.alarmText=line; }
+    else if(line.includes("[VER:")) parseFirmware(line);
+    else if(line.includes("[OPT:")) detectCaps(line);
+    else if(/temp|temperature/i.test(line)) parseTemp(line);
+    else if(/^\[PRB:/i.test(line)) parseProbeResult(line);
+    else if(/^\[GC:/i.test(line)) {
+      const m=line.match(/\bG5[4-9]\b/);
+      if(m) state.activeWcs=m[0];
+    }
+  }
+
+  function parseStatus(body){
+    const parts=body.split('|');
+    state.controllerState=(parts[0]||"UNKNOWN").toUpperCase();
+    for(let i=1;i<parts.length;i++){
+      const p=parts[i];
+      const [k,v]=p.split(':');
+      if(v===undefined) continue;
+      if(k==='MPos') { const a=v.split(',').map(Number); state.mpos={x:a[0]||0,y:a[1]||0,z:a[2]||0}; }
+      else if(k==='WPos'){ const a=v.split(',').map(Number); state.wpos={x:a[0]||0,y:a[1]||0,z:a[2]||0}; }
+      else if(k==='WCO'){ const a=v.split(',').map(Number); state.wco={x:a[0]||0,y:a[1]||0,z:a[2]||0}; }
+      else if(k==='FS'){ const a=v.split(',').map(Number); state.fs={f:a[0]||0,s:a[1]||0}; }
+      else if(k==='Ov'){ const a=v.split(',').map(Number); state.ov={f:a[0]||100,r:a[1]||100,s:a[2]||100}; }
+      else if(k==='Pn'){ state.pins=new Set(v.split('')); }
+      else if(k==='A'){ state.outputs.spindle=v.includes('S'); state.outputs.flood=v.includes('F'); state.outputs.mist=v.includes('M'); state.outputs.coolant=state.outputs.flood||state.outputs.mist; }
+      else if(k==='Bf'){/* planner/rx buffer available */}
+    }
+    deriveCoordinates();
+    pulseTick();
+  }
+
+  function deriveCoordinates(){
+    const hasM = state.mpos && isFinite(state.mpos.x);
+    const hasW = state.wpos && isFinite(state.wpos.x);
+    const hasO = state.wco && isFinite(state.wco.x);
+    if(hasM && hasO && !hasW) state.wpos = {x:state.mpos.x-state.wco.x,y:state.mpos.y-state.wco.y,z:state.mpos.z-state.wco.z};
+    if(hasW && hasO && !hasM) state.mpos = {x:state.wpos.x+state.wco.x,y:state.wpos.y+state.wco.y,z:state.wpos.z+state.wco.z};
+    if(hasM && hasW && !hasO) state.wco = {x:state.mpos.x-state.wpos.x,y:state.mpos.y-state.wpos.y,z:state.mpos.z-state.wpos.z};
+  }
+
+  function parseFirmware(line){
+    const m=line.match(/\[VER:([^\]]+)\]/i); if(m) state.firmware=m[1];
+    const c=line.match(/(chip|chipid|id)[:= ]+([A-Za-z0-9_-]+)/i); if(c) state.chipId=c[2];
+  }
+  function parseTemp(line){ const m=line.match(/(-?\d+(?:\.\d+)?)\s*°?C/i); if(m) state.temp=`${m[1]}C`; }
+  function detectCaps(line){
+    if(/SD/i.test(line)) { state.capabilities.sd=true; state.capabilities.reason="Detected in [OPT]"; }
+    else { state.capabilities.sd=false; state.capabilities.reason="No SD flag in [OPT]"; }
+    updateSdEnabledState();
+  }
+  function parseProbeResult(line){ logLine(`[probe] ${line}`, "#8ff"); }
+
+  // machine state / ui updates
+  function onConnState(machine, conn){ state.controllerState=machine; ui.machineState.textContent=machine; ui.connState.textContent=conn; refreshHeaderClass(); }
+
+  function refreshHeaderClass(){
+    const s=state.controllerState.toLowerCase();
+    ui.headerState.classList.remove("state-idle","state-run","state-hold","state-alarm");
+    if(s.includes("idle")) ui.headerState.classList.add("state-idle");
+    else if(s.includes("run")||s.includes("jog")) ui.headerState.classList.add("state-run");
+    else if(s.includes("hold")) ui.headerState.classList.add("state-hold");
+    else if(s.includes("alarm")) ui.headerState.classList.add("state-alarm");
+  }
+
+  function refreshUi(){
+    ["X","Y","Z"].forEach(ax=>{
+      const k=ax.toLowerCase();
+      $(`w${ax}`).textContent=fmt(state.wpos[k]);
+      $(`m${ax}`).textContent=fmt(state.mpos[k]);
+    });
+    ui.fwBadge.textContent=`FW: ${state.firmware}`;
+    ui.chipBadge.textContent=`CHIP: ${state.chipId}`;
+    ui.tempBadge.textContent=`TMP: ${state.temp}`;
+    ui.activeWcs.textContent=state.activeWcs;
+    ui.machineState.textContent=state.controllerState;
+    ui.stateBanner.textContent=`STATE: ${state.controllerState}`;
+    ui.alarmBanner.style.display = state.alarmText ? "block" : "none";
+    ui.alarmBanner.textContent = `ALARM: ${state.alarmText || "--"}`;
+    ui.actFeed.textContent=`${Math.round(state.fs.f)} mm/min`;
+    ui.actRpm.textContent=`${Math.round(state.fs.s)} rpm`;
+    ui.feedBar.style.width = clamp(state.fs.f/12000*100,0,100)+"%";
+    ui.rpmBar.style.width = clamp(state.fs.s/24000*100,0,100)+"%";
+    ui.cursorInfo.textContent=`Tool: X${fmt(state.wpos.x)} Y${fmt(state.wpos.y)} Z${fmt(state.wpos.z)}`;
+    ui.runProgress.textContent=`${Math.round(streamPercent())}%`;
+    ui.runLines.textContent=`${state.stream.acked} / ${state.fileLines.length}`;
+    ui.jobDone.textContent=ui.runProgress.textContent;
+    ui.statFeed.textContent=Math.round(state.fs.f);
+    ui.statRpm.textContent=Math.round(state.fs.s);
+    ui.statLines.textContent=ui.runLines.textContent;
+    ui.feedOvVal.textContent=`${ui.feedOv.value}%`;
+    ui.spindleOvVal.textContent=`${ui.spindleOv.value}%`;
+    refreshIo();
+    refreshHeaderClass();
+    renderViewer();
+  }
+
+  function refreshIo(){
+    const set = (id, on)=>$(id).classList.toggle('on',!!on);
+    set('io_x_limit', state.pins.has('X'));
+    set('io_y_limit', state.pins.has('Y'));
+    set('io_z_limit', state.pins.has('Z'));
+    set('io_probe', state.pins.has('P'));
+    set('io_door', state.pins.has('D'));
+    set('io_hold', state.pins.has('H'));
+    set('io_reset', state.pins.has('R'));
+    set('io_safety', state.pins.has('S'));
+    set('io_spindle', state.outputs.spindle);
+    set('io_flood', state.outputs.flood);
+    set('io_mist', state.outputs.mist);
+    set('io_coolant', state.outputs.coolant);
+  }
+
+  // jog
+  function jogVector(str){
+    const step = Number(state.jogStep);
+    let x=0,y=0,z=0;
+    if(str.includes('X+')) x=step;
+    if(str.includes('X-')) x=-step;
+    if(str.includes('Y+')) y=step;
+    if(str.includes('Y-')) y=-step;
+    if(str.includes('Z+')) z=step;
+    if(str.includes('Z-')) z=-step;
+    const cmd=`$J=G91 G21 X${x.toFixed(3)} Y${y.toFixed(3)} Z${z.toFixed(3)} F${Math.round(state.jogFeed)}`;
+    sendLine(cmd);
+  }
+
+  function cancelJog(){ sendRawRealtime(String.fromCharCode(0x85)); }
+
+  function setupKeyboardJog(){
+    window.addEventListener('keydown', e=>{
+      if(e.target && /input|textarea|select/i.test(e.target.tagName)) return;
+      if(e.repeat) return;
+      if(e.key==='ArrowUp'){jogVector('Y+'); markJog('Y+'); e.preventDefault();}
+      if(e.key==='ArrowDown'){jogVector('Y-'); markJog('Y-'); e.preventDefault();}
+      if(e.key==='ArrowLeft'){jogVector('X-'); markJog('X-'); e.preventDefault();}
+      if(e.key==='ArrowRight'){jogVector('X+'); markJog('X+'); e.preventDefault();}
+      if(e.key==='PageUp'){jogVector('Z+'); markJog('Z+'); e.preventDefault();}
+      if(e.key==='PageDown'){jogVector('Z-'); markJog('Z-'); e.preventDefault();}
+    });
+  }
+
+  function markJog(tag){
+    document.querySelectorAll('#jogPad button').forEach(b=>b.classList.toggle('active',(b.dataset.jog||'')===tag));
+    setTimeout(()=>document.querySelectorAll('#jogPad button').forEach(b=>b.classList.remove('active')),180);
+  }
+
+  // MDI
+  function sendMdi(){
+    const cmd=ui.mdiInput.value.trim(); if(!cmd) return;
+    sendLine(cmd);
+    state.mdiHistory.unshift(cmd);
+    state.mdiHistory=state.mdiHistory.slice(0,80);
+    ui.mdiInput.value="";
+    ui.mdiHistory.innerHTML=state.mdiHistory.map(c=>`<div>${c}</div>`).join('');
+  }
+
+  // SD
+  function updateSdEnabledState(){
+    const en = !!state.capabilities.sd;
+    [ui.sdRefreshBtn,ui.sdLoadBtn,ui.sdRunBtn,ui.sdDownloadBtn,ui.sdUploadBtn,ui.sdUploadPickBtn].forEach(b=>b.disabled=!en);
+    ui.sdSupportInfo.textContent = en ? "SD filesystem available" : `SD unavailable: ${state.capabilities.reason}`;
+  }
+
+  function requestSdList(){ sendLine('$SD/List'); }
+  function parseSdListText(text){
+    const lines=text.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+    state.sdFiles = lines.filter(l=>l.startsWith('/')||/\.nc|\.gcode|\.tap/i.test(l));
+    renderSdList();
+  }
+
+  function renderSdList(){
+    ui.sdList.innerHTML='';
+    if(!state.sdFiles.length){ ui.sdList.textContent='No files'; return; }
+    state.sdFiles.forEach(f=>{
+      const d=document.createElement('div');
+      d.textContent=f; d.style.cursor='pointer';
+      d.style.padding='2px 0';
+      if(f===state.sdSelected){d.style.color='#79e6ff';}
+      d.onclick=()=>{state.sdSelected=f; ui.sdSelected.textContent=f; renderSdList();};
+      ui.sdList.appendChild(d);
+    });
+  }
+
+  // file loading
+  function stripLine(line){
+    return line.replace(/\([^)]*\)/g,'').replace(/;.*$/,'').trim();
+  }
+
+  function loadTextAsGcode(name, text){
+    const lines=text.split(/\r?\n/).map(stripLine).filter(Boolean);
+    state.fileName=name;
+    state.fileLines=lines;
+    state.stream.queue=[];
+    state.stream.inflight=[];
+    state.stream.sent=0;
+    state.stream.acked=0;
+    state.stream.errors=0;
+    state.stream.running=false;
+    state.path = parseGcodePath(lines);
+    state.pathBounds = calcBounds(state.path);
+    ui.runFileName.textContent=name;
+    ui.fileInfo.textContent=`${name} | ${lines.length} lines`;
+    ui.moveInfo.textContent=`Moves: ${state.path.length}`;
+    ui.boundsInfo.textContent=`Bounds: ${boundsText(state.pathBounds)}`;
+    ui.estTime.textContent=estimateTime(state.path);
+    fitView();
+    refreshUi();
+  }
+
+  function handleFile(f){
+    if(!f) return;
+    const r=new FileReader();
+    r.onload=()=>loadTextAsGcode(f.name, String(r.result||''));
+    r.readAsText(f);
+  }
+
+  function parseGcodePath(lines){
+    const pts=[];
+    let pos={x:0,y:0,z:0};
+    let modeAbs=true;
+    let feed=1000;
+    for(const raw of lines){
+      const line=raw.toUpperCase();
+      if(/\bG90\b/.test(line)) modeAbs=true;
+      if(/\bG91\b/.test(line)) modeAbs=false;
+      const isRapid=/\bG0\b|\bG00\b/.test(line);
+      const isMove=/\bG0\b|\bG00\b|\bG1\b|\bG01\b/.test(line);
+      if(!isMove) continue;
+      const nx=coordFrom(line,'X',pos.x,modeAbs);
+      const ny=coordFrom(line,'Y',pos.y,modeAbs);
+      const nz=coordFrom(line,'Z',pos.z,modeAbs);
+      const nf=feedFrom(line, feed); feed=nf;
+      const next={x:nx,y:ny,z:nz};
+      pts.push({from:{...pos},to:{...next},rapid:isRapid,feed:nf});
+      pos=next;
+    }
+    return pts;
+  }
+
+  function coordFrom(line, axis, cur, abs){
+    const m=line.match(new RegExp(`${axis}(-?\\d+(?:\\.\\d+)?)`));
+    if(!m) return cur;
+    const v=Number(m[1]);
+    return abs ? v : cur+v;
+  }
+
+  function feedFrom(line, cur){ const m=line.match(/F(-?\d+(?:\.\d+)?)/); return m?Number(m[1]):cur; }
+
+  function calcBounds(path){
+    if(!path.length) return null;
+    let min={x:Infinity,y:Infinity,z:Infinity}, max={x:-Infinity,y:-Infinity,z:-Infinity};
+    path.forEach(s=>{ [s.from,s.to].forEach(p=>{ min.x=Math.min(min.x,p.x); min.y=Math.min(min.y,p.y); min.z=Math.min(min.z,p.z); max.x=Math.max(max.x,p.x); max.y=Math.max(max.y,p.y); max.z=Math.max(max.z,p.z); });});
+    return {min,max};
+  }
+
+  function boundsText(b){ if(!b) return '--'; return `X[${fmt(b.min.x)}..${fmt(b.max.x)}] Y[${fmt(b.min.y)}..${fmt(b.max.y)}] Z[${fmt(b.min.z)}..${fmt(b.max.z)}]`; }
+
+  function estimateTime(path){
+    let sec=0;
+    for(const s of path){
+      const dx=s.to.x-s.from.x, dy=s.to.y-s.from.y, dz=s.to.z-s.from.z;
+      const d=Math.sqrt(dx*dx+dy*dy+dz*dz);
+      const f=Math.max(1,s.feed||1000);
+      sec+=d/f*60;
+    }
+    return hms(sec);
+  }
+
+  function hms(sec){ sec=Math.max(0,Math.round(sec)); const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60; return [h,m,s].map(n=>String(n).padStart(2,'0')).join(':'); }
+
+  // streaming
+  function canSendMore(){ return state.stream.inflight.length < 8; }
+
+  function startStream(){
+    if(!state.fileLines.length) return;
+    state.stream.queue = state.fileLines.slice();
+    state.stream.inflight = [];
+    state.stream.sent = 0;
+    state.stream.acked = 0;
+    state.stream.errors = 0;
+    state.stream.running = true;
+    state.stream.paused = false;
+    state.stream.stopped = false;
+    state.stream.startedAt = performance.now();
+    pumpStream();
+  }
+
+  function pumpStream(){
+    if(!state.stream.running || state.stream.paused || state.stream.stopped) return;
+    while(canSendMore() && state.stream.queue.length){
+      const line = state.stream.queue.shift();
+      sendLine(line);
+      state.stream.inflight.push(line);
+      state.stream.sent++;
+    }
+    if(state.stream.sent>=state.fileLines.length && state.stream.inflight.length===0){
+      state.stream.running=false;
+      logLine('[stream] done', '#7f7');
+    }
+    refreshUi();
+  }
+
+  function onAck(ok){
+    if(state.stream.inflight.length){
+      state.stream.inflight.shift();
+      state.stream.acked++;
+      if(!ok) state.stream.errors++;
+      pumpStream();
+    }
+  }
+
+  function holdStream(){ sendRawRealtime('!'); state.stream.paused=true; }
+  function resumeStream(){ sendRawRealtime('~'); state.stream.paused=false; pumpStream(); }
+  function stopStream(){ state.stream.stopped=true; state.stream.running=false; state.stream.queue=[]; state.stream.inflight=[]; sendRawRealtime(String.fromCharCode(0x18)); }
+  function streamPercent(){ if(!state.fileLines.length) return 0; return (state.stream.acked/state.fileLines.length)*100; }
+
+  // probe
+  function syncProbeFields(src){
+    const v = src.value;
+    document.querySelectorAll(`.probe-field[data-probe='${src.dataset.probe}']`).forEach(el=>{ if(el!==src) el.value=v; });
+    state.probe.thickness = Number(ui.probeThickness.value)||0;
+    state.probe.feed = Number(ui.probeFeed.value)||100;
+    state.probe.maxDepth = Number(ui.probeDepth.value)||-10;
+  }
+
+  function runProbeZ(){
+    syncProbeFields(ui.probeThickness);
+    const feed=state.probe.feed, depth=state.probe.maxDepth, plate=state.probe.thickness;
+    const seq=[
+      'G21',
+      '$X',
+      `G38.2 Z${depth} F${feed}`,
+      `G10 L20 P1 Z${plate}`,
+      'G91',
+      'G0 Z5',
+      'G90'
+    ];
+    seq.forEach(sendLine);
+  }
+
+  // viewer
+  const view = {zoom:1, panX:0, panY:0, dragging:false, lastX:0, lastY:0};
+
+  function fitView(){
+    const c=ui.viewerCanvas;
+    const b=state.pathBounds;
+    if(!b){ view.zoom=1; view.panX=0; view.panY=0; return; }
+    const w=b.max.x-b.min.x||10, h=b.max.y-b.min.y||10;
+    const sx=(c.width*0.78)/w, sy=(c.height*0.78)/h;
+    view.zoom=Math.max(0.2,Math.min(sx,sy));
+    view.panX=-(b.min.x+b.max.x)/2;
+    view.panY=-(b.min.y+b.max.y)/2;
+    renderViewer();
+  }
+
+  function worldToScreen(p){
+    const c=ui.viewerCanvas; const cx=c.width/2, cy=c.height/2;
+    if(state.viewerMode==='xy') return {x:cx+(p.x+view.panX)*view.zoom, y:cy-(p.y+view.panY)*view.zoom};
+    if(state.viewerMode==='xz') return {x:cx+(p.x+view.panX)*view.zoom, y:cy-(p.z+view.panY)*view.zoom};
+    const isoX=(p.x-p.y)*0.866;
+    const isoY=(p.x+p.y)*0.5-p.z;
+    return {x:cx+(isoX+view.panX)*view.zoom, y:cy-(isoY+view.panY)*view.zoom};
+  }
+
+  function renderViewer(){
+    const c=ui.viewerCanvas; if(!c) return;
+    if(c.width!==c.clientWidth||c.height!==c.clientHeight){ c.width=c.clientWidth; c.height=c.clientHeight; }
+    const g=c.getContext('2d');
+    g.clearRect(0,0,c.width,c.height);
+    drawGrid(g,c.width,c.height);
+    for(const seg of state.path){
+      if(seg.rapid && !state.rapidsVisible) continue;
+      const a=worldToScreen(seg.from), b=worldToScreen(seg.to);
+      g.lineWidth=seg.rapid?1:1.7;
+      g.strokeStyle = seg.rapid ? 'rgba(110,130,160,.8)' : (state.depthColor?depthColor(seg.to.z):'#6de6ff');
+      g.beginPath(); g.moveTo(a.x,a.y); g.lineTo(b.x,b.y); g.stroke();
+    }
+    const tool=worldToScreen(state.wpos);
+    g.fillStyle='#ffbf4a'; g.beginPath(); g.arc(tool.x,tool.y,4,0,Math.PI*2); g.fill();
+    const zero=worldToScreen({x:0,y:0,z:0});
+    g.strokeStyle='#67f3a5'; g.beginPath(); g.moveTo(zero.x-8,zero.y); g.lineTo(zero.x+8,zero.y); g.moveTo(zero.x,zero.y-8); g.lineTo(zero.x,zero.y+8); g.stroke();
+  }
+
+  function drawGrid(g,w,h){
+    g.fillStyle='#070d14'; g.fillRect(0,0,w,h);
+    g.strokeStyle='rgba(80,120,160,.18)'; g.lineWidth=1;
+    const step=40;
+    for(let x=0;x<w;x+=step){g.beginPath(); g.moveTo(x,0); g.lineTo(x,h); g.stroke();}
+    for(let y=0;y<h;y+=step){g.beginPath(); g.moveTo(0,y); g.lineTo(w,y); g.stroke();}
+    g.strokeStyle='rgba(130,200,250,.35)';
+    g.beginPath(); g.moveTo(w/2,0); g.lineTo(w/2,h); g.moveTo(0,h/2); g.lineTo(w,h/2); g.stroke();
+  }
+
+  function depthColor(z){
+    const t=clamp((z+50)/100,0,1);
+    const r=Math.round(50+200*t), b=Math.round(255-170*t), gg=Math.round(200-120*t);
+    return `rgb(${r},${gg},${b})`;
+  }
+
+  function setupViewerInteractions(){
+    const c=ui.viewerCanvas;
+    c.addEventListener('mousedown',e=>{view.dragging=true; view.lastX=e.clientX; view.lastY=e.clientY; c.style.cursor='grabbing';});
+    window.addEventListener('mouseup',()=>{view.dragging=false; c.style.cursor='grab';});
+    window.addEventListener('mousemove',e=>{
+      if(!view.dragging) return;
+      const dx=e.clientX-view.lastX, dy=e.clientY-view.lastY;
+      view.lastX=e.clientX; view.lastY=e.clientY;
+      view.panX += dx/view.zoom;
+      view.panY -= dy/view.zoom;
+      renderViewer();
+    });
+    c.addEventListener('wheel',e=>{ e.preventDefault(); const f=e.deltaY<0?1.1:0.9; view.zoom=clamp(view.zoom*f,0.05,200); renderViewer(); }, {passive:false});
+  }
+
+  function pulseTick(){
+    const val = /ALARM/i.test(state.controllerState)?1: /RUN|JOG/i.test(state.controllerState)?0.8: /HOLD/i.test(state.controllerState)?0.55:0.25;
+    state.pulse.push(val + Math.random()*0.08);
+    if(state.pulse.length>300) state.pulse.shift();
+    renderPulse();
+  }
+
+  function renderPulse(){
+    const c=ui.pulseCanvas; if(c.width!==c.clientWidth||c.height!==c.clientHeight){c.width=c.clientWidth;c.height=c.clientHeight;}
+    const g=c.getContext('2d'); g.clearRect(0,0,c.width,c.height); g.fillStyle='#070c13'; g.fillRect(0,0,c.width,c.height);
+    g.beginPath();
+    state.pulse.forEach((v,i)=>{
+      const x=i/(state.pulse.length-1)*c.width;
+      const y=c.height - v*c.height*0.95;
+      if(i===0) g.moveTo(x,y); else g.lineTo(x,y);
+    });
+    const st=state.controllerState.toUpperCase();
+    g.strokeStyle = st.includes('ALARM')?'#ff5a73':st.includes('RUN')||st.includes('JOG')?'#57dfff':st.includes('HOLD')?'#ffbf4a':'#67f3a5';
+    g.lineWidth=2;
+    g.stroke();
+  }
+
+  // init
+  function bindEvents(){
+    ui.connectBtn.onclick=connect;
+    ui.disconnectBtn.onclick=disconnect;
+    ui.usbBtn.onclick=connectUsb;
+    document.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>sendLine(b.dataset.cmd));
+    document.querySelectorAll('[data-zero]').forEach(b=>b.onclick=()=>{
+      const z=b.dataset.zero;
+      if(z==='ALL') sendLine('G10 L20 P1 X0 Y0 Z0');
+      else sendLine(`G10 L20 P1 ${z}0`);
+    });
+    ui.setAxisValue.onclick=()=>{ const ax=ui.axisSelect.value; const val=Number(ui.axisValue.value)||0; sendLine(`G10 L20 P1 ${ax}${val}`); };
+
+    document.querySelectorAll('#wcsRow .wcs-btn').forEach(b=>b.onclick=()=>{
+      document.querySelectorAll('#wcsRow .wcs-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      state.activeWcs=b.dataset.wcs;
+      sendLine(b.dataset.wcs);
+      refreshUi();
+    });
+
+    document.querySelectorAll('#jogPad [data-jog], .btn-grid-2 [data-jog]').forEach(b=>b.onclick=()=>jogVector(b.dataset.jog));
+    ui.jogStop.onclick=cancelJog;
+    document.querySelectorAll('#stepBtns [data-step]').forEach(b=>b.onclick=()=>{ document.querySelectorAll('#stepBtns [data-step]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); state.jogStep=Number(b.dataset.step); });
+    ui.jogSpeed.oninput=()=>{state.jogFeed=Number(ui.jogSpeed.value); ui.jogSpeedVal.textContent=ui.jogSpeed.value;};
+
+    ui.openFileBtn.onclick=()=>ui.fileInput.click();
+    ui.fileInput.onchange=e=>handleFile(e.target.files[0]);
+    ['dragenter','dragover'].forEach(ev=>ui.dropZone.addEventListener(ev,e=>{e.preventDefault();ui.dropZone.classList.add('drag');}));
+    ['dragleave','drop'].forEach(ev=>ui.dropZone.addEventListener(ev,e=>{e.preventDefault();ui.dropZone.classList.remove('drag');}));
+    ui.dropZone.addEventListener('drop',e=>{const f=e.dataTransfer.files[0]; handleFile(f);});
+
+    ui.startBtn.onclick=startStream;
+    ui.holdBtn.onclick=()=>{holdStream(); sendRawRealtime('!');};
+    ui.resumeBtn.onclick=()=>{resumeStream(); sendRawRealtime('~');};
+    ui.stopBtn.onclick=stopStream;
+
+    ui.m3Btn.onclick=()=>sendLine(`M3 S${ui.rpmSlider.value}`);
+    ui.m4Btn.onclick=()=>sendLine(`M4 S${ui.rpmSlider.value}`);
+    ui.m5Btn.onclick=()=>sendLine('M5');
+    ui.rpmSlider.oninput=()=>ui.rpmVal.textContent=ui.rpmSlider.value;
+
+    ui.sdRefreshBtn.onclick=requestSdList;
+    ui.sdLoadBtn.onclick=()=>state.sdSelected && sendLine(`$SD/Load=${state.sdSelected}`);
+    ui.sdRunBtn.onclick=()=>state.sdSelected && sendLine(`$SD/Run=${state.sdSelected}`);
+    ui.sdDownloadBtn.onclick=()=>state.sdSelected && sendLine(`$SD/Download=${state.sdSelected}`);
+    ui.sdUploadPickBtn.onclick=()=>ui.sdUploadInput.click();
+    ui.sdUploadInput.onchange=()=>ui.sdUploadStatus.textContent=`Selected: ${ui.sdUploadInput.files[0]?.name||'none'}`;
+    ui.sdUploadBtn.onclick=()=>{
+      const f=ui.sdUploadInput.files[0];
+      if(!f){ui.sdUploadStatus.textContent='No file selected';return;}
+      ui.sdUploadStatus.textContent='Upload scaffold ready (implement streaming to $SD/Upload endpoint).';
+    };
+
+    ui.mdiSendBtn.onclick=sendMdi;
+    ui.mdiInput.addEventListener('keydown',e=>{if(e.key==='Enter') sendMdi();});
+    ui.logSendBtn.onclick=()=>sendLine(ui.logCmdInput.value.trim());
+    ui.logCmdInput.addEventListener('keydown',e=>{if(e.key==='Enter') sendLine(ui.logCmdInput.value.trim());});
+    ui.clearLogBtn.onclick=()=>ui.consoleLog.innerHTML='';
+    ui.pingBtn.onclick=()=>{state.pingSentAt=performance.now(); sendLine('?'); setTimeout(()=>{ui.pingDisplay.textContent=`${Math.round(performance.now()-state.pingSentAt)} ms`;},40);};
+
+    ui.feedOv.oninput=()=>{ ui.feedOvVal.textContent=`${ui.feedOv.value}%`; sendRawRealtime(String.fromCharCode(0x91)); };
+    ui.spindleOv.oninput=()=>{ ui.spindleOvVal.textContent=`${ui.spindleOv.value}%`; sendRawRealtime(String.fromCharCode(0x99)); };
+    ui.resetOvBtn.onclick=()=>{ ui.feedOv.value=100; ui.spindleOv.value=100; ui.feedOvVal.textContent='100%'; ui.spindleOvVal.textContent='100%'; sendRawRealtime(String.fromCharCode(0x90)); sendRawRealtime(String.fromCharCode(0x99)); };
+
+    [ui.probeThickness,ui.probeFeed,ui.probeDepth].forEach(el=>el.addEventListener('input',()=>syncProbeFields(el)));
+    ui.probeZBtn.onclick=runProbeZ;
+    ui.probeCtrlBtn.onclick=runProbeZ;
+
+    ui.setParkA.onclick=ui.setParkB.onclick=()=>{ state.park={...state.wpos}; logLine(`[park] set ${fmt(state.park.x)},${fmt(state.park.y)},${fmt(state.park.z)}`,'#acf'); };
+    ui.goParkA.onclick=ui.goParkB.onclick=()=>sendLine(`G90 G0 X${fmt(state.park.x)} Y${fmt(state.park.y)} Z${fmt(state.park.z)}`);
+
+    ui.estopBtn.onclick=()=>sendRawRealtime(String.fromCharCode(0x18));
+    ui.feedHoldBtn.onclick=()=>sendRawRealtime('!');
+    ui.cycleStartBtn.onclick=()=>sendRawRealtime('~');
+
+    document.querySelectorAll('#viewerTabs .tab').forEach(t=>t.onclick=()=>{ document.querySelectorAll('#viewerTabs .tab').forEach(x=>x.classList.remove('active')); t.classList.add('active'); state.viewerMode=t.dataset.view; renderViewer(); });
+    document.querySelectorAll('#rightTabs .tab').forEach(t=>t.onclick=()=>{ document.querySelectorAll('#rightTabs .tab').forEach(x=>x.classList.remove('active')); t.classList.add('active'); document.querySelectorAll('.tab-page').forEach(p=>p.classList.remove('active')); $(`page-${t.dataset.page}`).classList.add('active'); });
+
+    ui.fitBtn.onclick=fitView;
+    ui.zoomInBtn.onclick=()=>{view.zoom*=1.2; renderViewer();};
+    ui.zoomOutBtn.onclick=()=>{view.zoom/=1.2; renderViewer();};
+    ui.rapidsBtn.onclick=()=>{state.rapidsVisible=!state.rapidsVisible; ui.rapidsBtn.textContent=state.rapidsVisible?'RAPIDS ON':'RAPIDS OFF'; renderViewer();};
+    ui.depthBtn.onclick=()=>{state.depthColor=!state.depthColor; ui.depthBtn.textContent=state.depthColor?'DEPTH ON':'DEPTH OFF'; renderViewer();};
+
+    setupKeyboardJog();
+    setupViewerInteractions();
+    window.addEventListener('resize', renderViewer);
+  }
+
+  function startTimers(){
+    setInterval(()=>{ if(state.connected) sendLine('?'); }, 250);
+    setInterval(()=>{
+      if(state.stream.running){
+        const sec=(performance.now()-state.stream.startedAt)/1000;
+        ui.runtime.textContent=hms(sec);
+        ui.workTime.textContent=hms(sec);
+      }
+      pulseTick();
+    }, 250);
+  }
+
+  function bootstrap(){
+    initRefs();
+    buildDro();
+    buildIo();
+    bindEvents();
+    updateSdEnabledState();
+    refreshUi();
+    startTimers();
+    parseSdListText('');
+  }
 
       setConnectedState(false);
       log("UI ready. Click Connect to start.", "sys");
     })();
   </script>
+  bootstrap();
+})();
+</script>
 </body>
 </html>
