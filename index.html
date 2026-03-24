@@ -1,402 +1,396 @@
-diff --git a/standalone-index.html b/standalone-index.html
-new file mode 100644
-index 0000000000000000000000000000000000000000..e1d0092c6412bf382787c5e915434fd0a8cc55b1
---- /dev/null
-+++ b/standalone-index.html
-@@ -0,0 +1,396 @@
-+<!DOCTYPE html>
-+<html lang="en">
-+<head>
-+  <meta charset="UTF-8" />
-+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-+  <title>FluidNC CNC WebUI</title>
-+  <style>
-+    :root {
-+      --bg: #0b0f14;
-+      --panel: #121922;
-+      --panel-2: #1a2430;
-+      --border: #2c3b4b;
-+      --text: #dce7f3;
-+      --muted: #8ba2b8;
-+      --accent: #35b0ff;
-+      --ok: #3ddc84;
-+      --warn: #ffca3a;
-+      --danger: #ff595e;
-+      --btn: #233142;
-+      --btn-hover: #2d4157;
-+    }
-+
-+    * { box-sizing: border-box; }
-+
-+    body {
-+      margin: 0;
-+      background: radial-gradient(circle at top, #111a24 0%, var(--bg) 50%);
-+      color: var(--text);
-+      font-family: Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-+      min-height: 100vh;
-+    }
-+
-+    .wrap {
-+      max-width: 1100px;
-+      margin: 24px auto;
-+      padding: 0 16px;
-+      display: grid;
-+      grid-template-columns: 1.15fr 1fr;
-+      gap: 16px;
-+    }
-+
-+    .card {
-+      background: linear-gradient(180deg, var(--panel) 0%, #0f161f 100%);
-+      border: 1px solid var(--border);
-+      border-radius: 12px;
-+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-+      padding: 16px;
-+    }
-+
-+    h1 {
-+      margin: 0 0 12px;
-+      font-size: 1.4rem;
-+      letter-spacing: 0.04em;
-+      color: var(--accent);
-+    }
-+
-+    h2 {
-+      margin: 0 0 10px;
-+      font-size: 1rem;
-+      color: var(--muted);
-+      text-transform: uppercase;
-+      letter-spacing: 0.08em;
-+    }
-+
-+    .row {
-+      display: flex;
-+      flex-wrap: wrap;
-+      gap: 8px;
-+      align-items: center;
-+    }
-+
-+    .connection {
-+      margin-bottom: 12px;
-+    }
-+
-+    .status {
-+      margin-left: auto;
-+      font-size: 0.9rem;
-+      color: var(--muted);
-+    }
-+
-+    .dot {
-+      width: 10px;
-+      height: 10px;
-+      border-radius: 50%;
-+      display: inline-block;
-+      margin-right: 6px;
-+      background: var(--danger);
-+      box-shadow: 0 0 8px rgba(255, 89, 94, 0.6);
-+      vertical-align: middle;
-+    }
-+
-+    .dot.connected {
-+      background: var(--ok);
-+      box-shadow: 0 0 8px rgba(61, 220, 132, 0.8);
-+    }
-+
-+    button {
-+      border: 1px solid var(--border);
-+      background: var(--btn);
-+      color: var(--text);
-+      border-radius: 8px;
-+      padding: 10px 12px;
-+      font-size: 0.95rem;
-+      cursor: pointer;
-+      transition: all 0.15s ease;
-+    }
-+
-+    button:hover:not(:disabled) {
-+      background: var(--btn-hover);
-+      border-color: #4e6a84;
-+    }
-+
-+    button:disabled {
-+      opacity: 0.55;
-+      cursor: not-allowed;
-+    }
-+
-+    button.primary { border-color: #2a7fb6; background: #1f4f72; }
-+    button.primary:hover:not(:disabled) { background: #256594; }
-+    button.good { border-color: #2b8b5d; background: #1e5c3f; }
-+    button.good:hover:not(:disabled) { background: #26774f; }
-+    button.warn { border-color: #9b7b1f; background: #6f5615; }
-+    button.warn:hover:not(:disabled) { background: #8b6d1a; }
-+    button.danger { border-color: #9b2e34; background: #6a2024; }
-+    button.danger:hover:not(:disabled) { background: #8a2a30; }
-+
-+    .cmd-grid {
-+      display: grid;
-+      grid-template-columns: repeat(2, minmax(0, 1fr));
-+      gap: 8px;
-+      margin-bottom: 14px;
-+    }
-+
-+    .jog-wrap {
-+      margin-top: 8px;
-+      display: grid;
-+      grid-template-columns: 1fr 1fr;
-+      gap: 12px;
-+    }
-+
-+    .jog-grid {
-+      display: grid;
-+      grid-template-columns: repeat(3, 1fr);
-+      gap: 8px;
-+    }
-+
-+    .jog-grid button,
-+    .z-jog button {
-+      min-height: 44px;
-+      font-size: 1rem;
-+      font-weight: 600;
-+    }
-+
-+    .z-jog {
-+      display: grid;
-+      gap: 8px;
-+      align-content: start;
-+    }
-+
-+    .send-row {
-+      margin-top: 12px;
-+      display: grid;
-+      grid-template-columns: 1fr auto;
-+      gap: 8px;
-+    }
-+
-+    input[type="text"] {
-+      width: 100%;
-+      padding: 10px 12px;
-+      border-radius: 8px;
-+      border: 1px solid var(--border);
-+      background: var(--panel-2);
-+      color: var(--text);
-+      font-size: 0.95rem;
-+      outline: none;
-+    }
-+
-+    input[type="text"]:focus {
-+      border-color: var(--accent);
-+      box-shadow: 0 0 0 2px rgba(53, 176, 255, 0.15);
-+    }
-+
-+    .hint {
-+      margin-top: 6px;
-+      color: var(--muted);
-+      font-size: 0.85rem;
-+    }
-+
-+    .log {
-+      margin-top: 10px;
-+      background: #0a1017;
-+      border: 1px solid #1f2d3a;
-+      border-radius: 10px;
-+      padding: 10px;
-+      height: 520px;
-+      overflow: auto;
-+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-+      font-size: 0.85rem;
-+      line-height: 1.45;
-+    }
-+
-+    .line {
-+      margin: 0;
-+      padding: 2px 0;
-+      white-space: pre-wrap;
-+      word-break: break-word;
-+      border-bottom: 1px dashed rgba(139, 162, 184, 0.15);
-+    }
-+
-+    .line.rx { color: #9fd4ff; }
-+    .line.tx { color: #c7ffb0; }
-+    .line.sys { color: #ffd97a; }
-+    .line.err { color: #ff9fa2; }
-+
-+    @media (max-width: 900px) {
-+      .wrap {
-+        grid-template-columns: 1fr;
-+      }
-+
-+      .log {
-+        height: 320px;
-+      }
-+    }
-+  </style>
-+</head>
-+<body>
-+  <div class="wrap">
-+    <section class="card">
-+      <h1>FluidNC CNC WebUI</h1>
-+
-+      <div class="row connection">
-+        <button id="connectBtn" class="primary">Connect</button>
-+        <button id="disconnectBtn" class="danger" disabled>Disconnect</button>
-+        <div class="status" id="statusText"><span class="dot" id="statusDot"></span>Disconnected</div>
-+      </div>
-+
-+      <h2>Quick Commands</h2>
-+      <div class="cmd-grid">
-+        <button data-cmd="$H" class="warn">$H (Homing)</button>
-+        <button data-cmd="G0 X0 Y0" class="primary">G0 X0 Y0</button>
-+        <button data-cmd="M3" class="good">M3 (Spindle ON)</button>
-+        <button data-cmd="M5" class="danger">M5 (Spindle OFF)</button>
-+      </div>
-+
-+      <h2>Jog Controls</h2>
-+      <div class="jog-wrap">
-+        <div class="jog-grid">
-+          <div></div>
-+          <button data-cmd="G91 G0 Y1 G90">Y+</button>
-+          <div></div>
-+
-+          <button data-cmd="G91 G0 X-1 G90">X-</button>
-+          <button disabled title="Center">•</button>
-+          <button data-cmd="G91 G0 X1 G90">X+</button>
-+
-+          <div></div>
-+          <button data-cmd="G91 G0 Y-1 G90">Y-</button>
-+          <div></div>
-+        </div>
-+
-+        <div class="z-jog">
-+          <button data-cmd="G91 G0 Z1 G90">Z+</button>
-+          <button data-cmd="G91 G0 Z-1 G90">Z-</button>
-+        </div>
-+      </div>
-+
-+      <div class="send-row">
-+        <input id="gcodeInput" type="text" placeholder="Enter G-code (e.g., G1 X10 F500)" />
-+        <button id="sendBtn" class="good">Send</button>
-+      </div>
-+      <div class="hint">WebSocket target: <code>ws://192.168.0.1:81</code></div>
-+    </section>
-+
-+    <section class="card">
-+      <h2>Console Log</h2>
-+      <div id="log" class="log" aria-live="polite"></div>
-+    </section>
-+  </div>
-+
-+  <script>
-+    (() => {
-+      const WS_URL = "ws://192.168.0.1:81";
-+      let ws = null;
-+
-+      const connectBtn = document.getElementById("connectBtn");
-+      const disconnectBtn = document.getElementById("disconnectBtn");
-+      const sendBtn = document.getElementById("sendBtn");
-+      const gcodeInput = document.getElementById("gcodeInput");
-+      const logEl = document.getElementById("log");
-+      const statusText = document.getElementById("statusText");
-+      const statusDot = document.getElementById("statusDot");
-+      const cmdButtons = [...document.querySelectorAll("button[data-cmd]")];
-+
-+      function log(message, type = "sys") {
-+        const line = document.createElement("p");
-+        line.className = `line ${type}`;
-+        const ts = new Date().toLocaleTimeString();
-+        line.textContent = `[${ts}] ${message}`;
-+        logEl.appendChild(line);
-+        logEl.scrollTop = logEl.scrollHeight;
-+      }
-+
-+      function setConnectedState(connected) {
-+        connectBtn.disabled = connected;
-+        disconnectBtn.disabled = !connected;
-+        sendBtn.disabled = !connected;
-+        gcodeInput.disabled = !connected;
-+        cmdButtons.forEach(btn => btn.disabled = !connected);
-+
-+        if (connected) {
-+          statusText.innerHTML = '<span class="dot connected" id="statusDot"></span>Connected';
-+        } else {
-+          statusText.innerHTML = '<span class="dot" id="statusDot"></span>Disconnected';
-+        }
-+      }
-+
-+      function connect() {
-+        if (ws && ws.readyState === WebSocket.OPEN) {
-+          log("Already connected.", "sys");
-+          return;
-+        }
-+
-+        try {
-+          ws = new WebSocket(WS_URL);
-+          log(`Connecting to ${WS_URL} ...`, "sys");
-+
-+          ws.onopen = () => {
-+            setConnectedState(true);
-+            log("WebSocket connected.", "sys");
-+          };
-+
-+          ws.onmessage = (event) => {
-+            log(`RX: ${event.data}`, "rx");
-+          };
-+
-+          ws.onerror = () => {
-+            log("WebSocket error.", "err");
-+          };
-+
-+          ws.onclose = () => {
-+            setConnectedState(false);
-+            log("WebSocket disconnected.", "sys");
-+            ws = null;
-+          };
-+        } catch (error) {
-+          log(`Connection failed: ${error.message}`, "err");
-+        }
-+      }
-+
-+      function disconnect() {
-+        if (ws) {
-+          ws.close();
-+        } else {
-+          log("No active connection.", "sys");
-+        }
-+      }
-+
-+      function sendCommand(raw) {
-+        const cmd = raw.trim();
-+        if (!cmd) return;
-+
-+        if (!ws || ws.readyState !== WebSocket.OPEN) {
-+          log("Cannot send. WebSocket is not connected.", "err");
-+          return;
-+        }
-+
-+        ws.send(cmd + "\n");
-+        log(`TX: ${cmd}`, "tx");
-+      }
-+
-+      connectBtn.addEventListener("click", connect);
-+      disconnectBtn.addEventListener("click", disconnect);
-+
-+      sendBtn.addEventListener("click", () => {
-+        sendCommand(gcodeInput.value);
-+        gcodeInput.value = "";
-+        gcodeInput.focus();
-+      });
-+
-+      gcodeInput.addEventListener("keydown", (e) => {
-+        if (e.key === "Enter") {
-+          sendBtn.click();
-+        }
-+      });
-+
-+      cmdButtons.forEach(btn => {
-+        btn.addEventListener("click", () => sendCommand(btn.dataset.cmd));
-+      });
-+
-+      setConnectedState(false);
-+      log("UI ready. Click Connect to start.", "sys");
-+    })();
-+  </script>
-+</body>
-+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FluidNC CNC WebUI</title>
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #121922;
+      --panel-2: #1a2430;
+      --border: #2c3b4b;
+      --text: #dce7f3;
+      --muted: #8ba2b8;
+      --accent: #35b0ff;
+      --ok: #3ddc84;
+      --warn: #ffca3a;
+      --danger: #ff595e;
+      --btn: #233142;
+      --btn-hover: #2d4157;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, #111a24 0%, var(--bg) 50%);
+      color: var(--text);
+      font-family: Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 24px auto;
+      padding: 0 16px;
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      gap: 16px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, var(--panel) 0%, #0f161f 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+      padding: 16px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 1.4rem;
+      letter-spacing: 0.04em;
+      color: var(--accent);
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .connection {
+      margin-bottom: 12px;
+    }
+
+    .status {
+      margin-left: auto;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+      background: var(--danger);
+      box-shadow: 0 0 8px rgba(255, 89, 94, 0.6);
+      vertical-align: middle;
+    }
+
+    .dot.connected {
+      background: var(--ok);
+      box-shadow: 0 0 8px rgba(61, 220, 132, 0.8);
+    }
+
+    button {
+      border: 1px solid var(--border);
+      background: var(--btn);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    button:hover:not(:disabled) {
+      background: var(--btn-hover);
+      border-color: #4e6a84;
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    button.primary { border-color: #2a7fb6; background: #1f4f72; }
+    button.primary:hover:not(:disabled) { background: #256594; }
+    button.good { border-color: #2b8b5d; background: #1e5c3f; }
+    button.good:hover:not(:disabled) { background: #26774f; }
+    button.warn { border-color: #9b7b1f; background: #6f5615; }
+    button.warn:hover:not(:disabled) { background: #8b6d1a; }
+    button.danger { border-color: #9b2e34; background: #6a2024; }
+    button.danger:hover:not(:disabled) { background: #8a2a30; }
+
+    .cmd-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .jog-wrap {
+      margin-top: 8px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .jog-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .jog-grid button,
+    .z-jog button {
+      min-height: 44px;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .z-jog {
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .send-row {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(53, 176, 255, 0.15);
+    }
+
+    .hint {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .log {
+      margin-top: 10px;
+      background: #0a1017;
+      border: 1px solid #1f2d3a;
+      border-radius: 10px;
+      padding: 10px;
+      height: 520px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.85rem;
+      line-height: 1.45;
+    }
+
+    .line {
+      margin: 0;
+      padding: 2px 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      border-bottom: 1px dashed rgba(139, 162, 184, 0.15);
+    }
+
+    .line.rx { color: #9fd4ff; }
+    .line.tx { color: #c7ffb0; }
+    .line.sys { color: #ffd97a; }
+    .line.err { color: #ff9fa2; }
+
+    @media (max-width: 900px) {
+      .wrap {
+        grid-template-columns: 1fr;
+      }
+
+      .log {
+        height: 320px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="card">
+      <h1>FluidNC CNC WebUI</h1>
+
+      <div class="row connection">
+        <button id="connectBtn" class="primary">Connect</button>
+        <button id="disconnectBtn" class="danger" disabled>Disconnect</button>
+        <div class="status" id="statusText"><span class="dot" id="statusDot"></span>Disconnected</div>
+      </div>
+
+      <h2>Quick Commands</h2>
+      <div class="cmd-grid">
+        <button data-cmd="$H" class="warn">$H (Homing)</button>
+        <button data-cmd="G0 X0 Y0" class="primary">G0 X0 Y0</button>
+        <button data-cmd="M3" class="good">M3 (Spindle ON)</button>
+        <button data-cmd="M5" class="danger">M5 (Spindle OFF)</button>
+      </div>
+
+      <h2>Jog Controls</h2>
+      <div class="jog-wrap">
+        <div class="jog-grid">
+          <div></div>
+          <button data-cmd="G91 G0 Y1 G90">Y+</button>
+          <div></div>
+
+          <button data-cmd="G91 G0 X-1 G90">X-</button>
+          <button disabled title="Center">•</button>
+          <button data-cmd="G91 G0 X1 G90">X+</button>
+
+          <div></div>
+          <button data-cmd="G91 G0 Y-1 G90">Y-</button>
+          <div></div>
+        </div>
+
+        <div class="z-jog">
+          <button data-cmd="G91 G0 Z1 G90">Z+</button>
+          <button data-cmd="G91 G0 Z-1 G90">Z-</button>
+        </div>
+      </div>
+
+      <div class="send-row">
+        <input id="gcodeInput" type="text" placeholder="Enter G-code (e.g., G1 X10 F500)" />
+        <button id="sendBtn" class="good">Send</button>
+      </div>
+      <div class="hint">WebSocket target: <code>ws://192.168.0.1:81</code></div>
+    </section>
+
+    <section class="card">
+      <h2>Console Log</h2>
+      <div id="log" class="log" aria-live="polite"></div>
+    </section>
+  </div>
+
+  <script>
+    (() => {
+      const WS_URL = "ws://192.168.0.1:81";
+      let ws = null;
+
+      const connectBtn = document.getElementById("connectBtn");
+      const disconnectBtn = document.getElementById("disconnectBtn");
+      const sendBtn = document.getElementById("sendBtn");
+      const gcodeInput = document.getElementById("gcodeInput");
+      const logEl = document.getElementById("log");
+      const statusText = document.getElementById("statusText");
+      const statusDot = document.getElementById("statusDot");
+      const cmdButtons = [...document.querySelectorAll("button[data-cmd]")];
+
+      function log(message, type = "sys") {
+        const line = document.createElement("p");
+        line.className = `line ${type}`;
+        const ts = new Date().toLocaleTimeString();
+        line.textContent = `[${ts}] ${message}`;
+        logEl.appendChild(line);
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      function setConnectedState(connected) {
+        connectBtn.disabled = connected;
+        disconnectBtn.disabled = !connected;
+        sendBtn.disabled = !connected;
+        gcodeInput.disabled = !connected;
+        cmdButtons.forEach(btn => btn.disabled = !connected);
+
+        if (connected) {
+          statusText.innerHTML = '<span class="dot connected" id="statusDot"></span>Connected';
+        } else {
+          statusText.innerHTML = '<span class="dot" id="statusDot"></span>Disconnected';
+        }
+      }
+
+      function connect() {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          log("Already connected.", "sys");
+          return;
+        }
+
+        try {
+          ws = new WebSocket(WS_URL);
+          log(`Connecting to ${WS_URL} ...`, "sys");
+
+          ws.onopen = () => {
+            setConnectedState(true);
+            log("WebSocket connected.", "sys");
+          };
+
+          ws.onmessage = (event) => {
+            log(`RX: ${event.data}`, "rx");
+          };
+
+          ws.onerror = () => {
+            log("WebSocket error.", "err");
+          };
+
+          ws.onclose = () => {
+            setConnectedState(false);
+            log("WebSocket disconnected.", "sys");
+            ws = null;
+          };
+        } catch (error) {
+          log(`Connection failed: ${error.message}`, "err");
+        }
+      }
+
+      function disconnect() {
+        if (ws) {
+          ws.close();
+        } else {
+          log("No active connection.", "sys");
+        }
+      }
+
+      function sendCommand(raw) {
+        const cmd = raw.trim();
+        if (!cmd) return;
+
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          log("Cannot send. WebSocket is not connected.", "err");
+          return;
+        }
+
+        ws.send(cmd + "\n");
+        log(`TX: ${cmd}`, "tx");
+      }
+
+      connectBtn.addEventListener("click", connect);
+      disconnectBtn.addEventListener("click", disconnect);
+
+      sendBtn.addEventListener("click", () => {
+        sendCommand(gcodeInput.value);
+        gcodeInput.value = "";
+        gcodeInput.focus();
+      });
+
+      gcodeInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          sendBtn.click();
+        }
+      });
+
+      cmdButtons.forEach(btn => {
+        btn.addEventListener("click", () => sendCommand(btn.dataset.cmd));
+      });
+
+      setConnectedState(false);
+      log("UI ready. Click Connect to start.", "sys");
+    })();
+  </script>
+</body>
+</html>
