@@ -1,8 +1,18 @@
-<div id="announcement-bar-pro" role="region" aria-label="{{ text|e('html_attr') }}" style="background-color:{{ bg_color|e }};color:{{ text_color|e }};">
-  <div class="abp-inner">{{ text|e }}</div>
+<div id="abp-bar" class="abp abp-pos-{{ position }}{% if sticky %} abp-sticky{% endif %} abp-mode-{{ mode }}" role="region" aria-label="{{ label|e }}" data-hash="{{ hash|e }}" data-days="{{ dismiss_days }}" data-interval="{{ interval }}" data-speed="{{ speed }}" data-mode="{{ mode }}" data-days-label="{{ days|e }}" style="font-size:{{ font_size }}px;background-color:{{ items[0].bg_color }};color:{{ items[0].text_color }};">
+  <div class="abp-viewport">
+    <div class="abp-track">
+      {% for item in items %}
+      <div class="abp-item{% if loop.first %} abp-active{% endif %}" data-id="{{ item.id }}" style="background-color:{{ item.bg_color }};color:{{ item.text_color }};padding-top:{{ padding }}px;padding-bottom:{{ padding }}px;">
+        {% if item.wrap_link %}<a class="abp-link" href="{{ item.link|e }}"{% if item.new_tab %} target="_blank" rel="noopener noreferrer"{% endif %} style="color:{{ item.text_color }};">{% endif %}
+        {% if item.icon %}<i class="fa {{ item.icon }}" aria-hidden="true"></i> {% endif %}<span class="abp-text">{{ item.html }}</span>{% if item.countdown %} {{ item.countdown }}{% endif %}
+        {% if item.wrap_link %}</a>{% endif %}
+        {% if item.link and item.link_text %}<a class="abp-btn" href="{{ item.link|e }}"{% if item.new_tab %} target="_blank" rel="noopener noreferrer"{% endif %} style="color:{{ item.text_color }};border-color:{{ item.text_color }};">{{ item.link_text|e }}</a>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% if dismissible %}<button type="button" class="abp-close" aria-label="{{ close|e }}" title="{{ close|e }}" style="color:{{ items[0].text_color }};">&times;</button>{% endif %}
 </div>
-<style>
-#announcement-bar-pro{width:100%;box-sizing:border-box;padding:8px 15px;text-align:center;font-size:14px;line-height:1.4;position:relative;z-index:1000;}
-#announcement-bar-pro .abp-inner{max-width:1170px;margin:0 auto;word-wrap:break-word;overflow-wrap:break-word;}
-@media (max-width:767px){ #announcement-bar-pro{font-size:13px;padding:6px 10px;}}
-</style>
+<script>(function(){try{var b=document.getElementById('abp-bar'),k='abp_dismiss',v=null,s=b.getAttribute('data-hash');try{v=JSON.parse(localStorage.getItem(k)||sessionStorage.getItem(k)||'null');}catch(e){}if(v&&v.h===s&&(!v.t||v.t>Date.now())){b.style.display='none';b.setAttribute('data-dismissed','1');}}catch(e){}})();</script>
+<link rel="stylesheet" href="catalog/view/javascript/announcement_bar_pro/announcement_bar_pro.css?v={{ version|e('url') }}" />
+<script src="catalog/view/javascript/announcement_bar_pro/announcement_bar_pro.js?v={{ version|e('url') }}" defer></script>

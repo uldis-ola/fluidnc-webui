@@ -1,0 +1,247 @@
+{{ header }}{{ column_left }}
+<div id="content" class="abp-admin">
+  <div class="page-header">
+    <div class="container-fluid">
+      <div class="pull-right">
+        <button type="submit" form="form-message" data-toggle="tooltip" title="{{ button_save|e }}" class="btn btn-primary"><i class="fa fa-save"></i></button>
+        <a href="{{ cancel }}" data-toggle="tooltip" title="{{ button_cancel|e }}" class="btn btn-default"><i class="fa fa-reply"></i></a>
+      </div>
+      <h1>{{ heading_title }} <small>v{{ version|e }}</small></h1>
+      <ul class="breadcrumb">
+        {% for breadcrumb in breadcrumbs %}
+        <li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="container-fluid">
+    {% if error_warning %}
+    <div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> {{ error_warning|e }}
+      <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endif %}
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title"><i class="fa fa-pencil"></i> {{ text_form }}</h3>
+      </div>
+      <div class="panel-body">
+        <form action="{{ action }}" method="post" enctype="multipart/form-data" id="form-message" class="form-horizontal">
+          <ul class="nav nav-tabs">
+            <li class="active"><a href="#tab-content" data-toggle="tab">{{ tab_content }}</a></li>
+            <li><a href="#tab-schedule" data-toggle="tab">{{ tab_schedule }}</a></li>
+            <li><a href="#tab-visibility" data-toggle="tab">{{ tab_visibility }}</a></li>
+          </ul>
+          <div class="tab-content">
+
+            {# ---------- Content ---------- #}
+            <div class="tab-pane active" id="tab-content">
+              <div class="form-group">
+                <label class="col-sm-2 control-label" for="input-status">{{ entry_status }}</label>
+                <div class="col-sm-10">
+                  <select name="status" id="input-status" class="form-control">
+                    <option value="1"{% if status %} selected="selected"{% endif %}>{{ text_enabled }}</option>
+                    <option value="0"{% if not status %} selected="selected"{% endif %}>{{ text_disabled }}</option>
+                  </select>
+                </div>
+              </div>
+
+              <ul class="nav nav-tabs" id="abp-language">
+                {% for language in languages %}
+                <li{% if loop.first %} class="active"{% endif %}><a href="#abp-language{{ language.language_id }}" data-toggle="tab"><img src="language/{{ language.code|e('url') }}/{{ language.code|e('url') }}.png" title="{{ language.name|e }}" alt="" /> {{ language.name|e }}</a></li>
+                {% endfor %}
+              </ul>
+              <div class="tab-content">
+                {% for language in languages %}
+                {% set lid = language.language_id %}
+                <div class="tab-pane{% if loop.first %} active{% endif %}" id="abp-language{{ lid }}">
+                  <div class="form-group required">
+                    <label class="col-sm-2 control-label" for="input-text{{ lid }}">{{ entry_text }}</label>
+                    <div class="col-sm-10">
+                      <textarea name="message_description[{{ lid }}][text]" rows="3" maxlength="{{ max_text }}" id="input-text{{ lid }}" class="form-control abp-text">{{ message_description[lid].text|e }}</textarea>
+                      <p class="help-block">{{ allow_html ? help_text_html : help_text_plain }} {{ help_countdown_placeholder }}</p>
+                      {% if error.text[lid] is defined %}<div class="text-danger">{{ error.text[lid]|e }}</div>{% endif %}
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="col-sm-2 control-label" for="input-link-text{{ lid }}"><span data-toggle="tooltip" title="{{ help_link_text|e }}">{{ entry_link_text }}</span></label>
+                    <div class="col-sm-10">
+                      <input type="text" name="message_description[{{ lid }}][link_text]" value="{{ message_description[lid].link_text|e }}" maxlength="{{ max_link_text }}" id="input-link-text{{ lid }}" class="form-control abp-link-text" />
+                      {% if error.link_text[lid] is defined %}<div class="text-danger">{{ error.link_text[lid]|e }}</div>{% endif %}
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+
+              <div class="form-group">
+                <label class="col-sm-2 control-label" for="input-link"><span data-toggle="tooltip" title="{{ help_link|e }}">{{ entry_link }}</span></label>
+                <div class="col-sm-10">
+                  <input type="text" name="link" value="{{ link|e }}" maxlength="255" placeholder="https://… / index.php?route=…" id="input-link" class="form-control" />
+                  <div class="checkbox"><label><input type="checkbox" name="link_new_tab" value="1"{% if link_new_tab %} checked="checked"{% endif %} /> {{ entry_link_new_tab }}</label></div>
+                  {% if error.link is defined %}<div class="text-danger">{{ error.link|e }}</div>{% endif %}
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="col-sm-2 control-label" for="input-icon"><span data-toggle="tooltip" title="{{ help_icon|e }}">{{ entry_icon }}</span></label>
+                <div class="col-sm-10">
+                  <div class="input-group" style="max-width:300px;">
+                    <span class="input-group-addon"><i id="abp-icon-preview" class="fa {{ icon|e }}"></i></span>
+                    <input type="text" name="icon" value="{{ icon|e }}" maxlength="44" placeholder="fa-truck" id="input-icon" class="form-control" />
+                  </div>
+                  {% if error.icon is defined %}<div class="text-danger">{{ error.icon|e }}</div>{% endif %}
+                </div>
+              </div>
+
+              {% for key in ['bg_color', 'text_color'] %}
+              <div class="form-group required">
+                <label class="col-sm-2 control-label" for="input-{{ key }}">{{ attribute(_context, 'entry_' ~ key) }}</label>
+                <div class="col-sm-10">
+                  <div class="input-group abp-color">
+                    <span class="input-group-addon"><input type="color" value="{{ attribute(_context, key)|e }}" /></span>
+                    <input type="text" name="{{ key }}" id="input-{{ key }}" value="{{ attribute(_context, key)|e }}" maxlength="7" class="form-control" />
+                  </div>
+                  {% if attribute(error, key) is defined %}<div class="text-danger">{{ attribute(error, key)|e }}</div>{% endif %}
+                </div>
+              </div>
+              {% endfor %}
+
+              <div class="form-group">
+                <label class="col-sm-2 control-label">{{ entry_preview }}</label>
+                <div class="col-sm-10">
+                  <div id="abp-preview"><i class="fa"></i> <span class="abp-p-text"></span> <span class="abp-p-cd"></span> <u class="abp-p-link"></u></div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="col-sm-2 control-label" for="input-sort-order">{{ entry_sort_order }}</label>
+                <div class="col-sm-10">
+                  <input type="number" name="sort_order" value="{{ sort_order|e }}" id="input-sort-order" class="form-control abp-num" />
+                  {% if error.sort_order is defined %}<div class="text-danger">{{ error.sort_order|e }}</div>{% endif %}
+                </div>
+              </div>
+            </div>
+
+            {# ---------- Schedule ---------- #}
+            <div class="tab-pane" id="tab-schedule">
+              {% for key in ['date_start', 'date_end'] %}
+              <div class="form-group">
+                <label class="col-sm-2 control-label" for="input-{{ key }}"><span data-toggle="tooltip" title="{{ help_dates|e }}">{{ attribute(_context, 'entry_' ~ key) }}</span></label>
+                <div class="col-sm-10">
+                  <div class="input-group datetime" style="max-width:300px;">
+                    <input type="text" name="{{ key }}" value="{{ attribute(_context, key)|e }}" placeholder="YYYY-MM-DD HH:mm" data-date-format="YYYY-MM-DD HH:mm" id="input-{{ key }}" class="form-control" />
+                    <span class="input-group-btn"><button type="button" class="btn btn-default"><i class="fa fa-calendar"></i></button></span>
+                  </div>
+                  {% if attribute(error, key) is defined %}<div class="text-danger">{{ attribute(error, key)|e }}</div>{% endif %}
+                </div>
+              </div>
+              {% endfor %}
+              <div class="form-group">
+                <label class="col-sm-2 control-label" for="input-countdown"><span data-toggle="tooltip" title="{{ help_countdown|e }}">{{ entry_countdown }}</span></label>
+                <div class="col-sm-10">
+                  <div class="checkbox"><label><input type="checkbox" name="countdown" id="input-countdown" value="1"{% if countdown %} checked="checked"{% endif %} /> {{ text_yes }}</label></div>
+                  {% if error.countdown is defined %}<div class="text-danger">{{ error.countdown|e }}</div>{% endif %}
+                </div>
+              </div>
+            </div>
+
+            {# ---------- Visibility ---------- #}
+            <div class="tab-pane" id="tab-visibility">
+              <div class="form-group">
+                <label class="col-sm-2 control-label"><span data-toggle="tooltip" title="{{ help_empty_all|e }}">{{ entry_store }}</span></label>
+                <div class="col-sm-10">
+                  <div class="well well-sm" style="height:120px;overflow:auto;">
+                    {% for store in store_list %}
+                    <div class="checkbox"><label><input type="checkbox" name="stores[]" value="{{ store.store_id }}"{% if store.store_id in stores %} checked="checked"{% endif %} /> {{ store.name }}</label></div>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label"><span data-toggle="tooltip" title="{{ help_empty_all|e }}">{{ entry_customer_group }}</span></label>
+                <div class="col-sm-10">
+                  <div class="well well-sm" style="height:120px;overflow:auto;">
+                    {% for group in customer_group_list %}
+                    <div class="checkbox"><label><input type="checkbox" name="customer_groups[]" value="{{ group.customer_group_id }}"{% if group.customer_group_id in customer_groups %} checked="checked"{% endif %} /> {{ group.name }}</label></div>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label" for="input-page-mode">{{ entry_page_mode }}</label>
+                <div class="col-sm-10">
+                  <select name="page_mode" id="input-page-mode" class="form-control">
+                    {% for value in ['all', 'home', 'include', 'exclude'] %}
+                    <option value="{{ value }}"{% if page_mode == value %} selected="selected"{% endif %}>{{ attribute(_context, 'text_page_' ~ value) }}</option>
+                    {% endfor %}
+                  </select>
+                  {% if error.page_mode is defined %}<div class="text-danger">{{ error.page_mode|e }}</div>{% endif %}
+                </div>
+              </div>
+              <div class="form-group" id="abp-routes-group">
+                <label class="col-sm-2 control-label" for="input-page-routes"><span data-toggle="tooltip" title="{{ help_routes|e }}">{{ entry_page_routes }}</span></label>
+                <div class="col-sm-10">
+                  <textarea name="page_routes" rows="5" id="input-page-routes" placeholder="product/product&#10;product/category&#10;checkout/*" class="form-control">{{ page_routes|e }}</textarea>
+                  <p class="help-block">{{ help_routes }}</p>
+                  {% if error.page_routes is defined %}<div class="text-danger">{{ error.page_routes|e }}</div>{% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+.abp-admin .abp-num{max-width:140px;}
+.abp-admin .abp-color{max-width:220px;}
+.abp-admin .abp-color .input-group-addon{padding:2px 4px;}
+.abp-admin .abp-color input[type=color]{width:32px;height:26px;border:0;padding:0;background:none;cursor:pointer;}
+#abp-preview{padding:8px 15px;text-align:center;border-radius:3px;min-height:36px;}
+#abp-preview .abp-p-link{margin-left:6px;font-weight:bold;}
+</style>
+<script type="text/javascript"><!--
+(function ($) {
+  var hex = /^#[0-9a-fA-F]{6}$/;
+
+  $('.abp-color').each(function () {
+    var picker = $(this).find('input[type=color]'), text = $(this).find('input[type=text]');
+    picker.on('input change', function () { text.val(this.value).trigger('input'); });
+    text.on('input change', function () { if (hex.test(this.value)) { picker.val(this.value); } });
+  });
+
+  function preview() {
+    var bg = $('#input-bg_color').val(), fg = $('#input-text_color').val();
+    var pane = $('#abp-language').next('.tab-content').find('.tab-pane.active');
+    var text = (pane.find('.abp-text').val() || '').replace(/<[^>]*>/g, '');
+    var icon = $('#input-icon').val();
+    var cd = $('#input-countdown').is(':checked') ? '00:00:00' : '';
+    var p = $('#abp-preview').css({ 'background-color': hex.test(bg) ? bg : '#222222', 'color': hex.test(fg) ? fg : '#ffffff' });
+    p.find('.abp-p-text').text(text.replace('{countdown}', ''));  // .text(): no HTML injection
+    p.find('.abp-p-cd').text(cd);
+    p.find('.abp-p-link').text($('#input-link').val() ? (pane.find('.abp-link-text').val() || '') : '');
+    p.find('i.fa').attr('class', /^fa-[a-z0-9-]+$/.test(icon) ? 'fa ' + icon : 'fa');
+    $('#abp-icon-preview').attr('class', /^fa-[a-z0-9-]+$/.test(icon) ? 'fa ' + icon : 'fa');
+  }
+
+  $('#form-message').on('input change', 'input, textarea, select', preview);
+  $('#abp-language a').on('shown.bs.tab', preview);
+  preview();
+
+  function routes() { $('#abp-routes-group').toggle($.inArray($('#input-page-mode').val(), ['include', 'exclude']) !== -1); }
+  $('#input-page-mode').on('change', routes);
+  routes();
+
+  if ($.fn.datetimepicker) {
+    $('.datetime').datetimepicker({ language: '{{ datepicker|e('js') }}', pickDate: true, pickTime: true });
+  }
+
+  // Open the first tab that contains an error.
+  var err = $('#form-message .text-danger').first().closest('.tab-pane');
+  if (err.length) {
+    err.parents('.tab-pane').addBack().each(function () { $('a[href="#' + this.id + '"]').tab('show'); });
+  }
+})(jQuery);
+//--></script>
+{{ footer }}
