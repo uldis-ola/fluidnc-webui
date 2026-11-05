@@ -1,0 +1,120 @@
+{{ header }}{{ column_left }}
+<div id="content">
+  <div class="page-header">
+    <div class="container-fluid">
+      <div class="pull-right">
+        <button type="submit" form="form-module" data-toggle="tooltip" title="{{ button_save|e }}" class="btn btn-primary"><i class="fa fa-save"></i></button>
+        <a href="{{ cancel }}" data-toggle="tooltip" title="{{ button_cancel|e }}" class="btn btn-default"><i class="fa fa-reply"></i></a>
+      </div>
+      <h1>{{ heading_title }}</h1>
+      <ul class="breadcrumb">
+        {% for breadcrumb in breadcrumbs %}
+        <li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="container-fluid">
+    {% if error_warning %}
+    <div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> {{ error_warning|e }}
+      <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endif %}
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title"><i class="fa fa-pencil"></i> {{ text_edit }} <small>v{{ version|e }}</small></h3>
+      </div>
+      <div class="panel-body">
+        <form action="{{ action }}" method="post" enctype="multipart/form-data" id="form-module" class="form-horizontal">
+
+          <div class="form-group">
+            <label class="col-sm-2 control-label" for="input-status">{{ entry_status }}</label>
+            <div class="col-sm-10">
+              <select name="module_announcement_bar_pro_status" id="input-status" class="form-control">
+                <option value="1"{% if status %} selected="selected"{% endif %}>{{ text_enabled }}</option>
+                <option value="0"{% if not status %} selected="selected"{% endif %}>{{ text_disabled }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group required">
+            <label class="col-sm-2 control-label">{{ entry_text }}</label>
+            <div class="col-sm-10">
+              <ul class="nav nav-tabs" id="abp-language">
+                {% for language in languages %}
+                <li{% if loop.first %} class="active"{% endif %}><a href="#abp-language{{ language.language_id }}" data-toggle="tab"><img src="language/{{ language.code|e('url') }}/{{ language.code|e('url') }}.png" title="{{ language.name|e }}" /> {{ language.name|e }}</a></li>
+                {% endfor %}
+              </ul>
+              <div class="tab-content">
+                {% for language in languages %}
+                <div class="tab-pane{% if loop.first %} active{% endif %}" id="abp-language{{ language.language_id }}">
+                  <textarea name="module_announcement_bar_pro_text[{{ language.language_id }}]" rows="3" maxlength="{{ max_text }}" placeholder="{{ entry_text|e }}" class="form-control">{{ text[language.language_id]|e }}</textarea>
+                  <p class="help-block">{{ help_text }}</p>
+                  {% if error_text[language.language_id] %}
+                  <div class="text-danger">{{ error_text[language.language_id]|e }}</div>
+                  {% endif %}
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group required">
+            <label class="col-sm-2 control-label" for="input-bg-color">{{ entry_bg_color }}</label>
+            <div class="col-sm-10">
+              <div class="input-group" style="max-width:260px;">
+                <span class="input-group-addon" style="padding:2px;"><input type="color" id="abp-bg-picker" value="{{ bg_color|e }}" style="width:34px;height:28px;border:0;padding:0;background:none;" /></span>
+                <input type="text" name="module_announcement_bar_pro_bg_color" id="input-bg-color" value="{{ bg_color|e }}" maxlength="7" pattern="#[0-9a-fA-F]{6}" class="form-control" />
+              </div>
+              {% if error_bg_color %}<div class="text-danger">{{ error_bg_color|e }}</div>{% endif %}
+            </div>
+          </div>
+
+          <div class="form-group required">
+            <label class="col-sm-2 control-label" for="input-text-color">{{ entry_text_color }}</label>
+            <div class="col-sm-10">
+              <div class="input-group" style="max-width:260px;">
+                <span class="input-group-addon" style="padding:2px;"><input type="color" id="abp-text-picker" value="{{ text_color|e }}" style="width:34px;height:28px;border:0;padding:0;background:none;" /></span>
+                <input type="text" name="module_announcement_bar_pro_text_color" id="input-text-color" value="{{ text_color|e }}" maxlength="7" pattern="#[0-9a-fA-F]{6}" class="form-control" />
+              </div>
+              {% if error_text_color %}<div class="text-danger">{{ error_text_color|e }}</div>{% endif %}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="col-sm-2 control-label">{{ entry_preview }}</label>
+            <div class="col-sm-10">
+              <div id="abp-preview" style="padding:8px 15px;text-align:center;border-radius:3px;"></div>
+            </div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript"><!--
+(function ($) {
+  var hex = /^#[0-9a-fA-F]{6}$/;
+
+  function bind(picker, input) {
+    $(picker).on('input change', function () { $(input).val(this.value).trigger('input'); });
+    $(input).on('input change', function () { if (hex.test(this.value)) { $(picker).val(this.value); } preview(); });
+  }
+
+  function preview() {
+    var bg = $('#input-bg-color').val(), fg = $('#input-text-color').val();
+    var txt = $('#abp-language').closest('.col-sm-10').find('.tab-pane.active textarea').val() || '';
+    $('#abp-preview')
+      .css({ 'background-color': hex.test(bg) ? bg : '#222222', 'color': hex.test(fg) ? fg : '#ffffff' })
+      .text(txt); // .text() = no HTML injection
+  }
+
+  bind('#abp-bg-picker', '#input-bg-color');
+  bind('#abp-text-picker', '#input-text-color');
+  $(document).on('input', 'textarea[name^="module_announcement_bar_pro_text"]', preview);
+  $('#abp-language a').on('shown.bs.tab', preview);
+  preview();
+})(jQuery);
+//--></script>
+{{ footer }}

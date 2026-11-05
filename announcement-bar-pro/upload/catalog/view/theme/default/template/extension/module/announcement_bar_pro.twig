@@ -1,0 +1,8 @@
+<div id="announcement-bar-pro" role="region" aria-label="{{ text|e('html_attr') }}" style="background-color:{{ bg_color|e }};color:{{ text_color|e }};">
+  <div class="abp-inner">{{ text|e }}</div>
+</div>
+<style>
+#announcement-bar-pro{width:100%;box-sizing:border-box;padding:8px 15px;text-align:center;font-size:14px;line-height:1.4;position:relative;z-index:1000;}
+#announcement-bar-pro .abp-inner{max-width:1170px;margin:0 auto;word-wrap:break-word;overflow-wrap:break-word;}
+@media (max-width:767px){ #announcement-bar-pro{font-size:13px;padding:6px 10px;}}
+</style>
