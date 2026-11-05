@@ -1,4 +1,4 @@
-/* Announcement Bar Pro v2.0.3 — no dependencies */
+/* Announcement Bar Pro v2.0.4 — no dependencies */
 (function () {
   'use strict';
 
@@ -126,7 +126,7 @@
           // Remember each closed message (merged with earlier ones), so messages that expire or are
           // switched off do not bring the bar back; only new or edited messages do.
           var prev = [];
-          try { var v = JSON.parse(keep.getItem('abp_dismiss2') || 'null'); if (v && v.k && (!v.t || v.t > now)) { prev = v.k; } } catch (e1) { prev = []; }
+          try { var v = JSON.parse(keep.getItem('abp_dismiss2') || 'null'); if (v && Array.isArray(v.k) && (!v.t || v.t > now)) { prev = v.k.filter(function (k) { return typeof k === 'string' && /^[0-9a-f]{12}$/.test(k); }); } } catch (e1) { prev = []; }
           var list = items(), keys = prev.slice();
           for (var j = 0; j < list.length; j++) { var k = list[j].getAttribute('data-key'); if (k && keys.indexOf(k) === -1) { keys.push(k); } }
           keep.setItem('abp_dismiss2', JSON.stringify({ k: keys.slice(-200), t: days > 0 ? now + days * 86400000 : 0 }));
@@ -147,15 +147,19 @@
 
     // Pause on mouse hover / keyboard focus; a tap on touch screens toggles pause (no stuck mouseenter).
     function pointerIsMouse(e) { return !e.pointerType || e.pointerType === 'mouse'; }
+    var touchTimer = null;
     function pause() { paused = true; bar.classList.add('abp-paused'); stopRotate(); }
-    function resume() { paused = false; bar.classList.remove('abp-paused'); startRotate(); }
+    function resume() { if (touchTimer) { clearTimeout(touchTimer); touchTimer = null; } paused = false; bar.classList.remove('abp-paused'); startRotate(); }
+    // Touch: a tap pauses for at most 8 s; a tap anywhere outside the bar resumes at once.
+    function touchPause() { pause(); if (touchTimer) { clearTimeout(touchTimer); } touchTimer = setTimeout(resume, 8000); }
 
     if (window.PointerEvent) {
       bar.addEventListener('pointerenter', function (e) { if (pointerIsMouse(e)) { pause(); } });
       bar.addEventListener('pointerleave', function (e) { if (pointerIsMouse(e)) { resume(); } });
       bar.addEventListener('pointerup', function (e) {
-        if (!pointerIsMouse(e) && !(e.target.closest && e.target.closest('a, button'))) { if (paused) { resume(); } else { pause(); } }
+        if (!pointerIsMouse(e) && !(e.target.closest && e.target.closest('a, button'))) { if (paused) { resume(); } else { touchPause(); } }
       });
+      document.addEventListener('pointerdown', function (e) { if (paused && touchTimer && !bar.contains(e.target)) { resume(); } }, true);
     } else {
       bar.addEventListener('mouseenter', pause);
       bar.addEventListener('mouseleave', resume);

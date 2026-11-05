@@ -1,10 +1,10 @@
 <?php
 /**
  * Announcement Bar Pro — admin controller (OpenCart 3.0.x)
- * @version 2.0.3
+ * @version 2.0.4
  */
 class ControllerExtensionModuleAnnouncementBarPro extends Controller {
-	const VERSION    = '2.0.3';
+	const VERSION    = '2.0.4';
 	const CODE       = 'module_announcement_bar_pro';
 	const EVENT_CODE = 'announcement_bar_pro';
 	const ROUTE      = 'extension/module/announcement_bar_pro';
@@ -380,9 +380,10 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 
 		// Unknown store / customer-group IDs are rejected (an all-invalid list must not turn into "all").
 		foreach (array('stores' => $this->storeIds(), 'customer_groups' => $this->customerGroupIds()) as $key => $valid) {
-			$posted = isset($p[$key]) && is_array($p[$key]) ? array_map('intval', $p[$key]) : array();
+			$raw    = isset($p[$key]) && is_array($p[$key]) ? $p[$key] : array();
+			$posted = array_map('intval', $raw);
 
-			if (array_diff($posted, $valid)) {
+			if (array_diff($posted, $valid) || preg_grep('/^\d{1,9}$/', array_map('strval', $raw), PREG_GREP_INVERT)) {
 				$this->error[$key] = $this->language->get('error_value');
 			}
 		}

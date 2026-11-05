@@ -3,10 +3,10 @@ namespace Opencart\Admin\Controller\Extension\AnnouncementBarPro\Module;
 /**
  * Announcement Bar Pro — admin controller (OpenCart 4.0.x / 4.1.x)
  *
- * @version 2.0.3
+ * @version 2.0.4
  */
 class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
-	public const VERSION       = '2.0.3';
+	public const VERSION       = '2.0.4';
 	public const CODE          = 'module_announcement_bar_pro';
 	public const EVENT_CODE    = 'announcement_bar_pro';
 	public const ROUTE         = 'extension/announcement_bar_pro/module/announcement_bar_pro';
@@ -427,7 +427,9 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 		}
 
 		foreach (['stores' => $this->storeIds(), 'customer_groups' => $this->customerGroupIds()] as $key => $valid) {
-			if (array_diff(array_map('intval', $p[$key] ?? []), $valid)) {
+			$raw = $p[$key] ?? [];
+
+			if (array_diff(array_map('intval', $raw), $valid) || preg_grep('/^\d{1,9}$/', array_map('strval', $raw), PREG_GREP_INVERT)) {
 				$error[$key] = $this->language->get('error_value');
 			}
 		}

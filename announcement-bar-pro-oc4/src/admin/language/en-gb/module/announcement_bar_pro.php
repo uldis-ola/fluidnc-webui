@@ -100,7 +100,7 @@ $_['error_range']                = 'Must be a whole number from %s to %s!';
 $_['error_color']                = 'Colour must be in #RRGGBB format!';
 $_['error_text_length']          = 'Must not exceed %s characters!';
 $_['error_text_required']        = 'Enter the text in at least one language!';
-$_['error_link']                 = 'Invalid link! Use https://…, /path or index.php?route=…';
+$_['error_link']                 = 'Invalid link! Use http(s)://…, /path or index.php?route=…';
 $_['error_icon']                 = 'Icon must look like fa-truck or fa-regular fa-bell!';
 $_['error_date']                 = 'Date must be YYYY-MM-DD HH:mm!';
 $_['error_date_order']           = 'End must be after start!';

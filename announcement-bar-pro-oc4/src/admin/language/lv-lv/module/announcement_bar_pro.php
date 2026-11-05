@@ -100,7 +100,7 @@ $_['error_range']                = 'Jābūt veselam skaitlim no %s līdz %s!';
 $_['error_color']                = 'Krāsai jābūt formātā #RRGGBB!';
 $_['error_text_length']          = 'Nedrīkst pārsniegt %s rakstzīmes!';
 $_['error_text_required']        = 'Ievadi tekstu vismaz vienā valodā!';
-$_['error_link']                 = 'Nederīga saite! Izmanto https://…, /ceļš vai index.php?route=…';
+$_['error_link']                 = 'Nederīga saite! Izmanto http(s)://…, /ceļš vai index.php?route=…';
 $_['error_icon']                 = 'Ikonai jābūt formātā fa-truck vai fa-regular fa-bell!';
 $_['error_date']                 = 'Datumam jābūt formātā YYYY-MM-DD HH:mm!';
 $_['error_date_order']           = 'Beigām jābūt pēc sākuma!';

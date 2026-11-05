@@ -1,4 +1,4 @@
-/* Announcement Bar Pro v2.0.3 — runs synchronously right after the bar markup (no inline script, CSP-friendly).
+/* Announcement Bar Pro v2.0.4 — runs synchronously right after the bar markup (no inline script, CSP-friendly).
    Removes messages the visitor already closed, before the first paint. */
 (function () {
   try {
@@ -8,7 +8,8 @@
     var read = function (name) {
       try {
         var v = JSON.parse(window[name].getItem('abp_dismiss2') || 'null');
-        return (v && v.k && v.k.length && (!v.t || v.t > now)) ? v.k : [];
+        if (!v || !Array.isArray(v.k) || (v.t && v.t <= now)) { return []; }
+        return v.k.filter(function (k) { return typeof k === 'string' && /^[0-9a-f]{12}$/.test(k); });
       } catch (e) { return []; }
     };
     keys = read('localStorage').concat(read('sessionStorage'));

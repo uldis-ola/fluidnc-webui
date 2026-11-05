@@ -2,7 +2,7 @@
 /**
  * Announcement Bar Pro (OpenCart 4) — text / HTML / URL sanitizer.
  * Shared by admin (on save) and catalog (on render, defence in depth).
- * @version 2.0.3
+ * @version 2.0.4
  */
 namespace Opencart\System\Library\Extension\AnnouncementBarPro;
 
@@ -205,7 +205,7 @@ class Sanitizer {
 		return preg_match('/^fa-(solid|regular|brands) fa-[a-z0-9-]{1,40}$/', $value) ? $value : '';
 	}
 
-	private function cleanNode(\DOMNode $node) {
+	private function cleanNode(\DOMNode $node, $in_link = false) {
 		// Copy list first: we mutate while iterating.
 		$children = array();
 		foreach ($node->childNodes as $child) {
@@ -221,42 +221,46 @@ class Sanitizer {
 					continue;
 				}
 
-				$this->cleanNode($child);
-
-				if (!in_array($tag, self::ALLOWED_TAGS, true)) {
-					while ($child->firstChild) {
-						$node->insertBefore($child->firstChild, $child);
-					}
-					$node->removeChild($child);
-					continue;
-				}
+				$this->cleanNode($child, $in_link || $tag === 'a');
 
 				$href   = $tag === 'a' ? $this->url($child->getAttribute('href')) : '';
 				$target = $tag === 'a' && $child->getAttribute('target') === '_blank';
 
-				while ($child->attributes->length) {
-					$child->removeAttribute($child->attributes->item(0)->nodeName);
+				// Unwrap: tags not on the whitelist, links without a valid href, and links nested in a link.
+				if (!in_array($tag, self::ALLOWED_TAGS, true) || ($tag === 'a' && ($href === '' || $in_link))) {
+					$this->unwrap($node, $child);
+					continue;
+				}
+
+				// Rebuild the element instead of removing attributes one by one: removeAttribute() fails
+				// on namespace-like names (xml:lang, xmlns, xmlns:x) and such a loop would never end.
+				$clean = $node->ownerDocument->createElement($tag);
+
+				while ($child->firstChild) {
+					$clean->appendChild($child->firstChild);
 				}
 
 				if ($tag === 'a') {
-					if ($href === '') {
-						while ($child->firstChild) {
-							$node->insertBefore($child->firstChild, $child);
-						}
-						$node->removeChild($child);
-						continue;
-					}
-
-					$child->setAttribute('href', $href);
+					$clean->setAttribute('href', $href);
 
 					if ($target) {
-						$child->setAttribute('target', '_blank');
-						$child->setAttribute('rel', 'noopener noreferrer');
+						$clean->setAttribute('target', '_blank');
+						$clean->setAttribute('rel', 'noopener noreferrer');
 					}
 				}
+
+				$node->replaceChild($clean, $child);
 			} elseif ($child instanceof \DOMComment || $child instanceof \DOMProcessingInstruction || $child instanceof \DOMCdataSection) {
 				$node->removeChild($child);
 			}
 		}
+	}
+
+	private function unwrap(\DOMNode $parent, \DOMNode $child) {
+		while ($child->firstChild) {
+			$parent->insertBefore($child->firstChild, $child);
+		}
+
+		$parent->removeChild($child);
 	}
 }

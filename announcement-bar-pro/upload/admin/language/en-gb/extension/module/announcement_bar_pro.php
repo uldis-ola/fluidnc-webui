@@ -76,7 +76,7 @@ $_['entry_page_routes']          = 'Page routes';
 
 // Help
 $_['help_mode']                  = 'How several active messages are shown.';
-$_['help_allow_html']            = 'Allows <b>, <strong>, <i>, <em>, <u>, <s>, <br>, <span> and links. All other tags and attributes are removed.';
+$_['help_allow_html']            = 'Allows &lt;b&gt;, &lt;strong&gt;, &lt;i&gt;, &lt;em&gt;, &lt;u&gt;, &lt;s&gt;, &lt;br&gt;, &lt;span&gt; and links. All other tags and attributes are removed.';
 $_['help_sticky']                = 'Bar stays visible at the top while scrolling.';
 $_['help_default_color']         = 'Used as the starting colour for new messages.';
 $_['help_dismiss_days']          = '0 = only until the browser tab is closed. The bar reappears when messages change.';
@@ -100,7 +100,7 @@ $_['error_range']                = 'Must be a whole number from %s to %s!';
 $_['error_color']                = 'Colour must be in #RRGGBB format!';
 $_['error_text_length']          = 'Must not exceed %s characters!';
 $_['error_text_required']        = 'Enter the text in at least one language!';
-$_['error_link']                 = 'Invalid link! Use https://…, /path or index.php?route=…';
+$_['error_link']                 = 'Invalid link! Use http(s)://…, /path or index.php?route=…';
 $_['error_icon']                 = 'Icon must look like fa-truck!';
 $_['error_date']                 = 'Date must be YYYY-MM-DD HH:mm!';
 $_['error_date_order']           = 'End must be after start!';

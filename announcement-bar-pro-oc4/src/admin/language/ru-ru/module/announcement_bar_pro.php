@@ -100,7 +100,7 @@ $_['error_range']                = 'Значение должно быть це�
 $_['error_color']                = 'Цвет должен быть в формате #RRGGBB!';
 $_['error_text_length']          = 'Не более %s символов!';
 $_['error_text_required']        = 'Введите текст хотя бы на одном языке!';
-$_['error_link']                 = 'Недопустимая ссылка! Используйте https://…, /путь или index.php?route=…';
+$_['error_link']                 = 'Недопустимая ссылка! Используйте http(s)://…, /путь или index.php?route=…';
 $_['error_icon']                 = 'Иконка должна быть в формате fa-truck или fa-regular fa-bell!';
 $_['error_date']                 = 'Дата в формате YYYY-MM-DD HH:mm!';
 $_['error_date_order']           = 'Окончание должно быть после начала!';

@@ -76,7 +76,7 @@ $_['entry_page_routes']          = 'Lapu maršruti';
 
 // Help
 $_['help_mode']                  = 'Kā rādīt vairākus aktīvus paziņojumus.';
-$_['help_allow_html']            = 'Atļauj <b>, <strong>, <i>, <em>, <u>, <s>, <br>, <span> un saites. Visi citi tagi un atribūti tiek izņemti.';
+$_['help_allow_html']            = 'Atļauj &lt;b&gt;, &lt;strong&gt;, &lt;i&gt;, &lt;em&gt;, &lt;u&gt;, &lt;s&gt;, &lt;br&gt;, &lt;span&gt; un saites. Visi citi tagi un atribūti tiek izņemti.';
 $_['help_sticky']                = 'Josla paliek redzama augšā, kad lapu ritina.';
 $_['help_default_color']         = 'Sākuma krāsa jauniem paziņojumiem.';
 $_['help_dismiss_days']          = '0 = tikai līdz pārlūka cilnes aizvēršanai. Josla parādās atkal, ja paziņojumi mainās.';
@@ -100,7 +100,7 @@ $_['error_range']                = 'Jābūt veselam skaitlim no %s līdz %s!';
 $_['error_color']                = 'Krāsai jābūt formātā #RRGGBB!';
 $_['error_text_length']          = 'Nedrīkst pārsniegt %s rakstzīmes!';
 $_['error_text_required']        = 'Ievadi tekstu vismaz vienā valodā!';
-$_['error_link']                 = 'Nederīga saite! Izmanto https://…, /ceļš vai index.php?route=…';
+$_['error_link']                 = 'Nederīga saite! Izmanto http(s)://…, /ceļš vai index.php?route=…';
 $_['error_icon']                 = 'Ikonai jābūt formātā fa-nosaukums, piem., fa-truck!';
 $_['error_date']                 = 'Datumam jābūt formātā YYYY-MM-DD HH:mm!';
 $_['error_date_order']           = 'Beigām jābūt pēc sākuma!';

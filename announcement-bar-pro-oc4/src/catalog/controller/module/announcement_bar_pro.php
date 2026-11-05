@@ -4,10 +4,10 @@ namespace Opencart\Catalog\Controller\Extension\AnnouncementBarPro\Module;
  * Announcement Bar Pro — catalog controller (OpenCart 4.0.x / 4.1.x)
  * Injected via event: catalog/view/common/header/after
  *
- * @version 2.0.3
+ * @version 2.0.4
  */
 class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
-	public const VERSION = '2.0.3';
+	public const VERSION = '2.0.4';
 	public const CODE    = 'module_announcement_bar_pro';
 	public const ROUTE   = 'extension/announcement_bar_pro/module/announcement_bar_pro';
 
@@ -108,8 +108,9 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 
 			$items[] = array(
 				'id'         => (int)$row['message_id'],
-				// Per-message dismiss key: changes when the message is edited, so edited/new messages reappear.
-				'key'        => substr(md5($row['message_id'] . ':' . $row['date_modified'] . ':' . $language_id), 0, 12),
+				// Per-message dismiss key from what the visitor sees (text, button, link, icon): saving without
+				// changes or editing only visibility/dates keeps it closed; a content edit or new message shows again.
+				'key'        => substr(md5($row['message_id'] . '|' . $row['text'] . '|' . $row['link_text'] . '|' . $row['link'] . '|' . $row['icon'] . '|' . $language_id), 0, 12),
 				'html'       => $html,           // already safe HTML
 				'countdown'  => $countdown,      // built above, safe
 				'bg_color'   => $this->abp->color($row['bg_color'], '#222222'),
