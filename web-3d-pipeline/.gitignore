@@ -1,0 +1,4 @@
+models/*.glb
+models/*.gltf
+*.web.glb
+__pycache__/
