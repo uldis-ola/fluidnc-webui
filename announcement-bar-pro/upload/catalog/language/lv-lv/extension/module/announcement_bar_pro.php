@@ -1,4 +1,4 @@
 <?php
-$_['text_label'] = 'Paziņojums';
-$_['text_close'] = 'Aizvērt';
-$_['text_days']  = 'd.';
+$_['abp_text_label'] = 'Paziņojums';
+$_['abp_text_close'] = 'Aizvērt';
+$_['abp_text_days']  = 'd.';

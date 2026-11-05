@@ -2,7 +2,7 @@
 /**
  * Announcement Bar Pro — admin model (OpenCart 3.0.x)
  * Tables: {prefix}abp_message, {prefix}abp_message_description
- * @version 2.0.1
+ * @version 2.0.2
  */
 class ModelExtensionModuleAnnouncementBarPro extends Model {
 	const CODE           = 'module_announcement_bar_pro';
@@ -152,9 +152,16 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 	}
 
 	public function tablesExist() {
-		$query = $this->db->query("SHOW TABLES LIKE '" . $this->db->escape(DB_PREFIX . 'abp_message') . "'");
+		foreach (array('abp_message', 'abp_message_description') as $table) {
+			// Escape LIKE wildcards: "_" in the prefix/table name must match literally.
+			$query = $this->db->query("SHOW TABLES LIKE '" . $this->db->escape(addcslashes(DB_PREFIX . $table, '_%')) . "'");
 
-		return (bool)$query->num_rows;
+			if (!$query->num_rows) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	public function addMessage(array $data) {
@@ -206,8 +213,17 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 		return $message;
 	}
 
+	/**
+	 * List rows. `text` = admin language, else any language that has text.
+	 * `languages_with_text` = comma list of language_ids that have text (to flag missing translations).
+	 */
 	public function getMessages($language_id) {
-		$query = $this->db->query("SELECT m.*, md.`text` FROM `" . DB_PREFIX . "abp_message` m LEFT JOIN `" . DB_PREFIX . "abp_message_description` md ON (m.`message_id` = md.`message_id` AND md.`language_id` = '" . (int)$language_id . "') ORDER BY m.`sort_order` ASC, m.`message_id` ASC");
+		$query = $this->db->query("SELECT m.*,
+				COALESCE(NULLIF(md.`text`, ''), (SELECT x.`text` FROM `" . DB_PREFIX . "abp_message_description` x WHERE x.`message_id` = m.`message_id` AND x.`text` <> '' ORDER BY x.`language_id` LIMIT 1), '') AS `text`,
+				(SELECT GROUP_CONCAT(y.`language_id`) FROM `" . DB_PREFIX . "abp_message_description` y WHERE y.`message_id` = m.`message_id` AND y.`text` <> '') AS `languages_with_text`
+			FROM `" . DB_PREFIX . "abp_message` m
+			LEFT JOIN `" . DB_PREFIX . "abp_message_description` md ON (m.`message_id` = md.`message_id` AND md.`language_id` = '" . (int)$language_id . "')
+			ORDER BY m.`sort_order` ASC, m.`message_id` ASC");
 
 		$rows = array();
 

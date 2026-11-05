@@ -68,7 +68,7 @@
                     {% for message in messages %}
                     <tr>
                       <td class="text-center"><input type="checkbox" name="selected[]" value="{{ message.message_id }}" /></td>
-                      <td><span class="abp-swatch" style="background:{{ message.bg_color|e }};color:{{ message.text_color|e }};">{{ message.text|e }}</span></td>
+                      <td><span class="abp-swatch" style="background:{{ message.bg_color|e }};color:{{ message.text_color|e }};">{{ message.text|e }}</span>{% if message.missing %}<br /><small class="text-warning"><i class="fa fa-language"></i> {{ message.missing|e }}</small>{% endif %}</td>
                       <td class="text-center">
                         {% if message.state == 'active' %}<span class="label label-success">{{ message.state_text }}</span>
                         {% elseif message.state == 'scheduled' %}<span class="label label-info">{{ message.state_text }}</span>
@@ -178,7 +178,7 @@
                   <label class="col-sm-3 control-label" for="input-{{ key }}"><span data-toggle="tooltip" title="{{ help_default_color|e }}">{{ attribute(_context, 'entry_' ~ key) }}</span></label>
                   <div class="col-sm-9">
                     <div class="input-group abp-color">
-                      <span class="input-group-addon"><input type="color" value="{{ attribute(setting, key)|e }}" /></span>
+                      <span class="input-group-addon"><input type="color" value="{{ attribute(setting, key)|e }}" aria-label="{{ attribute(_context, 'entry_' ~ key)|e }}" /></span>
                       <input type="text" name="module_announcement_bar_pro_{{ key }}" id="input-{{ key }}" value="{{ attribute(setting, key)|e }}" maxlength="7" class="form-control" />
                     </div>
                     {% if attribute(error_settings, key) is defined %}<div class="text-danger">{{ attribute(error_settings, key)|e }}</div>{% endif %}

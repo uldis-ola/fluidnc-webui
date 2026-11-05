@@ -1,4 +1,4 @@
-/* Announcement Bar Pro v2.0.1 — no dependencies */
+/* Announcement Bar Pro v2.0.2 — no dependencies */
 (function () {
   'use strict';
 
@@ -8,7 +8,7 @@
 
     var mode = bar.getAttribute('data-mode');
     var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var timer = null, cdTimer = null, index = 0;
+    var timer = null, tickTimer = null, index = 0, paused = false;
 
     if (mode === 'marquee' && reduced) {
       mode = 'rotate';
@@ -25,22 +25,47 @@
       if (close) { close.style.color = item.style.color; }
     }
 
+    function fitBody() {
+      if (bar.classList.contains('abp-pos-bottom')) {
+        document.body.style.paddingBottom = bar.style.display === 'none' ? '' : bar.offsetHeight + 'px';
+      }
+    }
+
+    // Rotate mode: reserve the height of the tallest message so the page does not jump on every change.
+    function stabilise() {
+      var track = bar.querySelector('.abp-track');
+      if (!track) { return; }
+      track.style.minHeight = '';
+      if (mode !== 'rotate') { return; }
+      var list = items(), max = 0;
+      for (var i = 0; i < list.length; i++) {
+        var was = list[i].style.display;
+        list[i].style.display = 'block';
+        max = Math.max(max, list[i].offsetHeight);
+        list[i].style.display = was;
+      }
+      if (max) { track.style.minHeight = max + 'px'; }
+    }
+
     function show(i) {
       var list = items();
       if (!list.length) { return; }
       index = (i + list.length) % list.length;
-      for (var n = 0; n < list.length; n++) { list[n].classList.toggle('abp-active', n === index); }
+      for (var n = 0; n < list.length; n++) {
+        if (n === index) { list[n].classList.add('abp-active'); } else { list[n].classList.remove('abp-active'); }
+      }
       paintBar(list[index]);
-    }
-
-    function startRotate() {
-      stopRotate();
-      if (mode !== 'rotate' || items().length < 2) { return; }
-      var ms = Math.max(2, parseInt(bar.getAttribute('data-interval'), 10) || 5) * 1000;
-      timer = setInterval(function () { show(index + 1); }, ms);
+      fitBody();
     }
 
     function stopRotate() { if (timer) { clearInterval(timer); timer = null; } }
+
+    function startRotate() {
+      stopRotate();
+      if (paused || mode !== 'rotate' || items().length < 2) { return; }
+      var ms = Math.max(2, parseInt(bar.getAttribute('data-interval'), 10) || 5) * 1000;
+      timer = setInterval(function () { show(index + 1); }, ms);
+    }
 
     function startMarquee() {
       if (mode !== 'marquee') { return; }
@@ -56,39 +81,40 @@
       track.classList.add('abp-run');
     }
 
-    function fitBody() {
-      if (bar.classList.contains('abp-pos-bottom')) {
-        document.body.style.paddingBottom = bar.style.display === 'none' ? '' : bar.offsetHeight + 'px';
-      }
-    }
+    function relayout() { stabilise(); show(Math.min(index, Math.max(items().length - 1, 0))); startRotate(); startMarquee(); fitBody(); }
 
     function hideBar() {
       stopRotate();
-      if (cdTimer) { clearInterval(cdTimer); }
+      if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
       bar.style.display = 'none';
       fitBody();
     }
 
     function pad(n) { return (n < 10 ? '0' : '') + n; }
 
+    // Countdowns + removal of messages whose end time passed while the page is open.
     function tick() {
+      var now = Date.now(), changed = false, list = items();
+      for (var i = list.length - 1; i >= 0; i--) {
+        var end = parseInt(list[i].getAttribute('data-end'), 10);
+        if (end && end <= now) { list[i].parentNode.removeChild(list[i]); changed = true; }
+      }
       var nodes = bar.querySelectorAll('.abp-countdown');
-      if (!nodes.length) { if (cdTimer) { clearInterval(cdTimer); } return; }
-      var now = Date.now(), changed = false;
-      for (var i = 0; i < nodes.length; i++) {
-        var end = parseInt(nodes[i].getAttribute('data-end'), 10), left = Math.floor((end - now) / 1000);
-        if (!end || left <= 0) {
-          var item = nodes[i].closest('.abp-item');
+      for (var c = 0; c < nodes.length; c++) {
+        var cEnd = parseInt(nodes[c].getAttribute('data-end'), 10), left = Math.floor((cEnd - now) / 1000);
+        if (!cEnd || left <= 0) {
+          var item = nodes[c].closest ? nodes[c].closest('.abp-item') : null;
           if (item && item.parentNode) { item.parentNode.removeChild(item); changed = true; }
           continue;
         }
         var d = Math.floor(left / 86400), h = Math.floor(left % 86400 / 3600), m = Math.floor(left % 3600 / 60), s = left % 60;
-        nodes[i].textContent = (d > 0 ? d + (bar.getAttribute('data-days-label') || 'd') + ' ' : '') + pad(h) + ':' + pad(m) + ':' + pad(s);
+        nodes[c].textContent = (d > 0 ? d + (bar.getAttribute('data-days-label') || 'd') + ' ' : '') + pad(h) + ':' + pad(m) + ':' + pad(s);
       }
       if (changed) {
         if (!items().length) { hideBar(); return; }
-        show(0); startRotate(); startMarquee(); fitBody();
+        index = 0; relayout();
       }
+      if (!bar.querySelector('.abp-countdown, .abp-item[data-end]') && tickTimer) { clearInterval(tickTimer); tickTimer = null; }
     }
 
     var close = bar.querySelector('.abp-close');
@@ -101,27 +127,47 @@
           keep.setItem('abp_dismiss', value);
           drop.removeItem('abp_dismiss');
         } catch (e) { /* storage blocked: bar just hides for this page view */ }
+        var focusWasInside = bar.contains(document.activeElement);
         hideBar();
+        // Keyboard users: continue at the first focusable element after the bar, not at <body>.
+        if (focusWasInside) {
+          var next = document.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
+          for (var k = 0; k < next.length; k++) {
+            if (!bar.contains(next[k]) && (bar.compareDocumentPosition(next[k]) & 4) && next[k].offsetParent !== null) { next[k].focus(); break; }
+          }
+        }
       });
     }
 
-    bar.addEventListener('mouseenter', stopRotate);
-    bar.addEventListener('mouseleave', startRotate);
-    bar.addEventListener('focusin', stopRotate);
-    bar.addEventListener('focusout', startRotate);
+    // Pause on mouse hover / keyboard focus; a tap on touch screens toggles pause (no stuck mouseenter).
+    function pointerIsMouse(e) { return !e.pointerType || e.pointerType === 'mouse'; }
+    function pause() { paused = true; bar.classList.add('abp-paused'); stopRotate(); }
+    function resume() { paused = false; bar.classList.remove('abp-paused'); startRotate(); }
+
+    if (window.PointerEvent) {
+      bar.addEventListener('pointerenter', function (e) { if (pointerIsMouse(e)) { pause(); } });
+      bar.addEventListener('pointerleave', function (e) { if (pointerIsMouse(e)) { resume(); } });
+      bar.addEventListener('pointerup', function (e) {
+        if (!pointerIsMouse(e) && !(e.target.closest && e.target.closest('a, button'))) { if (paused) { resume(); } else { pause(); } }
+      });
+    } else {
+      bar.addEventListener('mouseenter', pause);
+      bar.addEventListener('mouseleave', resume);
+    }
+    bar.addEventListener('focusin', pause);
+    bar.addEventListener('focusout', function () { setTimeout(function () { if (!bar.contains(document.activeElement)) { resume(); } }, 0); });
 
     var resizeTimer = null;
     window.addEventListener('resize', function () {
       clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(function () { startMarquee(); fitBody(); }, 200);
+      resizeTimer = setTimeout(relayout, 200);
     });
 
     tick();
-    if (bar.querySelector('.abp-countdown')) { cdTimer = setInterval(tick, 1000); }
-    show(0);
-    startRotate();
-    startMarquee();
-    fitBody();
+    if (bar.querySelector('.abp-countdown, .abp-item[data-end]')) { tickTimer = setInterval(tick, 1000); }
+    relayout();
+    // Web fonts / icons can change heights after load.
+    window.addEventListener('load', relayout);
   }
 
   if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }

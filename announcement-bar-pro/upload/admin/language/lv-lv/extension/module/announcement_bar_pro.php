@@ -11,7 +11,7 @@ $_['tab_visibility']             = 'Redzamība';
 
 // Text
 $_['text_extension']             = 'Paplašinājumi';
-$_['text_success']               = 'Izdevās: Announcement Bar Pro izmaiņas saglabātas!';
+$_['text_success']               = 'Veiksmīgi: Announcement Bar Pro izmaiņas saglabātas!';
 $_['text_message_list']          = 'Paziņojumi';
 $_['text_add_message']           = 'Pievienot paziņojumu';
 $_['text_edit_message']          = 'Rediģēt paziņojumu';
@@ -101,9 +101,15 @@ $_['error_color']                = 'Krāsai jābūt formātā #RRGGBB!';
 $_['error_text_length']          = 'Nedrīkst pārsniegt %s rakstzīmes!';
 $_['error_text_required']        = 'Ievadi tekstu vismaz vienā valodā!';
 $_['error_link']                 = 'Nederīga saite! Izmanto https://…, /ceļš vai index.php?route=…';
-$_['error_icon']                 = 'Ikonai jāizskatās kā fa-truck!';
+$_['error_icon']                 = 'Ikonai jābūt formātā fa-nosaukums, piem., fa-truck!';
 $_['error_date']                 = 'Datumam jābūt formātā YYYY-MM-DD HH:mm!';
 $_['error_date_order']           = 'Beigām jābūt pēc sākuma!';
 $_['error_countdown']            = 'Atpakaļskaitīšanai vajadzīgs beigu datums!';
-$_['error_routes']               = 'Nederīgs maršruts! Atļauti burti, cipari, _ un /, beigās var būt /*.';
+$_['error_routes']               = 'Nederīgs maršrutu saraksts! Atļauti burti, cipari, _ un /, beigās var būt /*; ne vairāk kā 50 maršruti.';
 $_['error_routes_required']      = 'Ievadi vismaz vienu maršrutu!';
+
+// 2.0.2
+$_['text_missing_language']      = 'Nav teksta: %s (tiek rādīts veikala noklusētās valodas teksts)';
+$_['text_low_contrast']          = 'Zems kontrasts — tekstu var būt grūti izlasīt.';
+$_['error_not_found']            = 'Brīdinājums: Paziņojums nav atrasts (iespējams, tas ir dzēsts).';
+$_['help_lang_fallback']         = 'Valodās, kur teksts nav ievadīts, tiek rādīts veikala noklusētās valodas teksts.';

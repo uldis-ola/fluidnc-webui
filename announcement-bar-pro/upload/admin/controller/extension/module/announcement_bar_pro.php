@@ -1,17 +1,23 @@
 <?php
 /**
  * Announcement Bar Pro — admin controller (OpenCart 3.0.x)
- * @version 2.0.1
+ * @version 2.0.2
  */
 class ControllerExtensionModuleAnnouncementBarPro extends Controller {
-	const VERSION    = '2.0.1';
+	const VERSION    = '2.0.2';
 	const CODE       = 'module_announcement_bar_pro';
 	const EVENT_CODE = 'announcement_bar_pro';
 	const ROUTE      = 'extension/module/announcement_bar_pro';
 	const MAX_TEXT   = 1000;
 	const MAX_LINK_TEXT = 64;
 
+	const MAX_RAW_TEXT = 20000;  // hard cap on submitted text before it is parsed/sanitized
+	const MAX_ROUTES   = 50;
+
 	private $error = array();
+
+	/** @var \Announcementbarpro\Sanitizer  Declared property: kept out of the shared registry. */
+	private $abp;
 
 	/* ------------------------------------------------------------------ *
 	 * Settings + message list
@@ -51,10 +57,12 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			$data['setting'][$key] = $post ? (isset($this->request->post[$full]) && is_string($this->request->post[$full]) ? $this->request->post[$full] : '') : $stored[$full];
 		}
 
-		$data['active_tab'] = (isset($this->request->get['tab']) && $this->request->get['tab'] === 'messages') ? 'messages' : 'settings';
+		$tab = isset($this->request->get['tab']) && is_string($this->request->get['tab']) ? $this->request->get['tab'] : '';
+		$data['active_tab'] = ($tab === 'settings' || $post) ? 'settings' : 'messages';
 
 		// Message list
 		$language_id = (int)$this->config->get('config_language_id');
+		$languages   = $this->model_localisation_language->getLanguages();
 		$now         = date('Y-m-d H:i:s');
 
 		$data['messages'] = array();
@@ -70,18 +78,28 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 				$state = 'active';
 			}
 
-			$text = $this->sanitizer->plain($this->sanitizer->decode((string)$message['text']));
+			$text = $this->abp->plain($this->abp->decode((string)$message['text']));
+
+			// Languages without text fall back to the store's default language in the shop.
+			$with_text = array_map('intval', array_filter(explode(',', (string)$message['languages_with_text'])));
+			$missing   = array();
+			foreach ($languages as $language) {
+				if (!in_array((int)$language['language_id'], $with_text, true)) {
+					$missing[] = $language['name'];
+				}
+			}
 
 			$data['messages'][] = array(
 				'message_id' => (int)$message['message_id'],
 				'text'       => function_exists('mb_strimwidth') ? mb_strimwidth($text, 0, 90, '…', 'UTF-8') : substr($text, 0, 90),
-				'bg_color'   => $this->sanitizer->color($message['bg_color'], '#222222'),
-				'text_color' => $this->sanitizer->color($message['text_color'], '#ffffff'),
+				'bg_color'   => $this->abp->color($message['bg_color'], '#222222'),
+				'text_color' => $this->abp->color($message['text_color'], '#ffffff'),
 				'date_start' => $message['date_start'] ? substr($message['date_start'], 0, 16) : '',
 				'date_end'   => $message['date_end'] ? substr($message['date_end'], 0, 16) : '',
 				'sort_order' => (int)$message['sort_order'],
 				'state'      => $state,
 				'state_text' => $this->language->get('text_state_' . $state),
+				'missing'    => $missing ? sprintf($this->language->get('text_missing_language'), implode(', ', $missing)) : '',
 				'edit'       => $this->link(self::ROUTE . '/form', '&message_id=' . (int)$message['message_id'])
 			);
 		}
@@ -99,6 +117,8 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		$message    = $message_id ? $this->model_extension_module_announcement_bar_pro->getMessage($message_id) : array();
 
 		if ($message_id && !$message) {
+			$this->load->language(self::ROUTE);
+			$this->session->data['abp_error'] = $this->language->get('error_not_found');
 			$this->response->redirect($this->link(self::ROUTE, '&tab=messages'));
 		}
 
@@ -130,6 +150,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		$data['max_text']      = self::MAX_TEXT;
 		$data['max_link_text'] = self::MAX_LINK_TEXT;
 		$data['allow_html']    = (bool)$this->config->get(self::CODE . '_allow_html');
+		$data['datepicker']    = $this->language->get('datepicker');
 
 		// Stores (0 = default)
 		$this->load->model('setting/store');
@@ -149,8 +170,8 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			'sort_order'      => 0,
 			'date_start'      => '',
 			'date_end'        => '',
-			'bg_color'        => $this->sanitizer->color($this->config->get(self::CODE . '_default_bg_color'), '#222222'),
-			'text_color'      => $this->sanitizer->color($this->config->get(self::CODE . '_default_text_color'), '#ffffff'),
+			'bg_color'        => $this->abp->color($this->config->get(self::CODE . '_default_bg_color'), '#222222'),
+			'text_color'      => $this->abp->color($this->config->get(self::CODE . '_default_text_color'), '#ffffff'),
 			'link'            => '',
 			'link_new_tab'    => 0,
 			'icon'            => '',
@@ -167,7 +188,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 				if (is_array($default)) {
 					$value = is_array($value) ? array_map('intval', $value) : array();
 				} elseif (is_string($value)) {
-					$value = $this->sanitizer->decode($value);
+					$value = $this->abp->decode($value);
 				}
 				$data[$key] = $value;
 			} else {
@@ -186,8 +207,8 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			$row = isset($descriptions[$id]) && is_array($descriptions[$id]) ? $descriptions[$id] : array();
 
 			$data['message_description'][$id] = array(
-				'text'      => isset($row['text']) && is_string($row['text']) ? $this->sanitizer->decode($row['text']) : '',
-				'link_text' => isset($row['link_text']) && is_string($row['link_text']) ? $this->sanitizer->decode($row['link_text']) : ''
+				'text'      => isset($row['text']) && is_string($row['text']) ? $this->abp->decode($row['text']) : '',
+				'link_text' => isset($row['link_text']) && is_string($row['link_text']) ? $this->abp->decode($row['link_text']) : ''
 			);
 		}
 
@@ -271,8 +292,8 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		if (!$this->intInRange($this->postValue('font_size'), 10, 30))                         $this->error['font_size'] = sprintf($this->language->get('error_range'), 10, 30);
 		if (!$this->intInRange($this->postValue('padding'), 0, 30))                            $this->error['padding'] = sprintf($this->language->get('error_range'), 0, 30);
 		if (!$this->intInRange($this->postValue('dismiss_days'), 0, 365))                      $this->error['dismiss_days'] = sprintf($this->language->get('error_range'), 0, 365);
-		if (!$this->sanitizer->color($this->postValue('default_bg_color')))                    $this->error['default_bg_color'] = $this->language->get('error_color');
-		if (!$this->sanitizer->color($this->postValue('default_text_color')))                  $this->error['default_text_color'] = $this->language->get('error_color');
+		if (!$this->abp->color($this->postValue('default_bg_color')))                    $this->error['default_bg_color'] = $this->language->get('error_color');
+		if (!$this->abp->color($this->postValue('default_text_color')))                  $this->error['default_text_color'] = $this->language->get('error_color');
 
 		if ($this->error) {
 			$this->error['warning'] = $this->language->get('error_form');
@@ -294,10 +315,15 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		foreach ($languages as $language) {
 			$id   = (int)$language['language_id'];
 			$row  = isset($descs[$id]) && is_array($descs[$id]) ? $descs[$id] : array();
-			$text = isset($row['text']) && is_string($row['text']) ? $this->sanitizer->decode($row['text']) : '';
-			$link = isset($row['link_text']) && is_string($row['link_text']) ? $this->sanitizer->plain($this->sanitizer->decode($row['link_text'])) : '';
+			$text = isset($row['text']) && is_string($row['text']) ? $this->abp->decode($row['text']) : '';
+			$link = isset($row['link_text']) && is_string($row['link_text']) ? $this->abp->plain($this->abp->decode($row['link_text'])) : '';
 
-			$clean = $allow_html ? $this->sanitizer->html($text) : $this->sanitizer->plain($text);
+			if (strlen($text) > self::MAX_RAW_TEXT) {
+				$this->error['text'][$id] = sprintf($this->language->get('error_text_length'), self::MAX_TEXT);
+				continue;
+			}
+
+			$clean = $allow_html ? $this->abp->html($text) : $this->abp->plain($text);
 
 			if ($this->strlen($clean) > self::MAX_TEXT) {
 				$this->error['text'][$id] = sprintf($this->language->get('error_text_length'), self::MAX_TEXT);
@@ -318,23 +344,23 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		}
 
 		foreach (array('bg_color', 'text_color') as $key) {
-			if (!$this->sanitizer->color(isset($p[$key]) ? $p[$key] : '')) {
+			if (!$this->abp->color(isset($p[$key]) ? $p[$key] : '')) {
 				$this->error[$key] = $this->language->get('error_color');
 			}
 		}
 
-		$link = isset($p['link']) ? $this->sanitizer->decode($p['link']) : '';
-		if ($link !== '' && $this->sanitizer->url($link) === '') {
+		$link = isset($p['link']) ? $this->abp->decode($p['link']) : '';
+		if ($link !== '' && $this->abp->url($link) === '') {
 			$this->error['link'] = $this->language->get('error_link');
 		}
 
 		$icon = isset($p['icon']) ? trim((string)$p['icon']) : '';
-		if ($icon !== '' && $this->sanitizer->icon($icon) === '') {
+		if ($icon !== '' && $this->abp->icon($icon) === '') {
 			$this->error['icon'] = $this->language->get('error_icon');
 		}
 
 		$start = $this->parseDate(isset($p['date_start']) ? $p['date_start'] : '');
-		$end   = $this->parseDate(isset($p['date_end']) ? $p['date_end'] : '');
+		$end   = $this->parseDate(isset($p['date_end']) ? $p['date_end'] : '', true);
 
 		if ($start === false) $this->error['date_start'] = $this->language->get('error_date');
 		if ($end === false)   $this->error['date_end'] = $this->language->get('error_date');
@@ -349,6 +375,15 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 
 		if (!isset($p['sort_order']) || !preg_match('/^-?\d{1,6}$/', trim((string)$p['sort_order']))) {
 			$this->error['sort_order'] = $this->language->get('error_value');
+		}
+
+		// Unknown store / customer-group IDs are rejected (an all-invalid list must not turn into "all").
+		foreach (array('stores' => $this->storeIds(), 'customer_groups' => $this->customerGroupIds()) as $key => $valid) {
+			$posted = isset($p[$key]) && is_array($p[$key]) ? array_map('intval', $p[$key]) : array();
+
+			if (array_diff($posted, $valid)) {
+				$this->error[$key] = $this->language->get('error_value');
+			}
 		}
 
 		$mode = isset($p['page_mode']) ? $p['page_mode'] : '';
@@ -386,8 +421,8 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			'dismissible'        => !empty($p[self::CODE . '_dismissible']) ? 1 : 0,
 			'dismiss_days'       => (int)$this->postValue('dismiss_days'),
 			'allow_html'         => !empty($p[self::CODE . '_allow_html']) ? 1 : 0,
-			'default_bg_color'   => $this->sanitizer->color($this->postValue('default_bg_color')),
-			'default_text_color' => $this->sanitizer->color($this->postValue('default_text_color')),
+			'default_bg_color'   => $this->abp->color($this->postValue('default_bg_color')),
+			'default_text_color' => $this->abp->color($this->postValue('default_text_color')),
 			'delete_data'        => !empty($p[self::CODE . '_delete_data']) ? 1 : 0
 		);
 
@@ -407,34 +442,34 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		foreach ($languages as $language) {
 			$id   = (int)$language['language_id'];
 			$row  = isset($descs[$id]) && is_array($descs[$id]) ? $descs[$id] : array();
-			$text = isset($row['text']) && is_string($row['text']) ? $this->sanitizer->decode($row['text']) : '';
-			$link = isset($row['link_text']) && is_string($row['link_text']) ? $this->sanitizer->decode($row['link_text']) : '';
+			$text = isset($row['text']) && is_string($row['text']) ? $this->abp->decode($row['text']) : '';
+			$link = isset($row['link_text']) && is_string($row['link_text']) ? $this->abp->decode($row['link_text']) : '';
 
 			// encode4byte: OpenCart's DB link is 3-byte utf8, emoji would be stored as "?".
 			$description[$id] = array(
-				'text'      => $this->sanitizer->encode4byte($allow_html ? $this->sanitizer->html($text) : $this->sanitizer->plain($text)),
-				'link_text' => $this->sanitizer->encode4byte($this->substr($this->sanitizer->plain($link), self::MAX_LINK_TEXT))
+				'text'      => $this->abp->encode4byte($allow_html ? $this->abp->html($text) : $this->abp->plain($text)),
+				'link_text' => $this->abp->encode4byte($this->substr($this->abp->plain($link), self::MAX_LINK_TEXT))
 			);
 		}
 
 		$mode   = isset($p['page_mode']) ? (string)$p['page_mode'] : 'all';
 		$routes = in_array($mode, array('include', 'exclude'), true) ? implode("\n", (array)$this->parseRoutes(isset($p['page_routes']) ? $p['page_routes'] : '')) : '';
 		$start  = $this->parseDate(isset($p['date_start']) ? $p['date_start'] : '');
-		$end    = $this->parseDate(isset($p['date_end']) ? $p['date_end'] : '');
+		$end    = $this->parseDate(isset($p['date_end']) ? $p['date_end'] : '', true);
 
 		return array(
 			'status'              => !empty($p['status']) ? 1 : 0,
 			'sort_order'          => isset($p['sort_order']) ? (int)$p['sort_order'] : 0,
 			'date_start'          => $start ? $start : '',
 			'date_end'            => $end ? $end : '',
-			'bg_color'            => $this->sanitizer->color(isset($p['bg_color']) ? $p['bg_color'] : '', '#222222'),
-			'text_color'          => $this->sanitizer->color(isset($p['text_color']) ? $p['text_color'] : '', '#ffffff'),
-			'link'                => $this->sanitizer->url($this->sanitizer->decode(isset($p['link']) ? $p['link'] : '')),
+			'bg_color'            => $this->abp->color(isset($p['bg_color']) ? $p['bg_color'] : '', '#222222'),
+			'text_color'          => $this->abp->color(isset($p['text_color']) ? $p['text_color'] : '', '#ffffff'),
+			'link'                => $this->abp->url($this->abp->decode(isset($p['link']) ? $p['link'] : '')),
 			'link_new_tab'        => !empty($p['link_new_tab']) ? 1 : 0,
-			'icon'                => $this->sanitizer->icon(isset($p['icon']) ? $p['icon'] : ''),
+			'icon'                => $this->abp->icon(isset($p['icon']) ? $p['icon'] : ''),
 			'countdown'           => !empty($p['countdown']) ? 1 : 0,
-			'stores'              => isset($p['stores']) && is_array($p['stores']) ? array_unique(array_map('intval', $p['stores'])) : array(),
-			'customer_groups'     => isset($p['customer_groups']) && is_array($p['customer_groups']) ? array_unique(array_map('intval', $p['customer_groups'])) : array(),
+			'stores'              => $this->existingIds(isset($p['stores']) ? $p['stores'] : array(), $this->storeIds()),
+			'customer_groups'     => $this->existingIds(isset($p['customer_groups']) ? $p['customer_groups'] : array(), $this->customerGroupIds()),
 			'page_mode'           => $mode,
 			'page_routes'         => $routes,
 			'message_description' => $description
@@ -451,7 +486,8 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		$this->load->model('setting/setting');
 		$this->load->model('localisation/language');
 		$this->load->model(self::ROUTE);
-		$this->load->library('announcementbarpro/sanitizer');
+		require_once(DIR_SYSTEM . 'library/announcementbarpro/sanitizer.php');
+		$this->abp = new \Announcementbarpro\Sanitizer();
 
 		// Creating/migrating tables writes to the DB: only for users with "modify" permission.
 		if ($this->user->hasPermission('modify', self::ROUTE)) {
@@ -539,8 +575,9 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 
 	/**
 	 * '' → '' (no limit); valid → 'Y-m-d H:i:00'; invalid → false.
+	 * A date without time as END date means the end of that day (23:59:59).
 	 */
-	private function parseDate($value) {
+	private function parseDate($value, $is_end = false) {
 		$value = trim(str_replace('T', ' ', (string)$value));
 
 		if ($value === '') {
@@ -550,7 +587,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		foreach (array('Y-m-d H:i:s', 'Y-m-d H:i', 'Y-m-d') as $format) {
 			$date = DateTime::createFromFormat('!' . $format, $value);
 			if ($date && $date->format($format) === $value) {
-				return $date->format('Y-m-d H:i:00');
+				return ($format === 'Y-m-d' && $is_end) ? $date->format('Y-m-d 23:59:59') : $date->format('Y-m-d H:i:00');
 			}
 		}
 
@@ -563,7 +600,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 	private function parseRoutes($value) {
 		$routes = array();
 
-		foreach (preg_split('/[\r\n,]+/', $this->sanitizer->decode((string)$value)) as $line) {
+		foreach (preg_split('/[\r\n,]+/', $this->abp->decode((string)$value)) as $line) {
 			$line = trim($line);
 
 			if ($line === '') {
@@ -577,7 +614,38 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			$routes[] = strtolower($line);
 		}
 
-		return array_slice(array_values(array_unique($routes)), 0, 50);
+		$routes = array_values(array_unique($routes));
+
+		return count($routes) > self::MAX_ROUTES ? false : $routes;
+	}
+
+	/** Keeps only IDs that really exist (crafted POSTs could send 999 / -5). */
+	private function existingIds($posted, array $valid) {
+		$posted = is_array($posted) ? array_map('intval', array_filter($posted, 'is_scalar')) : array();
+
+		return array_values(array_unique(array_intersect($posted, $valid)));
+	}
+
+	private function storeIds() {
+		$this->load->model('setting/store');
+
+		$ids = array(0);
+		foreach ($this->model_setting_store->getStores() as $store) {
+			$ids[] = (int)$store['store_id'];
+		}
+
+		return $ids;
+	}
+
+	private function customerGroupIds() {
+		$this->load->model('customer/customer_group');
+
+		$ids = array();
+		foreach ($this->model_customer_customer_group->getCustomerGroups() as $group) {
+			$ids[] = (int)$group['customer_group_id'];
+		}
+
+		return $ids;
 	}
 
 	private function strlen($value) {

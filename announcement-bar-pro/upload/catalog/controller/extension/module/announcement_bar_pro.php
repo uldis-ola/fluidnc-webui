@@ -2,11 +2,14 @@
 /**
  * Announcement Bar Pro — catalog controller (OpenCart 3.0.x)
  * Injected via event: catalog/view/common/header/after
- * @version 2.0.1
+ * @version 2.0.2
  */
 class ControllerExtensionModuleAnnouncementBarPro extends Controller {
-	const VERSION = '2.0.1';
+	const VERSION = '2.0.2';
 	const CODE    = 'module_announcement_bar_pro';
+
+	/** @var \Announcementbarpro\Sanitizer  Declared property: not put into the shared registry. */
+	private $abp;
 
 	/**
 	 * Event handler. Inserts the bar right after the opening <body> tag of the header output.
@@ -28,9 +31,15 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			return;
 		}
 
-		$output = preg_replace_callback('/<body\b[^>]*>/i', function ($m) use ($html) {
+		// First real <body> tag — skip any "<body" inside HTML comments or <script> blocks.
+		$result = preg_replace_callback('#<!--.*?-->(*SKIP)(*FAIL)|<script\b.*?</script>(*SKIP)(*FAIL)|<body\b[^>]*>#is', function ($m) use ($html) {
 			return $m[0] . "\n" . $html;
 		}, $output, 1);
+
+		// preg_* returns null on failure (e.g. backtrack limit): keep the original header.
+		if (is_string($result)) {
+			$output = $result;
+		}
 	}
 
 	/**
@@ -41,14 +50,16 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 	}
 
 	private function render() {
-		$this->load->library('announcementbarpro/sanitizer');
+		require_once(DIR_SYSTEM . 'library/announcementbarpro/sanitizer.php');
+
+		$this->abp = new \Announcementbarpro\Sanitizer();
 
 		$language_id = (int)$this->config->get('config_language_id');
 		$allow_html  = (bool)$this->config->get(self::CODE . '_allow_html');
 
 		if ((int)$this->config->get(self::CODE . '_schema') >= 2) {
 			$this->load->model('extension/module/announcement_bar_pro');
-			$rows = $this->model_extension_module_announcement_bar_pro->getActiveMessages($language_id);
+			$rows = $this->model_extension_module_announcement_bar_pro->getActiveMessages($language_id, $this->defaultLanguageId());
 		} else {
 			$rows = $this->legacyRows($language_id);
 		}
@@ -75,7 +86,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 				continue;
 			}
 
-			$html = $this->sanitizer->toSafeHtml($row['text'], $allow_html);
+			$html = $this->abp->toSafeHtml($row['text'], $allow_html);
 
 			$countdown = '';
 			if (!empty($row['countdown']) && !empty($row['date_end'])) {
@@ -86,7 +97,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			}
 
 			// Replace {countdown} only in text, never inside a tag/attribute.
-			list($html, $replaced) = $this->sanitizer->replaceToken($html, '{countdown}', $countdown);
+			list($html, $replaced) = $this->abp->replaceToken($html, '{countdown}', $countdown);
 
 			if ($replaced) {
 				$countdown = '';
@@ -96,20 +107,22 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 				continue;
 			}
 
-			$link      = $this->sanitizer->url($row['link']);
-			$link_text = $this->sanitizer->plain($this->sanitizer->decode($row['link_text']));
+			$link      = $this->abp->url($row['link']);
+			$link_text = $this->abp->plain($this->abp->decode($row['link_text']));
 
 			$items[] = array(
 				'id'         => (int)$row['message_id'],
 				'html'       => $html,           // already safe HTML
 				'countdown'  => $countdown,      // built above, safe
-				'bg_color'   => $this->sanitizer->color($row['bg_color'], '#222222'),
-				'text_color' => $this->sanitizer->color($row['text_color'], '#ffffff'),
-				'icon'       => $this->sanitizer->icon($row['icon']),
+				'bg_color'   => $this->abp->color($row['bg_color'], '#222222'),
+				'text_color' => $this->abp->color($row['text_color'], '#ffffff'),
+				'icon'       => $this->abp->icon($row['icon']),
 				'link'       => $link,
 				'link_text'  => $link_text,
 				'new_tab'    => !empty($row['link_new_tab']),
-				'wrap_link'  => $link !== '' && $link_text === '' && stripos($html, '<a ') === false
+				'wrap_link'  => $link !== '' && $link_text === '' && stripos($html, '<a ') === false,
+				// Lets the script hide a message when its end time passes while the page is open.
+				'end'        => !empty($row['date_end']) && strtotime($row['date_end']) ? strtotime($row['date_end']) * 1000 : 0
 			);
 		}
 
@@ -135,9 +148,9 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			'dismiss_days' => $this->clamp($this->config->get(self::CODE . '_dismiss_days'), 0, 365, 1),
 			'hash'         => substr(md5($hash . $language_id), 0, 12),
 			'version'      => self::VERSION,
-			'label'        => $this->language->get('text_label'),
-			'close'        => $this->language->get('text_close'),
-			'days'         => $this->language->get('text_days')
+			'label'        => $this->language->get('abp_text_label'),
+			'close'        => $this->language->get('abp_text_close'),
+			'days'         => $this->language->get('abp_text_days')
 		);
 
 		return $this->load->view('extension/module/announcement_bar_pro', $data);
@@ -170,6 +183,18 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			'page_routes'     => '',
 			'date_modified'   => 'v1'
 		));
+	}
+
+	/**
+	 * Store's default language: used when a message has no text in the visitor's language.
+	 */
+	private function defaultLanguageId() {
+		$this->load->model('localisation/language');
+
+		$code      = $this->config->get('config_language');
+		$languages = $this->model_localisation_language->getLanguages();
+
+		return isset($languages[$code]['language_id']) ? (int)$languages[$code]['language_id'] : 0;
 	}
 
 	private function inList($json, $id) {

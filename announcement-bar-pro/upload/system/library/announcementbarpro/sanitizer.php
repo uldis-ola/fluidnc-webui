@@ -3,7 +3,7 @@
  * Announcement Bar Pro — text / HTML / URL sanitizer.
  * Shared by admin (on save) and catalog (on render, defence in depth).
  * Load: $this->load->library('announcementbarpro/sanitizer'); → $this->sanitizer
- * @version 2.0.1
+ * @version 2.0.2
  */
 namespace Announcementbarpro;
 
@@ -61,7 +61,12 @@ class Sanitizer {
 	 * Plain text: no tags, no control chars, collapsed whitespace.
 	 */
 	public function plain($value) {
-		$value = strip_tags($this->utf8($value));
+		$value = $this->utf8($value);
+		// Remove only real tags/comments. strip_tags() would also eat text such as "a<b" or "x < 5".
+		// Line breaks / block tags become a space so words are not glued together ("st<br>line2").
+		$value = (string)preg_replace('/<!--.*?-->/s', ' ', $value);
+		$value = (string)preg_replace('#<\s*(br|p|div|li|tr|h[1-6])\b[^>]*>|<\s*/\s*(p|div|li|tr|h[1-6])\s*>#i', ' ', $value);
+		$value = (string)preg_replace('#<\s*/?\s*[a-z][a-z0-9-]*(\s[^<>]*)?/?\s*>#i', '', $value);
 		$value = preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $value);
 
 		return trim((string)preg_replace('/\s+/u', ' ', (string)$value));
@@ -88,17 +93,12 @@ class Sanitizer {
 
 		$doc = new \DOMDocument('1.0', 'UTF-8');
 		$prev = libxml_use_internal_errors(true);
-		$doc->loadHTML('<?xml encoding="utf-8"?><div id="abp-root">' . $value . '</div>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NONET);
+		// <body> as root: stray closing tags (</div></span>) in the input cannot close it early.
+		$doc->loadHTML('<?xml encoding="utf-8"?><html><body>' . $value . '</body></html>', LIBXML_HTML_NODEFDTD | LIBXML_NONET);
 		libxml_clear_errors();
 		libxml_use_internal_errors($prev);
 
-		$root = null;
-		foreach ($doc->getElementsByTagName('div') as $div) {
-			if ($div->getAttribute('id') === 'abp-root') {
-				$root = $div;
-				break;
-			}
-		}
+		$root = $doc->getElementsByTagName('body')->item(0);
 
 		if (!$root) {
 			return htmlspecialchars($this->plain($value), ENT_QUOTES, 'UTF-8');
@@ -155,6 +155,14 @@ class Sanitizer {
 	public function url($value) {
 		$value = trim(str_replace(array("\r", "\n", "\t", "\0", ' '), array('', '', '', '', '%20'), $this->utf8($value)));
 
+		// Internationalised domain (https://ēkas.lv) → punycode, when the intl extension is available.
+		if (preg_match('#^(https?://)([^/?\#:]+)(.*)$#iu', $value, $m) && preg_match('/[^\x00-\x7F]/', $m[2]) && function_exists('idn_to_ascii') && defined('INTL_IDNA_VARIANT_UTS46')) {
+			$host = idn_to_ascii($m[2], 0, INTL_IDNA_VARIANT_UTS46);
+			if ($host !== false) {
+				$value = $m[1] . $host . $m[3];
+			}
+		}
+
 		// Non-ASCII paths/slugs (e.g. /akcija-šodien) → percent-encoded, so they validate and stay safe.
 		$value = (string)preg_replace_callback('/[^\x00-\x7F]+/u', function ($m) {
 			return rawurlencode($m[0]);
@@ -164,12 +172,17 @@ class Sanitizer {
 			return '';
 		}
 
+		// Only RFC 3986 characters, minus the apostrophe (no quotes, <, >, {, }, backslash) — for absolute and relative URLs.
+		if (!preg_match('/^[A-Za-z0-9\-._~:\/?#\[\]@!$&()*+,;=%]+$/', $value)) {
+			return '';
+		}
+
 		if (preg_match('#^https?://#i', $value)) {
 			return filter_var($value, FILTER_VALIDATE_URL) !== false ? $value : '';
 		}
 
 		if (preg_match('#^/(?!/)#', $value) || stripos($value, 'index.php?') === 0) {
-			return preg_match('/^[A-Za-z0-9\-._~:\/?#\[\]@!$&\'()*+,;=%]+$/', $value) ? $value : '';
+			return $value;
 		}
 
 		return '';

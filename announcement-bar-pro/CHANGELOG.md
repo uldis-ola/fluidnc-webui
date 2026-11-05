@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.0.2 — 2026-11-05
+Supersedes: 2.0.1, 2.0.0, 1.0.0. Fixes from three independent reviews (security audit, OpenCart code review, black-box test).
+
+- Messages fall back to the store's default-language text when the visitor's language has none. The admin list flags missing languages and never shows blank rows.
+- An end date without a time now means the end of that day (23:59:59).
+- Plain-text mode keeps text such as "a<b" and turns `<br>`/block tags into spaces, so words are no longer glued together.
+- Malformed HTML (stray `</div>`) no longer wipes the whole text.
+- Links are restricted to RFC 3986 characters, without quotes, `<`, `>`, `{`, `}` or apostrophe. IDN domains are converted to punycode.
+- The bar is injected after the real `<body>` tag, never inside comments or scripts. A regex failure leaves the header untouched.
+- The sanitizer is no longer registered under the generic registry name `sanitizer`. Catalog language keys are prefixed `abp_`.
+- The SQL limit is now 500, applied before targeting filters.
+- Text over 20,000 bytes is rejected before parsing.
+- Saved store and customer-group IDs must exist.
+- More than 50 routes now gives an error instead of silent truncation.
+- Editing a deleted message shows "not found" instead of "success". The date picker uses the admin language.
+- Storefront fixes:
+  - Icons scale with the font size.
+  - Rotation no longer makes the page jump.
+  - Bottom padding follows the bar height.
+  - A tap on touch screens no longer stops rotation for good.
+  - A message whose end time passes disappears while the page is open.
+  - Focus moves to the next element after the bar is closed.
+  - The marquee pauses on keyboard focus.
+  - The close button no longer overlaps long button text on mobile.
+- The dismiss check is skipped when the close button is disabled.
+- The admin form warns about low colour contrast. Colour pickers have labels.
+- Translation fixes (lv, ru). README updated: http(s), language fallback, uninstall before removal, CSP note.
+
 ## 2.0.1 — 2026-11-05
 Supersedes: 2.0.0, 1.0.0 (upload over the old version, then open the module page once in admin).
 
