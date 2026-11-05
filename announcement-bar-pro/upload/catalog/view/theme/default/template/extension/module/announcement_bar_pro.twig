@@ -1,8 +1,8 @@
-<div id="abp-bar" class="abp abp-pos-{{ position }}{% if sticky %} abp-sticky{% endif %} abp-mode-{{ mode }}" role="region" aria-label="{{ label|e }}" data-hash="{{ hash|e }}" data-days="{{ dismiss_days }}" data-interval="{{ interval }}" data-speed="{{ speed }}" data-mode="{{ mode }}" data-days-label="{{ days|e }}" style="font-size:{{ font_size }}px;background-color:{{ items[0].bg_color }};color:{{ items[0].text_color }};">
+<div id="abp-bar" class="abp abp-pos-{{ position }}{% if sticky %} abp-sticky{% endif %} abp-mode-{{ mode }}" role="region" aria-label="{{ label|e }}" data-days="{{ dismiss_days }}" data-interval="{{ interval }}" data-speed="{{ speed }}" data-mode="{{ mode }}" data-days-label="{{ days|e }}" style="font-size:{{ font_size }}px;background-color:{{ items[0].bg_color }};color:{{ items[0].text_color }};">
   <div class="abp-viewport">
     <div class="abp-track">
       {% for item in items %}
-      <div class="abp-item{% if loop.first %} abp-active{% endif %}" data-id="{{ item.id }}"{% if item.end %} data-end="{{ item.end }}"{% endif %} style="background-color:{{ item.bg_color }};color:{{ item.text_color }};padding-top:{{ padding }}px;padding-bottom:{{ padding }}px;">
+      <div class="abp-item{% if loop.first %} abp-active{% endif %}" data-id="{{ item.id }}" data-key="{{ item.key|e }}"{% if item.end %} data-end="{{ item.end }}"{% endif %} style="background-color:{{ item.bg_color }};color:{{ item.text_color }};padding-top:{{ padding }}px;padding-bottom:{{ padding }}px;">
         {% if item.wrap_link %}<a class="abp-link" href="{{ item.link|e }}"{% if item.new_tab %} target="_blank" rel="noopener noreferrer"{% endif %} style="color:{{ item.text_color }};">{% endif %}
         {% if item.icon %}<i class="fa {{ item.icon }}" aria-hidden="true"></i> {% endif %}<span class="abp-text">{{ item.html }}</span>{% if item.countdown %} {{ item.countdown }}{% endif %}
         {% if item.wrap_link %}</a>{% endif %}
@@ -13,6 +13,6 @@
   </div>
   {% if dismissible %}<button type="button" class="abp-close" aria-label="{{ close|e }}" title="{{ close|e }}" style="color:{{ items[0].text_color }};">&times;</button>{% endif %}
 </div>
-{% if dismissible %}<script>(function(){try{var b=document.getElementById('abp-bar'),h=b.getAttribute('data-hash'),n=Date.now();function ok(st){try{var v=JSON.parse(window[st].getItem('abp_dismiss')||'null');return !!v&&v.h===h&&(!v.t||v.t>n);}catch(e){return false;}}if(ok('localStorage')||ok('sessionStorage')){b.style.display='none';b.setAttribute('data-dismissed','1');}}catch(e){}})();</script>{% endif %}
+{% if dismissible %}<script src="catalog/view/javascript/announcement_bar_pro/announcement_bar_pro_pre.js?v={{ version|e('url') }}"></script>{% endif %}
 <link rel="stylesheet" href="catalog/view/javascript/announcement_bar_pro/announcement_bar_pro.css?v={{ version|e('url') }}" />
 <script src="catalog/view/javascript/announcement_bar_pro/announcement_bar_pro.js?v={{ version|e('url') }}" defer></script>

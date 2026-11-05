@@ -133,6 +133,7 @@
                     <input type="text" name="{{ key }}" value="{{ attribute(_context, key)|e }}" placeholder="YYYY-MM-DD HH:mm" data-date-format="YYYY-MM-DD HH:mm" id="input-{{ key }}" class="form-control" />
                     <span class="input-group-btn"><button type="button" class="btn btn-default"><i class="fa fa-calendar"></i></button></span>
                   </div>
+                  {% if key == 'date_end' %}<div class="checkbox"><label><input type="checkbox" name="end_all_day" id="input-end-all-day" value="1"{% if end_all_day %} checked="checked"{% endif %} /> {{ entry_end_all_day }}</label></div>{% endif %}
                   {% if attribute(error, key) is defined %}<div class="text-danger">{{ attribute(error, key)|e }}</div>{% endif %}
                 </div>
               </div>

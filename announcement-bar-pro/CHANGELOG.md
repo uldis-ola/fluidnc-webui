@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.3 — 2026-11-05
+Supersedes: 2.0.2 and older. An OpenCart 4.0.x / 4.1.x version with the same features is a separate package (`announcement-bar-pro-oc4`).
+
+- Closing is now remembered per message (localStorage key `abp_dismiss2`). A message that expires or is switched off no longer brings back a bar the visitor closed; new or edited messages still show.
+- No inline script: the pre-paint dismiss check moved to `announcement_bar_pro_pre.js` (CSP-friendly).
+- New "Until the end of that day (23:59:59)" checkbox on the end date, so the date picker's 00:00 no longer cuts off the last day.
+
 ## 2.0.2 — 2026-11-05
 Supersedes: 2.0.1, 2.0.0, 1.0.0. Fixes from three independent reviews (security audit, OpenCart code review, black-box test).
 

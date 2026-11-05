@@ -1,10 +1,10 @@
 <?php
 /**
  * Announcement Bar Pro — admin controller (OpenCart 3.0.x)
- * @version 2.0.2
+ * @version 2.0.3
  */
 class ControllerExtensionModuleAnnouncementBarPro extends Controller {
-	const VERSION    = '2.0.2';
+	const VERSION    = '2.0.3';
 	const CODE       = 'module_announcement_bar_pro';
 	const EVENT_CODE = 'announcement_bar_pro';
 	const ROUTE      = 'extension/module/announcement_bar_pro';
@@ -196,6 +196,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			}
 		}
 
+		$data['end_all_day'] = $post ? !empty($post_data['end_all_day']) : (!empty($message['date_end']) && substr($message['date_end'], 11, 8) === '23:59:59');
 		$data['date_start'] = $data['date_start'] ? substr(str_replace('T', ' ', $data['date_start']), 0, 16) : '';
 		$data['date_end']   = $data['date_end'] ? substr(str_replace('T', ' ', $data['date_end']), 0, 16) : '';
 
@@ -360,7 +361,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		}
 
 		$start = $this->parseDate(isset($p['date_start']) ? $p['date_start'] : '');
-		$end   = $this->parseDate(isset($p['date_end']) ? $p['date_end'] : '', true);
+		$end   = $this->parseEndDate($p);
 
 		if ($start === false) $this->error['date_start'] = $this->language->get('error_date');
 		if ($end === false)   $this->error['date_end'] = $this->language->get('error_date');
@@ -455,7 +456,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		$mode   = isset($p['page_mode']) ? (string)$p['page_mode'] : 'all';
 		$routes = in_array($mode, array('include', 'exclude'), true) ? implode("\n", (array)$this->parseRoutes(isset($p['page_routes']) ? $p['page_routes'] : '')) : '';
 		$start  = $this->parseDate(isset($p['date_start']) ? $p['date_start'] : '');
-		$end    = $this->parseDate(isset($p['date_end']) ? $p['date_end'] : '', true);
+		$end    = $this->parseEndDate($p);
 
 		return array(
 			'status'              => !empty($p['status']) ? 1 : 0,
@@ -505,7 +506,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 	private function normalizeMessagePost(array $post) {
 		$out = array();
 
-		foreach (array('status', 'sort_order', 'date_start', 'date_end', 'bg_color', 'text_color', 'link', 'link_new_tab', 'icon', 'countdown', 'page_mode', 'page_routes') as $key) {
+		foreach (array('status', 'sort_order', 'date_start', 'date_end', 'bg_color', 'text_color', 'link', 'link_new_tab', 'icon', 'countdown', 'page_mode', 'page_routes', 'end_all_day') as $key) {
 			if (isset($post[$key])) {
 				$out[$key] = is_string($post[$key]) ? $post[$key] : '';
 			}
@@ -571,6 +572,19 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 
 	private function intInRange($value, $min, $max) {
 		return is_string($value) && preg_match('/^\d{1,4}$/', $value) && (int)$value >= $min && (int)$value <= $max;
+	}
+
+	/**
+	 * End date; with "until end of day" ticked the time part is replaced by 23:59:59.
+	 */
+	private function parseEndDate(array $p) {
+		$value = isset($p['date_end']) ? (string)$p['date_end'] : '';
+
+		if (!empty($p['end_all_day']) && preg_match('/^\s*(\d{4}-\d{2}-\d{2})/', $value, $m)) {
+			$value = $m[1];
+		}
+
+		return $this->parseDate($value, true);
 	}
 
 	/**

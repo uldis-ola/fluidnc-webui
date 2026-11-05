@@ -1,0 +1,272 @@
+{{ header }}{{ column_left }}
+<div id="content" class="abp-admin">
+  <div class="page-header">
+    <div class="container-fluid">
+      <div class="float-end">
+        <a href="{{ back }}" data-bs-toggle="tooltip" title="{{ button_back|e }}" class="btn btn-light"><i class="fa-solid fa-reply"></i></a>
+      </div>
+      <h1>{{ heading_title }} <small class="text-muted fs-6">v{{ version|e }}</small></h1>
+      <ol class="breadcrumb">
+        {% for breadcrumb in breadcrumbs %}
+          <li class="breadcrumb-item"><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+        {% endfor %}
+      </ol>
+    </div>
+  </div>
+  <div class="container-fluid">
+    {% if error_session %}
+      <div class="alert alert-danger alert-dismissible"><i class="fa-solid fa-circle-exclamation"></i> {{ error_session|e }} <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    {% endif %}
+    {% if success %}
+      <div class="alert alert-success alert-dismissible"><i class="fa-solid fa-circle-check"></i> {{ success|e }} <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    {% endif %}
+
+    <ul class="nav nav-tabs">
+      <li class="nav-item"><a href="#tab-messages" data-bs-toggle="tab" class="nav-link{% if active_tab == 'messages' %} active{% endif %}"><i class="fa-solid fa-bullhorn"></i> {{ tab_messages }} <span class="badge bg-secondary">{{ messages|length }}</span></a></li>
+      <li class="nav-item"><a href="#tab-settings" data-bs-toggle="tab" class="nav-link{% if active_tab == 'settings' %} active{% endif %}"><i class="fa-solid fa-gear"></i> {{ tab_settings }}</a></li>
+    </ul>
+
+    <div class="tab-content">
+      {# ---------------- Messages ---------------- #}
+      <div id="tab-messages" class="tab-pane{% if active_tab == 'messages' %} active{% endif %}">
+        <div class="card border-top-0">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="fa-solid fa-list"></i> {{ text_message_list }}</span>
+            <span>
+              <a href="{{ add }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> {{ button_add }}</a>
+              <button type="button" id="abp-delete" data-bs-toggle="tooltip" title="{{ button_delete|e }}" class="btn btn-danger btn-sm"><i class="fa-regular fa-trash-can"></i></button>
+            </span>
+          </div>
+          <div class="card-body">
+            {% if not setting.status %}
+              <div class="alert alert-warning"><i class="fa-solid fa-circle-info"></i> {{ text_module_disabled }}</div>
+            {% endif %}
+            <form id="form-delete">
+              <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                  <thead>
+                    <tr>
+                      <td class="text-center" style="width:1px;"><input type="checkbox" class="form-check-input" aria-label="{{ button_delete|e }}" onclick="$('input[name*=\'selected\']').prop('checked', $(this).prop('checked'));"/></td>
+                      <td>{{ column_text }}</td>
+                      <td class="text-center">{{ column_status }}</td>
+                      <td class="d-none d-md-table-cell">{{ column_period }}</td>
+                      <td class="text-end d-none d-md-table-cell">{{ column_sort_order }}</td>
+                      <td class="text-end">{{ column_action }}</td>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for message in messages %}
+                      <tr>
+                        <td class="text-center"><input type="checkbox" name="selected[]" value="{{ message.message_id }}" class="form-check-input"/></td>
+                        <td><span class="abp-swatch" style="background:{{ message.bg_color|e }};color:{{ message.text_color|e }};">{{ message.text|e }}</span>
+                          {% if message.missing %}<br/><small class="text-warning"><i class="fa-solid fa-language"></i> {{ message.missing|e }}</small>{% endif %}</td>
+                        <td class="text-center">
+                          {% if message.state == 'active' %}<span class="badge bg-success">{{ message.state_text }}</span>
+                          {% elseif message.state == 'scheduled' %}<span class="badge bg-info">{{ message.state_text }}</span>
+                          {% elseif message.state == 'expired' %}<span class="badge bg-warning text-dark">{{ message.state_text }}</span>
+                          {% else %}<span class="badge bg-secondary">{{ message.state_text }}</span>{% endif %}
+                        </td>
+                        <td class="d-none d-md-table-cell">{{ message.date_start ? message.date_start|e : '—' }} → {{ message.date_end ? message.date_end|e : '∞' }}</td>
+                        <td class="text-end d-none d-md-table-cell">{{ message.sort_order }}</td>
+                        <td class="text-end"><a href="{{ message.edit }}" data-bs-toggle="tooltip" title="{{ button_edit|e }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-pencil"></i></a></td>
+                      </tr>
+                    {% else %}
+                      <tr><td class="text-center" colspan="6">{{ text_no_messages }}</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {# ---------------- Settings ---------------- #}
+      <div id="tab-settings" class="tab-pane{% if active_tab == 'settings' %} active{% endif %}">
+        <div class="card border-top-0">
+          <div class="card-body">
+            <form id="form-settings" action="{{ save }}" method="post" data-oc-toggle="ajax">
+              <fieldset>
+                <legend>{{ text_general }}</legend>
+                <div class="row mb-3">
+                  <label for="input-status" class="col-sm-3 col-form-label">{{ entry_status }}</label>
+                  <div class="col-sm-9">
+                    <div class="form-check form-switch form-switch-lg">
+                      <input type="hidden" name="module_announcement_bar_pro_status" value="0"/>
+                      <input type="checkbox" name="module_announcement_bar_pro_status" value="1" id="input-status" class="form-check-input"{% if setting.status %} checked{% endif %}/>
+                    </div>
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <label for="input-mode" class="col-sm-3 col-form-label">{{ entry_mode }}</label>
+                  <div class="col-sm-9">
+                    <select name="module_announcement_bar_pro_mode" id="input-mode" class="form-select">
+                      {% for value in ['rotate', 'marquee', 'stack'] %}
+                        <option value="{{ value }}"{% if setting.mode == value %} selected{% endif %}>{{ attribute(_context, 'text_mode_' ~ value) }}</option>
+                      {% endfor %}
+                    </select>
+                    <div class="form-text">{{ help_mode }}</div>
+                    <div id="error-mode" class="invalid-feedback"></div>
+                  </div>
+                </div>
+                <div class="row mb-3" data-abp-show="rotate">
+                  <label for="input-interval" class="col-sm-3 col-form-label">{{ entry_interval }}</label>
+                  <div class="col-sm-9">
+                    <input type="number" min="2" max="60" name="module_announcement_bar_pro_interval" value="{{ setting.interval|e }}" id="input-interval" class="form-control abp-num"/>
+                    <div id="error-interval" class="invalid-feedback"></div>
+                  </div>
+                </div>
+                <div class="row mb-3" data-abp-show="marquee">
+                  <label for="input-speed" class="col-sm-3 col-form-label">{{ entry_speed }}</label>
+                  <div class="col-sm-9">
+                    <input type="number" min="20" max="300" name="module_announcement_bar_pro_speed" value="{{ setting.speed|e }}" id="input-speed" class="form-control abp-num"/>
+                    <div id="error-speed" class="invalid-feedback"></div>
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <label for="input-allow-html" class="col-sm-3 col-form-label">{{ entry_allow_html }}</label>
+                  <div class="col-sm-9">
+                    <div class="form-check form-switch form-switch-lg">
+                      <input type="checkbox" name="module_announcement_bar_pro_allow_html" value="1" id="input-allow-html" class="form-check-input"{% if setting.allow_html %} checked{% endif %}/>
+                    </div>
+                    <div class="form-text">{{ help_allow_html|e }}</div>
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>{{ text_appearance }}</legend>
+                <div class="row mb-3">
+                  <label for="input-position" class="col-sm-3 col-form-label">{{ entry_position }}</label>
+                  <div class="col-sm-9">
+                    <select name="module_announcement_bar_pro_position" id="input-position" class="form-select">
+                      <option value="top"{% if setting.position == 'top' %} selected{% endif %}>{{ text_position_top }}</option>
+                      <option value="bottom"{% if setting.position == 'bottom' %} selected{% endif %}>{{ text_position_bottom }}</option>
+                    </select>
+                    <div id="error-position" class="invalid-feedback"></div>
+                  </div>
+                </div>
+                <div class="row mb-3" id="abp-sticky-group">
+                  <label for="input-sticky" class="col-sm-3 col-form-label">{{ entry_sticky }}</label>
+                  <div class="col-sm-9">
+                    <div class="form-check form-switch form-switch-lg">
+                      <input type="checkbox" name="module_announcement_bar_pro_sticky" value="1" id="input-sticky" class="form-check-input"{% if setting.sticky %} checked{% endif %}/>
+                    </div>
+                    <div class="form-text">{{ help_sticky }}</div>
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <label for="input-font-size" class="col-sm-3 col-form-label">{{ entry_font_size }}</label>
+                  <div class="col-sm-9">
+                    <input type="number" min="10" max="30" name="module_announcement_bar_pro_font_size" value="{{ setting.font_size|e }}" id="input-font-size" class="form-control abp-num"/>
+                    <div id="error-font-size" class="invalid-feedback"></div>
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <label for="input-padding" class="col-sm-3 col-form-label">{{ entry_padding }}</label>
+                  <div class="col-sm-9">
+                    <input type="number" min="0" max="30" name="module_announcement_bar_pro_padding" value="{{ setting.padding|e }}" id="input-padding" class="form-control abp-num"/>
+                    <div id="error-padding" class="invalid-feedback"></div>
+                  </div>
+                </div>
+                {% for key in ['default_bg_color', 'default_text_color'] %}
+                  <div class="row mb-3">
+                    <label for="input-{{ key|replace({'_': '-'}) }}" class="col-sm-3 col-form-label">{{ attribute(_context, 'entry_' ~ key) }}</label>
+                    <div class="col-sm-9">
+                      <div class="input-group abp-color">
+                        <input type="color" value="{{ attribute(setting, key)|e }}" class="form-control form-control-color" aria-label="{{ attribute(_context, 'entry_' ~ key)|e }}"/>
+                        <input type="text" name="module_announcement_bar_pro_{{ key }}" value="{{ attribute(setting, key)|e }}" maxlength="7" id="input-{{ key|replace({'_': '-'}) }}" class="form-control"/>
+                      </div>
+                      <div class="form-text">{{ help_default_color }}</div>
+                      <div id="error-{{ key|replace({'_': '-'}) }}" class="invalid-feedback"></div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </fieldset>
+
+              <fieldset>
+                <legend>{{ text_dismiss }}</legend>
+                <div class="row mb-3">
+                  <label for="input-dismissible" class="col-sm-3 col-form-label">{{ entry_dismissible }}</label>
+                  <div class="col-sm-9">
+                    <div class="form-check form-switch form-switch-lg">
+                      <input type="checkbox" name="module_announcement_bar_pro_dismissible" value="1" id="input-dismissible" class="form-check-input"{% if setting.dismissible %} checked{% endif %}/>
+                    </div>
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <label for="input-dismiss-days" class="col-sm-3 col-form-label">{{ entry_dismiss_days }}</label>
+                  <div class="col-sm-9">
+                    <input type="number" min="0" max="365" name="module_announcement_bar_pro_dismiss_days" value="{{ setting.dismiss_days|e }}" id="input-dismiss-days" class="form-control abp-num"/>
+                    <div class="form-text">{{ help_dismiss_days }}</div>
+                    <div id="error-dismiss-days" class="invalid-feedback"></div>
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>{{ text_advanced }}</legend>
+                <div class="row mb-3">
+                  <label for="input-delete-data" class="col-sm-3 col-form-label">{{ entry_delete_data }}</label>
+                  <div class="col-sm-9">
+                    <div class="form-check form-switch form-switch-lg">
+                      <input type="checkbox" name="module_announcement_bar_pro_delete_data" value="1" id="input-delete-data" class="form-check-input"{% if setting.delete_data %} checked{% endif %}/>
+                    </div>
+                    <div class="form-text">{{ help_delete_data }}</div>
+                  </div>
+                </div>
+              </fieldset>
+              <div class="text-end"><button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> {{ button_save }}</button></div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+.abp-admin .abp-num{max-width:140px;}
+.abp-admin .abp-color{max-width:240px;}
+.abp-admin .abp-color .form-control-color{max-width:48px;}
+.abp-admin .abp-swatch{display:inline-block;padding:3px 8px;border-radius:3px;max-width:100%;}
+.abp-admin .tab-content > .card{border-top-left-radius:0;border-top-right-radius:0;}
+</style>
+<script type="text/javascript"><!--
+$(function () {
+  var hex = /^#[0-9a-fA-F]{6}$/;
+
+  $('.abp-color').each(function () {
+    var picker = $(this).find('input[type=color]'), text = $(this).find('input[type=text]');
+    picker.on('input change', function () { text.val(this.value); });
+    text.on('input change', function () { if (hex.test(this.value)) { picker.val(this.value); } });
+  });
+
+  function toggle() {
+    var mode = $('#input-mode').val();
+    $('[data-abp-show]').each(function () { $(this).toggle($(this).data('abp-show') === mode); });
+    $('#abp-sticky-group').toggle($('#input-position').val() === 'top');
+  }
+  $('#input-mode, #input-position').on('change', toggle);
+  toggle();
+
+  $('#abp-delete').on('click', function () {
+    var data = $('#form-delete').serialize();
+    if (!data || !confirm('{{ text_confirm|e('js') }}')) { return; }
+    $.ajax({
+      url: '{{ delete|e('js') }}'.replace(/&amp;/g, '&'),
+      type: 'post',
+      dataType: 'json',
+      data: data,
+      success: function (json) {
+        if (json['error']) {
+          $('#alert').prepend('<div class="alert alert-danger alert-dismissible"><i class="fa-solid fa-circle-exclamation"></i> ' + $('<div/>').text(json['error']).html() + ' <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>');
+        }
+        if (json['success']) {
+          location = '{{ reload|e('js') }}'.replace(/&amp;/g, '&');
+        }
+      }
+    });
+  });
+});
+//--></script>
+{{ footer }}

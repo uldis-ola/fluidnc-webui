@@ -1,0 +1,284 @@
+{{ header }}{{ column_left }}
+<div id="content" class="abp-admin">
+  <div class="page-header">
+    <div class="container-fluid">
+      <div class="float-end">
+        <button type="submit" form="form-message" data-bs-toggle="tooltip" title="{{ button_save|e }}" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i></button>
+        <a href="{{ back }}" data-bs-toggle="tooltip" title="{{ button_back|e }}" class="btn btn-light"><i class="fa-solid fa-reply"></i></a>
+      </div>
+      <h1>{{ heading_title }} <small class="text-muted fs-6">v{{ version|e }}</small></h1>
+      <ol class="breadcrumb">
+        {% for breadcrumb in breadcrumbs %}
+          <li class="breadcrumb-item"><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+        {% endfor %}
+      </ol>
+    </div>
+  </div>
+  <div class="container-fluid">
+    <div class="card">
+      <div class="card-header"><i class="fa-solid fa-pencil"></i> {{ text_form }}</div>
+      <div class="card-body">
+        <form id="form-message" action="{{ save }}" method="post" data-oc-toggle="ajax">
+          <ul class="nav nav-tabs">
+            <li class="nav-item"><a href="#tab-content" data-bs-toggle="tab" class="nav-link active">{{ tab_content }}</a></li>
+            <li class="nav-item"><a href="#tab-schedule" data-bs-toggle="tab" class="nav-link">{{ tab_schedule }}</a></li>
+            <li class="nav-item"><a href="#tab-visibility" data-bs-toggle="tab" class="nav-link">{{ tab_visibility }}</a></li>
+          </ul>
+          <div class="tab-content pt-3">
+
+            {# ---------- Content ---------- #}
+            <div id="tab-content" class="tab-pane active">
+              <div class="row mb-3">
+                <label for="input-status" class="col-sm-2 col-form-label">{{ entry_status }}</label>
+                <div class="col-sm-10">
+                  <div class="form-check form-switch form-switch-lg">
+                    <input type="hidden" name="status" value="0"/>
+                    <input type="checkbox" name="status" value="1" id="input-status" class="form-check-input"{% if status %} checked{% endif %}/>
+                  </div>
+                </div>
+              </div>
+
+              <ul class="nav nav-tabs" id="abp-language">
+                {% for language in languages %}
+                  <li class="nav-item"><a href="#abp-language{{ language.language_id }}" data-bs-toggle="tab" class="nav-link{% if loop.first %} active{% endif %}"><img src="{{ language.image|e }}" title="{{ language.name|e }}" alt=""/> {{ language.name|e }}</a></li>
+                {% endfor %}
+              </ul>
+              <div class="tab-content pt-3">
+                {% for language in languages %}
+                  {% set lid = language.language_id %}
+                  <div id="abp-language{{ lid }}" class="tab-pane{% if loop.first %} active{% endif %}">
+                    <div class="row mb-3 required">
+                      <label for="input-text-{{ lid }}" class="col-sm-2 col-form-label">{{ entry_text }}</label>
+                      <div class="col-sm-10">
+                        <textarea name="message_description[{{ lid }}][text]" rows="3" maxlength="{{ max_text }}" id="input-text-{{ lid }}" class="form-control abp-text">{{ message_description[lid].text|e }}</textarea>
+                        <div class="form-text">{{ allow_html ? help_text_html : help_text_plain }} {{ help_countdown_placeholder }} {{ help_lang_fallback }}</div>
+                        <div id="error-text-{{ lid }}" class="invalid-feedback"></div>
+                      </div>
+                    </div>
+                    <div class="row mb-3">
+                      <label for="input-link-text-{{ lid }}" class="col-sm-2 col-form-label">{{ entry_link_text }}</label>
+                      <div class="col-sm-10">
+                        <input type="text" name="message_description[{{ lid }}][link_text]" value="{{ message_description[lid].link_text|e }}" maxlength="{{ max_link_text }}" id="input-link-text-{{ lid }}" class="form-control abp-link-text"/>
+                        <div class="form-text">{{ help_link_text }}</div>
+                        <div id="error-link-text-{{ lid }}" class="invalid-feedback"></div>
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+
+              <div class="row mb-3">
+                <label for="input-link" class="col-sm-2 col-form-label">{{ entry_link }}</label>
+                <div class="col-sm-10">
+                  <input type="text" name="link" value="{{ link|e }}" maxlength="255" placeholder="https://… / index.php?route=…" id="input-link" class="form-control"/>
+                  <div class="form-check mt-1">
+                    <input type="checkbox" name="link_new_tab" value="1" id="input-link-new-tab" class="form-check-input"{% if link_new_tab %} checked{% endif %}/>
+                    <label for="input-link-new-tab" class="form-check-label">{{ entry_link_new_tab }}</label>
+                  </div>
+                  <div class="form-text">{{ help_link }}</div>
+                  <div id="error-link" class="invalid-feedback"></div>
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <label for="input-icon" class="col-sm-2 col-form-label">{{ entry_icon }}</label>
+                <div class="col-sm-10">
+                  <div class="input-group" style="max-width:340px;">
+                    <span class="input-group-text"><i id="abp-icon-preview" class="fa-solid fa-question"></i></span>
+                    <input type="text" name="icon" value="{{ icon|e }}" maxlength="64" placeholder="fa-truck" id="input-icon" class="form-control"/>
+                  </div>
+                  <div class="form-text">{{ help_icon }}</div>
+                  <div id="error-icon" class="invalid-feedback"></div>
+                </div>
+              </div>
+
+              {% for key in ['bg_color', 'text_color'] %}
+                <div class="row mb-3 required">
+                  <label for="input-{{ key|replace({'_': '-'}) }}" class="col-sm-2 col-form-label">{{ attribute(_context, 'entry_' ~ key) }}</label>
+                  <div class="col-sm-10">
+                    <div class="input-group abp-color">
+                      <input type="color" value="{{ attribute(_context, key)|e }}" class="form-control form-control-color" aria-label="{{ attribute(_context, 'entry_' ~ key)|e }}"/>
+                      <input type="text" name="{{ key }}" value="{{ attribute(_context, key)|e }}" maxlength="7" id="input-{{ key|replace({'_': '-'}) }}" class="form-control"/>
+                    </div>
+                    <div id="error-{{ key|replace({'_': '-'}) }}" class="invalid-feedback"></div>
+                  </div>
+                </div>
+              {% endfor %}
+
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label">{{ entry_preview }}</label>
+                <div class="col-sm-10">
+                  <div id="abp-preview"><i class="abp-p-icon"></i> <span class="abp-p-text"></span> <span class="abp-p-cd"></span> <u class="abp-p-link"></u></div>
+                  <div id="abp-contrast" class="text-warning mt-1" style="display:none;"><i class="fa-solid fa-triangle-exclamation"></i> {{ text_low_contrast }}</div>
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <label for="input-sort-order" class="col-sm-2 col-form-label">{{ entry_sort_order }}</label>
+                <div class="col-sm-10">
+                  <input type="number" name="sort_order" value="{{ sort_order|e }}" id="input-sort-order" class="form-control abp-num"/>
+                  <div id="error-sort-order" class="invalid-feedback"></div>
+                </div>
+              </div>
+            </div>
+
+            {# ---------- Schedule ---------- #}
+            <div id="tab-schedule" class="tab-pane">
+              {% for key in ['date_start', 'date_end'] %}
+                <div class="row mb-3">
+                  <label for="input-{{ key|replace({'_': '-'}) }}" class="col-sm-2 col-form-label">{{ attribute(_context, 'entry_' ~ key) }}</label>
+                  <div class="col-sm-10">
+                    <input type="datetime-local" name="{{ key }}" value="{{ attribute(_context, key)|e }}" id="input-{{ key|replace({'_': '-'}) }}" class="form-control" style="max-width:260px;"/>
+                    {% if key == 'date_end' %}
+                      <div class="form-check mt-1">
+                        <input type="checkbox" name="end_all_day" value="1" id="input-end-all-day" class="form-check-input"{% if end_all_day %} checked{% endif %}/>
+                        <label for="input-end-all-day" class="form-check-label">{{ entry_end_all_day }}</label>
+                      </div>
+                    {% endif %}
+                    <div class="form-text">{{ help_dates }}</div>
+                    <div id="error-{{ key|replace({'_': '-'}) }}" class="invalid-feedback"></div>
+                  </div>
+                </div>
+              {% endfor %}
+              <div class="row mb-3">
+                <label for="input-countdown" class="col-sm-2 col-form-label">{{ entry_countdown }}</label>
+                <div class="col-sm-10">
+                  <div class="form-check form-switch form-switch-lg">
+                    <input type="checkbox" name="countdown" value="1" id="input-countdown" class="form-check-input"{% if countdown %} checked{% endif %}/>
+                  </div>
+                  <div class="form-text">{{ help_countdown }}</div>
+                  <div id="error-countdown" class="invalid-feedback"></div>
+                </div>
+              </div>
+            </div>
+
+            {# ---------- Visibility ---------- #}
+            <div id="tab-visibility" class="tab-pane">
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label">{{ entry_store }}</label>
+                <div class="col-sm-10">
+                  <div id="input-stores" class="form-control p-2" style="height:140px;overflow:auto;">
+                    {% for store in store_list %}
+                      <div class="form-check">
+                        <input type="checkbox" name="stores[]" value="{{ store.store_id }}" id="input-store-{{ store.store_id }}" class="form-check-input"{% if store.store_id in stores %} checked{% endif %}/>
+                        <label for="input-store-{{ store.store_id }}" class="form-check-label">{{ store.name }}</label>
+                      </div>
+                    {% endfor %}
+                  </div>
+                  <div class="form-text">{{ help_empty_all }}</div>
+                  <div id="error-stores" class="invalid-feedback"></div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label">{{ entry_customer_group }}</label>
+                <div class="col-sm-10">
+                  <div id="input-customer-groups" class="form-control p-2" style="height:140px;overflow:auto;">
+                    {% for group in customer_group_list %}
+                      <div class="form-check">
+                        <input type="checkbox" name="customer_groups[]" value="{{ group.customer_group_id }}" id="input-customer-group-{{ group.customer_group_id }}" class="form-check-input"{% if group.customer_group_id in customer_groups %} checked{% endif %}/>
+                        <label for="input-customer-group-{{ group.customer_group_id }}" class="form-check-label">{{ group.name }}</label>
+                      </div>
+                    {% endfor %}
+                  </div>
+                  <div class="form-text">{{ help_empty_all }}</div>
+                  <div id="error-customer-groups" class="invalid-feedback"></div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label for="input-page-mode" class="col-sm-2 col-form-label">{{ entry_page_mode }}</label>
+                <div class="col-sm-10">
+                  <select name="page_mode" id="input-page-mode" class="form-select">
+                    {% for value in ['all', 'home', 'include', 'exclude'] %}
+                      <option value="{{ value }}"{% if page_mode == value %} selected{% endif %}>{{ attribute(_context, 'text_page_' ~ value) }}</option>
+                    {% endfor %}
+                  </select>
+                  <div id="error-page-mode" class="invalid-feedback"></div>
+                </div>
+              </div>
+              <div class="row mb-3" id="abp-routes-group">
+                <label for="input-page-routes" class="col-sm-2 col-form-label">{{ entry_page_routes }}</label>
+                <div class="col-sm-10">
+                  <textarea name="page_routes" rows="5" id="input-page-routes" placeholder="product/product&#10;product/category&#10;checkout/*" class="form-control">{{ page_routes|e }}</textarea>
+                  <div class="form-text">{{ help_routes }}</div>
+                  <div id="error-page-routes" class="invalid-feedback"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+.abp-admin .abp-num{max-width:140px;}
+.abp-admin .abp-color{max-width:240px;}
+.abp-admin .abp-color .form-control-color{max-width:48px;}
+#abp-preview{padding:8px 15px;text-align:center;border-radius:4px;min-height:38px;}
+#abp-preview .abp-p-link{margin-left:6px;font-weight:bold;}
+</style>
+<script type="text/javascript"><!--
+$(function () {
+  var hex = /^#[0-9a-fA-F]{6}$/, iconRe = /^(fa-(solid|regular|brands) )?fa-[a-z0-9-]{1,40}$/;
+
+  function iconClass(v) {
+    v = $.trim(v || '').replace(/\s+/g, ' ');
+    if (!iconRe.test(v)) { return ''; }
+    return /^fa-(solid|regular|brands) /.test(v) ? v : 'fa-solid ' + v;
+  }
+
+  $('.abp-color').each(function () {
+    var picker = $(this).find('input[type=color]'), text = $(this).find('input[type=text]');
+    picker.on('input change', function () { text.val(this.value).trigger('input'); });
+    text.on('input change', function () { if (hex.test(this.value)) { picker.val(this.value); } });
+  });
+
+  // WCAG relative-luminance contrast ratio (1–21).
+  function contrast(a, b) {
+    function lum(h) {
+      var c = [1, 3, 5].map(function (i) {
+        var v = parseInt(h.substr(i, 2), 16) / 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    }
+    var x = lum(a), y = lum(b);
+    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+  }
+
+  function preview() {
+    var bg = $('#input-bg-color').val(), fg = $('#input-text-color').val();
+    var pane = $('#abp-language').next('.tab-content').find('.tab-pane.active');
+    var text = (pane.find('.abp-text').val() || '').replace(/<[^>]*>/g, '');
+    var p = $('#abp-preview').css({ 'background-color': hex.test(bg) ? bg : '#222222', 'color': hex.test(fg) ? fg : '#ffffff' });
+    p.find('.abp-p-text').text(text.replace('{countdown}', ''));  // .text(): no HTML injection
+    p.find('.abp-p-cd').text($('#input-countdown').is(':checked') ? '00:00:00' : '');
+    p.find('.abp-p-link').text($('#input-link').val() ? (pane.find('.abp-link-text').val() || '') : '');
+    var cls = iconClass($('#input-icon').val());
+    p.find('.abp-p-icon').attr('class', 'abp-p-icon ' + cls);
+    $('#abp-icon-preview').attr('class', cls || 'fa-solid fa-question');
+    $('#abp-contrast').toggle(hex.test(bg) && hex.test(fg) && contrast(bg, fg) < 3);
+  }
+
+  $('#form-message').on('input change', 'input, textarea, select', preview);
+  $('#abp-language a').on('shown.bs.tab', preview);
+  preview();
+
+  function routes() { $('#abp-routes-group').toggle($.inArray($('#input-page-mode').val(), ['include', 'exclude']) !== -1); }
+  $('#input-page-mode').on('change', routes);
+  routes();
+
+  // After an AJAX validation error, open the tab that holds the first invalid field.
+  $(document).ajaxComplete(function () {
+    setTimeout(function () {
+      var bad = $('#form-message .invalid-feedback.d-block').first();
+      if (!bad.length) { return; }
+      bad.parents('.tab-pane').each(function () {
+        var t = document.querySelector('a[href="#' + this.id + '"]');
+        if (t && window.bootstrap) { bootstrap.Tab.getOrCreateInstance(t).show(); }
+      });
+    }, 50);
+  });
+});
+//--></script>
+{{ footer }}

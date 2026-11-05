@@ -2,10 +2,10 @@
 /**
  * Announcement Bar Pro — catalog controller (OpenCart 3.0.x)
  * Injected via event: catalog/view/common/header/after
- * @version 2.0.2
+ * @version 2.0.3
  */
 class ControllerExtensionModuleAnnouncementBarPro extends Controller {
-	const VERSION = '2.0.2';
+	const VERSION = '2.0.3';
 	const CODE    = 'module_announcement_bar_pro';
 
 	/** @var \Announcementbarpro\Sanitizer  Declared property: not put into the shared registry. */
@@ -74,12 +74,6 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 
 		$items = array();
 
-		// Dismiss key covers ALL active messages (not only this page's), so closing the bar
-		// on one page keeps it closed on others until any message changes.
-		$hash = '';
-		foreach ($rows as $row) {
-			$hash .= $row['message_id'] . ':' . $row['date_modified'] . ';';
-		}
 
 		foreach ($rows as $row) {
 			if (!$this->inList($row['stores'], $store_id) || !$this->inList($row['customer_groups'], $customer_group_id) || !$this->pageMatches($row['page_mode'], $row['page_routes'], $current_route)) {
@@ -112,6 +106,8 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 
 			$items[] = array(
 				'id'         => (int)$row['message_id'],
+				// Per-message dismiss key: changes when the message is edited, so edited/new messages reappear.
+				'key'        => substr(md5($row['message_id'] . ':' . $row['date_modified'] . ':' . $language_id), 0, 12),
 				'html'       => $html,           // already safe HTML
 				'countdown'  => $countdown,      // built above, safe
 				'bg_color'   => $this->abp->color($row['bg_color'], '#222222'),
@@ -146,7 +142,6 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			'padding'      => $this->clamp($this->config->get(self::CODE . '_padding'), 0, 30, 8),
 			'dismissible'  => (bool)$this->config->get(self::CODE . '_dismissible'),
 			'dismiss_days' => $this->clamp($this->config->get(self::CODE . '_dismiss_days'), 0, 365, 1),
-			'hash'         => substr(md5($hash . $language_id), 0, 12),
 			'version'      => self::VERSION,
 			'label'        => $this->language->get('abp_text_label'),
 			'close'        => $this->language->get('abp_text_close'),

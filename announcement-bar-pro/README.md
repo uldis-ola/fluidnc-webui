@@ -3,8 +3,8 @@
 Paziņojumu josla veikala augšā vai apakšā: akcijas, piegādes nosacījumi, svarīgas ziņas.
 *An announcement bar for the top or bottom of every store page: promotions, shipping terms, notices.*
 
-- **Versija / Version:** 2.0.2
-- **Saderība / Compatibility:** OpenCart 3.0.x (tested on 3.0.5.1), PHP 7.3+ (pārbaudīts / tested: PHP 8.3)
+- **Versija / Version:** 2.0.3
+- **Saderība / Compatibility:** OpenCart 3.0.0.0–3.0.5.1 (tested on 3.0.5.1), PHP 7.3+ (tested: PHP 8.3). OpenCart 4.0.x / 4.1.x: separate package in `announcement-bar-pro-oc4`.
 - **Valodas / Languages:** English, Latviešu, Русский
 - **Licence / License:** GPL-3.0 (see `LICENSE.txt`)
 
@@ -25,13 +25,13 @@ Paziņojumu josla veikala augšā vai apakšā: akcijas, piegādes nosacījumi, 
 
 ### Instalēšana
 1. **Pirms instalēšanas izveido failu un datubāzes rezerves kopiju.**
-2. Admin → *Extensions → Installer* → augšupielādē `announcement_bar_pro_v2.0.2.ocmod.zip`.
+2. Admin → *Extensions → Installer* → augšupielādē `announcement_bar_pro_v2.0.3.ocmod.zip`.
 3. *Extensions → Modifications* → **Refresh** (modulis core failus nemaina; solis nav obligāts, bet nekaitē).
 4. *Extensions → Extensions → Modules* → **Announcement Bar Pro** → **Install** (zaļais +) → **Edit**.
 5. Cilnē *Iestatījumi* ieslēdz moduli un saglabā; cilnē *Paziņojumi* pievieno paziņojumus.
 
 ### Jaunināšana no 1.0.0
-Augšupielādē v2.0.2 virs v1 vai v2.0.x (2. un 3. solis), tad vienreiz atver moduļa lapu adminā.
+Augšupielādē v2.0.3 virs v1 vai v2.0.x (2. un 3. solis), tad vienreiz atver moduļa lapu adminā.
 v1 teksts un krāsas automātiski kļūst par pirmo paziņojumu. Līdz tam veikalā turpina rādīties v1 teksts.
 
 ### Atinstalēšana
@@ -56,7 +56,9 @@ Pirms pakas dzēšanas no *Extensions → Installer* vispirms nospied **Uninstal
 - Ja paziņojumam kādā valodā nav teksta, šajā valodā tiek rādīts veikala noklusētās valodas teksts. Sarakstā adminā redzams, kurām valodām teksta trūkst.
 - Viesi redz paziņojumus, kas paredzēti veikala noklusētajai klientu grupai.
 - `{countdown}` tiek aizstāts tikai pirmo reizi tekstā. Paziņojums ar beigu laiku pazūd arī atvērtā lapā, kad laiks beidzies.
-- Josla izmanto nelielu iekļautu (inline) skriptu. Ja veikalam ir stingra CSP politika, kas aizliedz inline skriptus, aizvēršanas atcerēšanās pirms lapas ielādes nedarbosies.
+- Aizvēršana tiek atcerēta katram paziņojumam atsevišķi: ja kāds paziņojums beidzas vai tiek izslēgts, josla neatgriežas; atgriežas tikai ar jaunu vai labotu paziņojumu.
+- Modulis neizmanto iekļautus (inline) skriptus. Krāsas tiek iestatītas ar `style` atribūtiem, tāpēc CSP politikai jāatļauj `style-src 'unsafe-inline'`.
+- Beigu datumam ir izvēles rūtiņa „Līdz šīs dienas beigām (23:59:59)”.
 - Pēc jaunas versijas augšupielādes pagaidi dažas sekundes, pirms atver moduļa lapu. Ja serverī ir OPcache ar `validate_timestamps=0`, notīri OPcache vai pārstartē PHP; citādi PHP var izpildīt veco kodu.
 - Ja moduļa veidne tiek mainīta *Design → Theme Editor* un tajā ir Twig kļūda, OpenCart pats aptur lapas izvadi. To modulis nevar notvert, tāpēc veidni labo uzmanīgi.
 - Pārlūki: visi mūsdienīgie (Chrome, Firefox, Safari, Edge). Internet Explorer 11 netiek atbalstīts.
@@ -77,13 +79,13 @@ Pirms pakas dzēšanas no *Extensions → Installer* vispirms nospied **Uninstal
 
 ### Install
 1. **Back up files and database first.**
-2. Admin → *Extensions → Installer* → upload `announcement_bar_pro_v2.0.2.ocmod.zip`.
+2. Admin → *Extensions → Installer* → upload `announcement_bar_pro_v2.0.3.ocmod.zip`.
 3. *Extensions → Modifications* → **Refresh** (optional — no core files are modified).
 4. *Extensions → Extensions → Modules* → **Announcement Bar Pro** → **Install** → **Edit**.
 5. Enable it in *Settings*, add messages in *Messages*.
 
 ### Upgrade from 1.0.0
-Upload v2.0.2 over v1 or v2.0.x, then open the module page in admin once — the v1 text is migrated automatically.
+Upload v2.0.3 over v1 or v2.0.x, then open the module page in admin once — the v1 text is migrated automatically.
 
 ### Uninstall
 Removes the event and settings. Messages are kept unless *Settings → Advanced → Delete messages on uninstall* is ticked.
@@ -96,7 +98,9 @@ Uninstall the module before removing the package in *Extensions → Installer*; 
 - A message with no text in the visitor's language shows the store's default-language text. The admin list flags missing languages.
 - An end date without a time means the end of that day (23:59:59). Only the first `{countdown}` is replaced.
 - Guests see messages for the store's default customer group.
-- The bar uses a small inline script. A strict CSP that blocks inline scripts disables the pre-paint dismiss check.
+- Closing is remembered per message: when a message expires or is switched off the bar stays closed; only a new or edited message brings it back.
+- No inline scripts. Colours are set with `style` attributes, so a CSP needs `style-src 'unsafe-inline'`.
+- The end date has an "Until the end of that day (23:59:59)" checkbox.
 
 ### Security
 - `modify` permission is checked on every save and delete. Every admin URL needs a valid `user_token`.

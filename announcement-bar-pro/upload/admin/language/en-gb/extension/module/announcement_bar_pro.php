@@ -113,3 +113,6 @@ $_['text_missing_language']      = 'No text in: %s (the store\'s default languag
 $_['text_low_contrast']          = 'Low contrast — the text may be hard to read.';
 $_['error_not_found']            = 'Warning: The message was not found (it may have been deleted).';
 $_['help_lang_fallback']         = 'Languages left empty show the text of the store\'s default language.';
+
+// 2.0.3
+$_['entry_end_all_day']         = 'Until the end of that day (23:59:59)';

@@ -113,3 +113,6 @@ $_['text_missing_language']      = 'Nav teksta: %s (tiek rādīts veikala noklus
 $_['text_low_contrast']          = 'Zems kontrasts — tekstu var būt grūti izlasīt.';
 $_['error_not_found']            = 'Brīdinājums: Paziņojums nav atrasts (iespējams, tas ir dzēsts).';
 $_['help_lang_fallback']         = 'Valodās, kur teksts nav ievadīts, tiek rādīts veikala noklusētās valodas teksts.';
+
+// 2.0.3
+$_['entry_end_all_day']         = 'Līdz šīs dienas beigām (23:59:59)';

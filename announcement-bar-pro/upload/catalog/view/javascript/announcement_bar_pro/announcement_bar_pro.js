@@ -1,4 +1,4 @@
-/* Announcement Bar Pro v2.0.2 — no dependencies */
+/* Announcement Bar Pro v2.0.3 — no dependencies */
 (function () {
   'use strict';
 
@@ -120,12 +120,18 @@
     var close = bar.querySelector('.abp-close');
     if (close) {
       close.addEventListener('click', function () {
-        var days = parseInt(bar.getAttribute('data-days'), 10) || 0;
-        var value = JSON.stringify({ h: bar.getAttribute('data-hash'), t: days > 0 ? Date.now() + days * 86400000 : 0 });
+        var days = parseInt(bar.getAttribute('data-days'), 10) || 0, now = Date.now();
         try {
           var keep = days > 0 ? localStorage : sessionStorage, drop = days > 0 ? sessionStorage : localStorage;
-          keep.setItem('abp_dismiss', value);
-          drop.removeItem('abp_dismiss');
+          // Remember each closed message (merged with earlier ones), so messages that expire or are
+          // switched off do not bring the bar back; only new or edited messages do.
+          var prev = [];
+          try { var v = JSON.parse(keep.getItem('abp_dismiss2') || 'null'); if (v && v.k && (!v.t || v.t > now)) { prev = v.k; } } catch (e1) { prev = []; }
+          var list = items(), keys = prev.slice();
+          for (var j = 0; j < list.length; j++) { var k = list[j].getAttribute('data-key'); if (k && keys.indexOf(k) === -1) { keys.push(k); } }
+          keep.setItem('abp_dismiss2', JSON.stringify({ k: keys.slice(-200), t: days > 0 ? now + days * 86400000 : 0 }));
+          drop.removeItem('abp_dismiss2');
+          keep.removeItem('abp_dismiss'); drop.removeItem('abp_dismiss'); // pre-2.0.3 format
         } catch (e) { /* storage blocked: bar just hides for this page view */ }
         var focusWasInside = bar.contains(document.activeElement);
         hideBar();
