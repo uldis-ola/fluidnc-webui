@@ -40,14 +40,14 @@
 
               <ul class="nav nav-tabs" id="abp-language">
                 {% for language in languages %}
-                  <li class="nav-item"><a href="#abp-language{{ language.language_id }}" data-bs-toggle="tab" class="nav-link{% if loop.first %} active{% endif %}"><img src="{{ language.image|e }}" title="{{ language.name|e }}" alt=""/> {{ language.name|e }}</a></li>
+                  <li class="nav-item"><a href="#abp-language{{ language.language_id }}" data-bs-toggle="tab" class="nav-link{% if loop.first %} active{% endif %}"><img src="{{ (language.image ?: 'language/' ~ language.code ~ '/' ~ language.code ~ '.png')|e }}" title="{{ language.name|e }}" alt=""/> {{ language.name|e }}</a></li>
                 {% endfor %}
               </ul>
               <div class="tab-content pt-3">
                 {% for language in languages %}
                   {% set lid = language.language_id %}
                   <div id="abp-language{{ lid }}" class="tab-pane{% if loop.first %} active{% endif %}">
-                    <div class="row mb-3 required">
+                    <div class="row mb-3">
                       <label for="input-text-{{ lid }}" class="col-sm-2 col-form-label">{{ entry_text }}</label>
                       <div class="col-sm-10">
                         <textarea name="message_description[{{ lid }}][text]" rows="3" maxlength="{{ max_text }}" id="input-text-{{ lid }}" class="form-control abp-text">{{ message_description[lid].text|e }}</textarea>

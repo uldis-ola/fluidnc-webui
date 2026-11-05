@@ -108,7 +108,7 @@ $_['error_countdown']            = 'Countdown needs an end date!';
 $_['error_routes']               = 'Invalid route list! Use letters, digits, _ and /, optional /* at the end; at most 50 routes.';
 $_['error_routes_required']      = 'Enter at least one route!';
 
-$_['text_missing_language']      = 'No text in: %s (the store\'s default language is shown instead)';
+$_['text_missing_language']      = 'No text in: %s. Visitors using these languages see the store\'s default-language text (if the message has one).';
 $_['text_low_contrast']          = 'Low contrast — the text may be hard to read.';
 $_['error_not_found']            = 'Warning: The message was not found (it may have been deleted).';
 $_['help_lang_fallback']         = 'Languages left empty show the text of the store\'s default language.';

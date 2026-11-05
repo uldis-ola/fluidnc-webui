@@ -91,6 +91,9 @@ class Sanitizer {
 			return htmlspecialchars($this->plain($value), ENT_QUOTES, 'UTF-8');
 		}
 
+		// A "<" that cannot start a tag ("x < 5") is text: escape it so the parser does not swallow the rest.
+		$value = (string)preg_replace('/<(?![a-zA-Z\/!?])/', '&lt;', $value);
+
 		$doc = new \DOMDocument('1.0', 'UTF-8');
 		$prev = libxml_use_internal_errors(true);
 		// <body> as root: stray closing tags (</div></span>) in the input cannot close it early.

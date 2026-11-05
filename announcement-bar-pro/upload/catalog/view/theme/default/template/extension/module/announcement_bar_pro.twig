@@ -1,4 +1,4 @@
-<div id="abp-bar" class="abp abp-pos-{{ position }}{% if sticky %} abp-sticky{% endif %} abp-mode-{{ mode }}" role="region" aria-label="{{ label|e }}" data-days="{{ dismiss_days }}" data-interval="{{ interval }}" data-speed="{{ speed }}" data-mode="{{ mode }}" data-days-label="{{ days|e }}" style="font-size:{{ font_size }}px;background-color:{{ items[0].bg_color }};color:{{ items[0].text_color }};">
+<div id="abp-bar" class="abp abp-pos-{{ position }}{% if sticky %} abp-sticky{% endif %} abp-mode-{{ mode }}" role="region" aria-label="{{ label|e }}" data-days="{{ dismiss_days }}" data-interval="{{ interval }}" data-speed="{{ speed }}" data-mode="{{ mode }}" data-now="{{ now }}" data-days-label="{{ days|e }}" style="font-size:{{ font_size }}px;background-color:{{ items[0].bg_color }};color:{{ items[0].text_color }};">
   <div class="abp-viewport">
     <div class="abp-track">
       {% for item in items %}

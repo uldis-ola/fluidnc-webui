@@ -461,8 +461,9 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 			$text = $this->abp->decode($row['text']);
 
 			$description[$id] = [
-				'text'      => $this->abp->encode4byte($allow_html ? $this->abp->html($text) : $this->abp->plain($text)),
-				'link_text' => $this->abp->encode4byte(mb_substr($this->abp->plain($this->abp->decode($row['link_text'])), 0, self::MAX_LINK_TEXT, 'UTF-8'))
+				// OpenCart 4 talks utf8mb4 to MySQL, so emoji are stored as they are (no entity encoding needed).
+				'text'      => $allow_html ? $this->abp->html($text) : $this->abp->plain($text),
+				'link_text' => mb_substr($this->abp->plain($this->abp->decode($row['link_text'])), 0, self::MAX_LINK_TEXT, 'UTF-8')
 			];
 		}
 
@@ -524,20 +525,39 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 	 * Helpers
 	 * ------------------------------------------------------------------ */
 	private function bootstrap(): void {
+		// English first, then the admin's language on top: a language without our file still gets labels.
+		$this->load->language(self::ROUTE, '', 'en-gb');
 		$this->load->language(self::ROUTE);
 		$this->document->setTitle($this->language->get('heading_title'));
 
 		$this->load->model('setting/setting');
+		$this->load->model('setting/extension');
 		$this->load->model('localisation/language');
 		$this->load->model(self::ROUTE);
 
-		$this->abp = new \Opencart\System\Library\Extension\AnnouncementBarPro\Sanitizer();
+		$this->abp = $this->sanitizer();
+
+		// After "Uninstall" the files and the group permission stay; do not silently recreate data then.
+		if (!$this->model_setting_extension->getExtensionByCode('module', 'announcement_bar_pro')) {
+			$this->response->redirect($this->link('marketplace/extension', '&type=module'));
+		}
 
 		if ($this->user->hasPermission('modify', self::ROUTE)) {
 			$this->model_extension_announcement_bar_pro_module_announcement_bar_pro->ensureSchema();
 		} elseif (!$this->model_extension_announcement_bar_pro_module_announcement_bar_pro->isSchemaCurrent()) {
 			$this->response->redirect($this->link('error/permission'));
 		}
+	}
+
+	/**
+	 * Sanitizer: autoloaded on 4.0.1+; 4.0.0.x registers no Library\\Extension namespace, so require it.
+	 */
+	private function sanitizer(): \Opencart\System\Library\Extension\AnnouncementBarPro\Sanitizer {
+		if (!class_exists('Opencart\\System\\Library\\Extension\\AnnouncementBarPro\\Sanitizer')) {
+			require_once(DIR_EXTENSION . 'announcement_bar_pro/system/library/sanitizer.php');
+		}
+
+		return new \Opencart\System\Library\Extension\AnnouncementBarPro\Sanitizer();
 	}
 
 	private function commonData(): array {

@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.0.4 — 2026-11-05
+Supersedes: 2.0.3 and older. Fixes from the second round of independent reviews.
+
+- **Security/stability:** the HTML sanitizer could loop forever on attributes such as `xml:lang` or `xmlns`, which could hang every storefront request. It now rebuilds each allowed element with only allowed attributes. Nested links are unwrapped.
+- Re-saving a message without content changes no longer re-shows it to visitors who closed it. The dismiss key now comes from the text, button, link and icon.
+- Countdown and live expiry use the server clock (`data-now`), not the visitor's.
+- A tap on a touch screen pauses rotation for at most 8 s, and a tap outside the bar resumes it.
+- A `<` that cannot start a tag ("x < 5") is kept in HTML mode.
+- Non-numeric store and customer-group IDs are rejected.
+- The link error mentions http(s). The allow-HTML help tooltip no longer renders raw tags.
+- Dismiss data in browser storage is type-checked.
+- Latvian texts now use a consistent formal register. The missing-language hint is clearer.
+
 ## 2.0.3 — 2026-11-05
 Supersedes: 2.0.2 and older. An OpenCart 4.0.x / 4.1.x version with the same features is a separate package (`announcement-bar-pro-oc4`).
 

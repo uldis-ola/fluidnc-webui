@@ -1,7 +1,7 @@
 <?php
 /**
  * Announcement Bar Pro — catalog model (OpenCart 3.0.x)
- * @version 2.0.2
+ * @version 2.0.4
  */
 class ModelExtensionModuleAnnouncementBarPro extends Model {
 	/**

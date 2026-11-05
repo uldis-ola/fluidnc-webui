@@ -37,8 +37,8 @@ class Sanitizer {
 	}
 
 	/**
-	 * OpenCart's mysqli driver uses the 3-byte "utf8" charset, so emoji and other characters above
-	 * U+FFFF are stored as "?". Store them as numeric entities instead; decode() restores them.
+	 * Kept for data shared with the OpenCart 3 package (its DB link is 3-byte utf8). OpenCart 4 uses
+	 * utf8mb4 and does not call this on save; decode() still restores any stored entities.
 	 */
 	public function encode4byte($value) {
 		return (string)preg_replace_callback('/[\x{10000}-\x{10FFFF}]/u', function ($m) {
@@ -89,6 +89,9 @@ class Sanitizer {
 		if (!class_exists('DOMDocument')) {
 			return htmlspecialchars($this->plain($value), ENT_QUOTES, 'UTF-8');
 		}
+
+		// A "<" that cannot start a tag ("x < 5") is text: escape it so the parser does not swallow the rest.
+		$value = (string)preg_replace('/<(?![a-zA-Z\/!?])/', '&lt;', $value);
 
 		$doc = new \DOMDocument('1.0', 'UTF-8');
 		$prev = libxml_use_internal_errors(true);

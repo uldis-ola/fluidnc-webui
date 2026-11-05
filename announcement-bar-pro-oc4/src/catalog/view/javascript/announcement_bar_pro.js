@@ -9,6 +9,9 @@
     var mode = bar.getAttribute('data-mode');
     var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var timer = null, tickTimer = null, index = 0, paused = false;
+    // Offset between server and visitor clock, so a wrong PC clock cannot shift countdowns/expiry.
+    var skew = (parseInt(bar.getAttribute('data-now'), 10) || Date.now()) - Date.now();
+    function serverNow() { return Date.now() + skew; }
 
     if (mode === 'marquee' && reduced) {
       mode = 'rotate';
@@ -94,7 +97,7 @@
 
     // Countdowns + removal of messages whose end time passed while the page is open.
     function tick() {
-      var now = Date.now(), changed = false, list = items();
+      var now = serverNow(), changed = false, list = items();
       for (var i = list.length - 1; i >= 0; i--) {
         var end = parseInt(list[i].getAttribute('data-end'), 10);
         if (end && end <= now) { list[i].parentNode.removeChild(list[i]); changed = true; }

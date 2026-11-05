@@ -53,7 +53,7 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 	}
 
 	private function render() {
-		$this->abp = new \Opencart\System\Library\Extension\AnnouncementBarPro\Sanitizer();
+		$this->abp = $this->sanitizer();
 
 		$language_id = (int)$this->config->get('config_language_id');
 		$allow_html  = (bool)$this->config->get(self::CODE . '_allow_html');
@@ -83,6 +83,7 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 			}
 
 			$html = $this->abp->toSafeHtml($row['text'], $allow_html);
+			$seen = $html; // what the visitor sees (before the timer is inserted) — basis of the dismiss key
 
 			$countdown = '';
 			if (!empty($row['countdown']) && !empty($row['date_end'])) {
@@ -108,9 +109,9 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 
 			$items[] = array(
 				'id'         => (int)$row['message_id'],
-				// Per-message dismiss key from what the visitor sees (text, button, link, icon): saving without
-				// changes or editing only visibility/dates keeps it closed; a content edit or new message shows again.
-				'key'        => substr(md5($row['message_id'] . '|' . $row['text'] . '|' . $row['link_text'] . '|' . $row['link'] . '|' . $row['icon'] . '|' . $language_id), 0, 12),
+				// Per-message dismiss key from what the visitor sees (rendered text, button, link, icon): a re-save,
+				// an HTML-mode switch or a visibility/date edit keeps it closed; a visible change shows it again.
+				'key'        => substr(md5($row['message_id'] . '|' . $seen . '|' . $link_text . '|' . $link . '|' . $row['icon'] . '|' . $language_id), 0, 12),
 				'html'       => $html,           // already safe HTML
 				'countdown'  => $countdown,      // built above, safe
 				'bg_color'   => $this->abp->color($row['bg_color'], '#222222'),
@@ -129,6 +130,8 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 			return '';
 		}
 
+		// English first, then the visitor's language on top (stores in other languages still get labels).
+		$this->load->language(self::ROUTE, '', 'en-gb');
 		$this->load->language(self::ROUTE);
 
 		$position = $this->config->get(self::CODE . '_position') === 'bottom' ? 'bottom' : 'top';
@@ -146,12 +149,24 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 			'dismissible'  => (bool)$this->config->get(self::CODE . '_dismissible'),
 			'dismiss_days' => $this->clamp($this->config->get(self::CODE . '_dismiss_days'), 0, 365, 1),
 			'version'      => self::VERSION,
+			'now'          => time() * 1000, // server clock: countdown/expiry must not trust the visitor's clock
 			'label'        => $this->language->get('abp_text_label'),
 			'close'        => $this->language->get('abp_text_close'),
 			'days'         => $this->language->get('abp_text_days')
 		);
 
 		return $this->load->view(self::ROUTE, $data);
+	}
+
+	/**
+	 * Sanitizer: autoloaded on 4.0.1+; 4.0.0.x registers no Library\\Extension namespace, so require it.
+	 */
+	private function sanitizer(): \Opencart\System\Library\Extension\AnnouncementBarPro\Sanitizer {
+		if (!class_exists('Opencart\\System\\Library\\Extension\\AnnouncementBarPro\\Sanitizer')) {
+			require_once(DIR_EXTENSION . 'announcement_bar_pro/system/library/sanitizer.php');
+		}
+
+		return new \Opencart\System\Library\Extension\AnnouncementBarPro\Sanitizer();
 	}
 
 	private function inList($json, $id) {

@@ -3,8 +3,8 @@
 Paziņojumu josla veikala augšā vai apakšā: akcijas, piegādes nosacījumi, svarīgas ziņas.
 *An announcement bar for the top or bottom of every store page.*
 
-- **Versija / Version:** 2.0.3 (same features as the OpenCart 3 package 2.0.3)
-- **Saderība / Compatibility:** OpenCart 4.0.2.0 – 4.1.0.x (tested on 4.0.2.3 and 4.1.0.4), PHP 8.0+ (tested: 8.3). 4.0.0.x–4.0.1.x are handled in code (route separator `|`) but not tested.
+- **Versija / Version:** 2.0.4 (same features as the OpenCart 3 package 2.0.4)
+- **Saderība / Compatibility:** OpenCart 4.0.2.x – 4.1.0.x, tested on 4.0.2.3 and 4.1.0.4 with PHP 8.3 (PHP 8.0+ required). The code also handles 4.0.0.x–4.0.1.x (route separator `|`, library loading, language flags), but those versions were **not** installed and tested.
 - **Valodas / Languages:** English, Latviešu, Русский
 - **Licence / License:** GPL-3.0 (see `LICENSE.txt`)
 - OpenCart 3.0.x: use the separate package in `announcement-bar-pro`.
@@ -36,8 +36,10 @@ Ikonas ir Font Awesome 6, piemēram, `fa-truck` vai `fa-regular fa-bell`.
 - Pēc tam paku var noņemt *Extensions → Installer* sadaļā.
 
 ### Piezīmes
-- OC4 noklusētajā tēmā tukšais paziņojumu konteiners `#alert` pārklāj augšējo labo stūri. Modulis tam izslēdz klikšķus, kamēr konteiners ir tukšs (`#alert:empty{pointer-events:none}`), lai aizvēršanas poga strādātu.
-- Ja paziņojumam nav teksta apmeklētāja valodā, tiek rādīts veikala noklusētās valodas teksts.
+- OC 4.0.x noklusētajā tēmā tukšais paziņojumu konteiners `#alert` pārklāj augšējo labo stūri. Modulis tam izslēdz klikšķus, kamēr konteiners ir tukšs (`#alert:empty{pointer-events:none}`), lai aizvēršanas poga strādātu.
+- Ja paziņojumam nav teksta apmeklētāja valodā, tiek rādīts veikala noklusētās valodas teksts. Paziņojums, kam teksts ir tikai citā (ne noklusētajā) valodā, citām valodām netiek rādīts.
+- Valodām bez moduļa tulkojuma (piem., de-de) tiek rādīti angļu teksti.
+- Aizvēršana tiek atcerēta katram paziņojumam; atkārtota saglabāšana bez satura izmaiņām to neatceļ. Atpakaļskaitīšana izmanto servera laiku.
 - Datumi ir veikala laika joslā. Beigu datumam ir izvēles rūtiņa „Līdz šīs dienas beigām”.
 - Modulis neizmanto inline skriptus. Krāsas tiek iestatītas ar `style` atribūtiem, tāpēc CSP politikai jāatļauj `style-src 'unsafe-inline'`.
 - Pirms publicēšanas `install.json` ieraksti savu `author` un `link`.
@@ -52,8 +54,11 @@ Ikonas ir Font Awesome 6, piemēram, `fa-truck` vai `fa-regular fa-bell`.
 4. *Extensions → Extensions → Modules* → **Announcement Bar Pro** → **Install** → **Edit**.
 
 ### Notes
-- The OC4 default theme's empty, fixed `#alert` toast container covers the top-right corner. The module disables pointer events on it while it is empty, so the close button can be clicked.
-- A message with no text in the visitor's language shows the store's default-language text.
+- On OC 4.0.x the default theme's empty, fixed `#alert` toast container covers the top-right corner (4.1 centres it; the rule is harmless there). The module disables pointer events on it while it is empty, so the close button can be clicked.
+- A message with no text in the visitor's language shows the store's default-language text; a message written only in a non-default language is shown only in that language.
+- Languages without a translation of this module (e.g. de-de) get the English labels.
+- After *Uninstall* the module page redirects to the extension list instead of recreating data.
+- Closing is remembered per message (a re-save without content changes keeps it closed). Countdowns use the server clock.
 - Only the first `{countdown}` in a message is replaced.
 - Guests see messages for the store's default customer group.
 - No inline scripts. Colours are set with `style` attributes, so a CSP needs `style-src 'unsafe-inline'`.
