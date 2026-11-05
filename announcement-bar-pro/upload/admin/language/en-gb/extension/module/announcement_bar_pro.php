@@ -116,3 +116,8 @@ $_['help_lang_fallback']         = 'Languages left empty show the text of the st
 
 // 2.0.3
 $_['entry_end_all_day']         = 'Until the end of that day (23:59:59)';
+$_['text_orphan_stores']         = 'This message was limited to stores that no longer exist. Choose where it should appear (leave all unticked only if it should show in every store).';
+$_['text_orphan_customer_groups'] = 'This message was limited to customer groups that no longer exist. Choose who should see it.';
+$_['error_orphan_stores']        = 'Choose at least one store — the stores this message was limited to were deleted.';
+$_['error_orphan_customer_groups'] = 'Choose at least one customer group — the groups this message was limited to were deleted.';
+$_['error_nothing_selected']     = 'Select at least one message to delete.';

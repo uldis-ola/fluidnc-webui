@@ -2,10 +2,10 @@
 /**
  * Announcement Bar Pro — catalog controller (OpenCart 3.0.x)
  * Injected via event: catalog/view/common/header/after
- * @version 2.0.4
+ * @version 2.0.5
  */
 class ControllerExtensionModuleAnnouncementBarPro extends Controller {
-	const VERSION = '2.0.4';
+	const VERSION = '2.0.5';
 	const CODE    = 'module_announcement_bar_pro';
 
 	/** @var \Announcementbarpro\Sanitizer  Declared property: not put into the shared registry. */

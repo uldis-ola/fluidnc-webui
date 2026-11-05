@@ -3,7 +3,7 @@
 Paziņojumu josla veikala augšā vai apakšā: akcijas, piegādes nosacījumi, svarīgas ziņas.
 *An announcement bar for the top or bottom of every store page.*
 
-- **Versija / Version:** 2.0.4 (same features as the OpenCart 3 package 2.0.4)
+- **Versija / Version:** 2.0.5 (same features as the OpenCart 3 package 2.0.5)
 - **Saderība / Compatibility:** OpenCart 4.0.2.x – 4.1.0.x, tested on 4.0.2.3 and 4.1.0.4 with PHP 8.3 (PHP 8.0+ required). The code also handles 4.0.0.x–4.0.1.x (route separator `|`, library loading, language flags), but those versions were **not** installed and tested.
 - **Valodas / Languages:** English, Latviešu, Русский
 - **Licence / License:** GPL-3.0 (see `LICENSE.txt`)
@@ -59,7 +59,8 @@ Ikonas ir Font Awesome 6, piemēram, `fa-truck` vai `fa-regular fa-bell`.
 - Languages without a translation of this module (e.g. de-de) get the English labels.
 - After *Uninstall* the module page redirects to the extension list instead of recreating data.
 - Closing is remembered per message (a re-save without content changes keeps it closed). Countdowns use the server clock.
-- Only the first `{countdown}` in a message is replaced.
+- Only the first `{countdown}` in a message is replaced; further ones are removed.
+- Sticky top also works on themes with an absolutely positioned page wrapper (OpenCart 4.1): the bar is then pinned with `position:fixed` and a spacer.
 - Guests see messages for the store's default customer group.
 - No inline scripts. Colours are set with `style` attributes, so a CSP needs `style-src 'unsafe-inline'`.
 - Set your own `author` and `link` in `install.json` before publishing.

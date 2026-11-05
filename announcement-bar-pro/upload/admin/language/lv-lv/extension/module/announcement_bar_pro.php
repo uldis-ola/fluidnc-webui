@@ -116,3 +116,8 @@ $_['help_lang_fallback']         = 'Valodās, kur teksts nav ievadīts, tiek rā
 
 // 2.0.3
 $_['entry_end_all_day']         = 'Līdz šīs dienas beigām (23:59:59)';
+$_['text_orphan_stores']         = 'Šis paziņojums bija ierobežots uz veikaliem, kas vairs neeksistē. Izvēlieties, kur tam jārādās (atstājiet visus neatzīmētus tikai tad, ja tam jārādās visos veikalos).';
+$_['text_orphan_customer_groups'] = 'Šis paziņojums bija ierobežots uz klientu grupām, kas vairs neeksistē. Izvēlieties, kam tas jārāda.';
+$_['error_orphan_stores']        = 'Izvēlieties vismaz vienu veikalu — veikali, uz kuriem paziņojums bija ierobežots, ir dzēsti.';
+$_['error_orphan_customer_groups'] = 'Izvēlieties vismaz vienu klientu grupu — grupas, uz kurām paziņojums bija ierobežots, ir dzēstas.';
+$_['error_nothing_selected']     = 'Atzīmējiet vismaz vienu paziņojumu, ko dzēst.';

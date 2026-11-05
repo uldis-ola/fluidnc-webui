@@ -3,7 +3,7 @@
 Paziņojumu josla veikala augšā vai apakšā: akcijas, piegādes nosacījumi, svarīgas ziņas.
 *An announcement bar for the top or bottom of every store page: promotions, shipping terms, notices.*
 
-- **Versija / Version:** 2.0.4
+- **Versija / Version:** 2.0.5
 - **Saderība / Compatibility:** OpenCart 3.0.0.0–3.0.5.1 (tested on 3.0.5.1), PHP 7.3+ (tested: PHP 8.3). OpenCart 4.0.x / 4.1.x: separate package in `announcement-bar-pro-oc4`.
 - **Valodas / Languages:** English, Latviešu, Русский
 - **Licence / License:** GPL-3.0 (see `LICENSE.txt`)
@@ -25,13 +25,13 @@ Paziņojumu josla veikala augšā vai apakšā: akcijas, piegādes nosacījumi, 
 
 ### Instalēšana
 1. **Pirms instalēšanas izveido failu un datubāzes rezerves kopiju.**
-2. Admin → *Extensions → Installer* → augšupielādē `announcement_bar_pro_v2.0.4.ocmod.zip`.
+2. Admin → *Extensions → Installer* → augšupielādē `announcement_bar_pro_v2.0.5.ocmod.zip`.
 3. *Extensions → Modifications* → **Refresh** (modulis core failus nemaina; solis nav obligāts, bet nekaitē).
 4. *Extensions → Extensions → Modules* → **Announcement Bar Pro** → **Install** (zaļais +) → **Edit**.
 5. Cilnē *Iestatījumi* ieslēdz moduli un saglabā; cilnē *Paziņojumi* pievieno paziņojumus.
 
 ### Jaunināšana no 1.0.0
-Augšupielādē v2.0.4 virs v1 vai v2.0.x (2. un 3. solis), tad vienreiz atver moduļa lapu adminā.
+Augšupielādē v2.0.5 virs v1 vai v2.0.x (2. un 3. solis), tad vienreiz atver moduļa lapu adminā.
 v1 teksts un krāsas automātiski kļūst par pirmo paziņojumu. Līdz tam veikalā turpina rādīties v1 teksts.
 
 ### Atinstalēšana
@@ -56,7 +56,7 @@ OpenCart 3 atinstalējot noņem moduļa piekļuves tiesības **visām** lietotā
 - Datumi tiek salīdzināti veikala laika joslā. Beigu datums bez laika nozīmē šīs dienas beigas (23:59:59).
 - Ja paziņojumam kādā valodā nav teksta, šajā valodā tiek rādīts veikala noklusētās valodas teksts. Sarakstā adminā redzams, kurām valodām teksta trūkst.
 - Viesi redz paziņojumus, kas paredzēti veikala noklusētajai klientu grupai.
-- `{countdown}` tiek aizstāts tikai pirmo reizi tekstā. Paziņojums ar beigu laiku pazūd arī atvērtā lapā, kad laiks beidzies.
+- `{countdown}` tiek aizstāts tikai pirmo reizi tekstā; nākamie `{countdown}` tiek izņemti. Paziņojums ar beigu laiku pazūd arī atvērtā lapā, kad laiks beidzies.
 - Aizvēršana tiek atcerēta katram paziņojumam atsevišķi: ja kāds paziņojums beidzas, tiek izslēgts vai saglabāts bez satura izmaiņām, josla neatgriežas; atgriežas tikai ar jaunu paziņojumu vai mainītu tekstu/pogu/saiti/ikonu.
 - Atpakaļskaitīšana izmanto servera laiku, nevis apmeklētāja datora pulksteni.
 - Modulis neizmanto iekļautus (inline) skriptus. Krāsas tiek iestatītas ar `style` atribūtiem, tāpēc CSP politikai jāatļauj `style-src 'unsafe-inline'`.
@@ -81,13 +81,13 @@ OpenCart 3 atinstalējot noņem moduļa piekļuves tiesības **visām** lietotā
 
 ### Install
 1. **Back up files and database first.**
-2. Admin → *Extensions → Installer* → upload `announcement_bar_pro_v2.0.4.ocmod.zip`.
+2. Admin → *Extensions → Installer* → upload `announcement_bar_pro_v2.0.5.ocmod.zip`.
 3. *Extensions → Modifications* → **Refresh** (optional — no core files are modified).
 4. *Extensions → Extensions → Modules* → **Announcement Bar Pro** → **Install** → **Edit**.
 5. Enable it in *Settings*, add messages in *Messages*.
 
 ### Upgrade from 1.0.0
-Upload v2.0.4 over v1 or v2.0.x, then open the module page in admin once — the v1 text is migrated automatically.
+Upload v2.0.5 over v1 or v2.0.x, then open the module page in admin once — the v1 text is migrated automatically.
 
 ### Uninstall
 Removes the event and settings. Messages are kept unless *Settings → Advanced → Delete messages on uninstall* is ticked.
@@ -99,7 +99,7 @@ OpenCart 3 removes the module's permissions from **all** user groups on uninstal
 - A Twig error in a Theme Editor override of this template makes OpenCart stop the page output, and the module cannot catch it.
 - Modern browsers only. IE11 is not supported.
 - A message with no text in the visitor's language shows the store's default-language text. The admin list flags missing languages.
-- An end date without a time means the end of that day (23:59:59). Only the first `{countdown}` is replaced.
+- An end date without a time means the end of that day (23:59:59). Only the first `{countdown}` is replaced; further ones are removed.
 - Guests see messages for the store's default customer group.
 - Closing is remembered per message: when a message expires, is switched off or is re-saved without content changes the bar stays closed; only a new message or changed text/button/link/icon brings it back.
 - Countdowns use the server's clock, not the visitor's.

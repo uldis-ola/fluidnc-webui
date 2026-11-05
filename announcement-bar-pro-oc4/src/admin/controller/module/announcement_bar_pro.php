@@ -3,10 +3,10 @@ namespace Opencart\Admin\Controller\Extension\AnnouncementBarPro\Module;
 /**
  * Announcement Bar Pro — admin controller (OpenCart 4.0.x / 4.1.x)
  *
- * @version 2.0.4
+ * @version 2.0.5
  */
 class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
-	public const VERSION       = '2.0.4';
+	public const VERSION       = '2.0.5';
 	public const CODE          = 'module_announcement_bar_pro';
 	public const EVENT_CODE    = 'announcement_bar_pro';
 	public const ROUTE         = 'extension/announcement_bar_pro/module/announcement_bar_pro';
@@ -17,6 +17,8 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 
 	/** @var \Opencart\System\Library\Extension\AnnouncementBarPro\Sanitizer */
 	private $abp;
+
+	private array $orphaned = ['stores' => false, 'customer_groups' => false];
 
 	/* ------------------------------------------------------------------ *
 	 * Page: message list + settings
@@ -166,10 +168,11 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 	public function form(): void {
 		$this->bootstrap();
 
-		$message_id = isset($this->request->get['message_id']) ? (int)$this->request->get['message_id'] : 0;
+		$raw_id     = isset($this->request->get['message_id']) && is_string($this->request->get['message_id']) ? $this->request->get['message_id'] : '';
+		$message_id = preg_match('/^\d{1,10}$/', $raw_id) ? (int)$raw_id : 0;
 		$message    = $message_id ? $this->model_extension_announcement_bar_pro_module_announcement_bar_pro->getMessage($message_id) : [];
 
-		if ($message_id && !$message) {
+		if (($raw_id !== '' && !$message_id) || ($message_id && !$message)) {
 			$this->session->data['abp_error'] = $this->language->get('error_not_found');
 			$this->response->redirect($this->link(self::ROUTE, '&tab=messages'));
 		}
@@ -183,6 +186,7 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 		$data['max_text']      = self::MAX_TEXT;
 		$data['max_link_text'] = self::MAX_LINK_TEXT;
 		$data['allow_html']    = (bool)$this->config->get(self::CODE . '_allow_html');
+		$data['orphaned']      = $this->orphanedTargets($message);
 
 		$data['store_list'] = [['store_id' => 0, 'name' => $this->config->get('config_name') . $this->language->get('text_default')]];
 		$this->load->model('setting/store');
@@ -242,13 +246,17 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 
 		$json = [];
 
-		$message_id = isset($this->request->get['message_id']) ? (int)$this->request->get['message_id'] : 0;
+		$raw_id     = isset($this->request->get['message_id']) && is_string($this->request->get['message_id']) ? $this->request->get['message_id'] : '';
+		$message_id = preg_match('/^\d{1,10}$/', $raw_id) ? (int)$raw_id : 0;
 		$languages  = $this->model_localisation_language->getLanguages();
 		$p          = $this->normalizeMessagePost($this->request->post);
+		$message    = $message_id ? $this->model_extension_announcement_bar_pro_module_announcement_bar_pro->getMessage($message_id) : [];
+
+		$this->orphaned = $this->orphanedTargets($message);
 
 		if (!$this->user->hasPermission('modify', self::ROUTE)) {
 			$json['error']['warning'] = $this->language->get('error_permission');
-		} elseif ($message_id && !$this->model_extension_announcement_bar_pro_module_announcement_bar_pro->getMessage($message_id)) {
+		} elseif (($raw_id !== '' && !$message_id) || ($message_id && !$message)) {
 			$json['error']['warning'] = $this->language->get('error_not_found');
 		} else {
 			$errors = $this->validateMessage($p, $languages);
@@ -290,15 +298,20 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 			$json['error'] = $this->language->get('error_permission');
 		}
 
-		if (!$json) {
-			$selected = isset($this->request->post['selected']) && is_array($this->request->post['selected']) ? $this->request->post['selected'] : [];
+		$selected = isset($this->request->post['selected']) && is_array($this->request->post['selected']) ? array_filter($this->request->post['selected'], function ($v) { return is_scalar($v) && preg_match('/^\d{1,10}$/', (string)$v); }) : [];
 
+		if (!$json && !$selected) {
+			$json['error'] = $this->language->get('error_nothing_selected');
+		}
+
+		if (!$json) {
 			foreach ($selected as $message_id) {
 				if (is_scalar($message_id)) {
 					$this->model_extension_announcement_bar_pro_module_announcement_bar_pro->deleteMessage((int)$message_id);
 				}
 			}
 
+			$this->session->data['abp_success'] = $this->language->get('text_success');
 			$json['success'] = $this->language->get('text_success');
 		}
 
@@ -431,6 +444,14 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 
 			if (array_diff(array_map('intval', $raw), $valid) || preg_grep('/^\d{1,9}$/', array_map('strval', $raw), PREG_GREP_INVERT)) {
 				$error[$key] = $this->language->get('error_value');
+			}
+		}
+
+		// A message limited to stores/groups that were all deleted must not silently become "all".
+		foreach ($this->orphaned as $key => $is_orphaned) {
+			if ($is_orphaned && empty($p[$key])) {
+				$error['orphan_' . $key] = $this->language->get('error_orphan_' . $key);
+				$error[$key] = $this->language->get('error_orphan_' . $key);
 			}
 		}
 
@@ -662,6 +683,20 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 		$routes = array_values(array_unique($routes));
 
 		return count($routes) > self::MAX_ROUTES ? false : $routes;
+	}
+
+	/**
+	 * For each of stores / customer_groups: true when the saved message was limited to IDs that no longer exist.
+	 */
+	private function orphanedTargets(array $message): array {
+		$out = [];
+
+		foreach (['stores' => $this->storeIds(), 'customer_groups' => $this->customerGroupIds()] as $key => $valid) {
+			$saved = isset($message[$key]) && is_array($message[$key]) ? $message[$key] : [];
+			$out[$key] = $saved && !array_intersect($saved, $valid);
+		}
+
+		return $out;
 	}
 
 	private function storeIds(): array {

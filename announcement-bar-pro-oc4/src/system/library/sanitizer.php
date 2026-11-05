@@ -2,7 +2,7 @@
 /**
  * Announcement Bar Pro (OpenCart 4) — text / HTML / URL sanitizer.
  * Shared by admin (on save) and catalog (on render, defence in depth).
- * @version 2.0.4
+ * @version 2.0.5
  */
 namespace Opencart\System\Library\Extension\AnnouncementBarPro;
 
@@ -11,7 +11,8 @@ class Sanitizer {
 	const ALLOWED_TAGS = array('b', 'strong', 'i', 'em', 'u', 's', 'br', 'span', 'a');
 
 	/** Tags removed together with their content. */
-	const DROP_TAGS = array('script', 'style', 'iframe', 'object', 'embed', 'noscript', 'template', 'svg', 'math', 'form', 'input', 'button', 'textarea', 'select', 'link', 'meta', 'base', 'head', 'title');
+	// (svg, math, form, button are unwrapped instead: an unclosed one would otherwise swallow the rest of the text)
+	const DROP_TAGS = array('script', 'style', 'iframe', 'object', 'embed', 'noscript', 'template', 'input', 'textarea', 'select', 'link', 'meta', 'base', 'head', 'title');
 
 	public function __construct($registry = null) {
 	}
@@ -64,8 +65,9 @@ class Sanitizer {
 		// Remove only real tags/comments. strip_tags() would also eat text such as "a<b" or "x < 5".
 		// Line breaks / block tags become a space so words are not glued together ("st<br>line2").
 		$value = (string)preg_replace('/<!--.*?-->/s', ' ', $value);
-		$value = (string)preg_replace('#<\s*(br|p|div|li|tr|h[1-6])\b[^>]*>|<\s*/\s*(p|div|li|tr|h[1-6])\s*>#i', ' ', $value);
-		$value = (string)preg_replace('#<\s*/?\s*[a-z][a-z0-9-]*(\s[^<>]*)?/?\s*>#i', '', $value);
+		// A tag starts with "<" directly followed by a letter or "/": "x < y and y > z" is text.
+		$value = (string)preg_replace('#<(br|p|div|li|tr|h[1-6])\b[^<>]*>|</(p|div|li|tr|h[1-6])\s*>#i', ' ', $value);
+		$value = (string)preg_replace('#</?[a-z][a-z0-9-]*(\s[^<>]*)?/?>#i', '', $value);
 		$value = preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $value);
 
 		return trim((string)preg_replace('/\s+/u', ' ', (string)$value));

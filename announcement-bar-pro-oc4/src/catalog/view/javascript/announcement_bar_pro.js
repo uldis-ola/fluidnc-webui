@@ -1,4 +1,4 @@
-/* Announcement Bar Pro v2.0.4 — no dependencies */
+/* Announcement Bar Pro v2.0.5 — no dependencies */
 (function () {
   'use strict';
 
@@ -28,9 +28,37 @@
       if (close) { close.style.color = item.style.color; }
     }
 
+    // Some themes put the whole page in an absolutely positioned wrapper (OpenCart 4.1: #container).
+    // Then <body> is short, CSS "sticky" cannot work and body padding does not reach the page bottom.
+    function wrappers() {
+      var out = [], kids = document.body.children;
+      for (var i = 0; i < kids.length; i++) {
+        if (kids[i] !== bar && kids[i].className.indexOf('abp-spacer') === -1 && window.getComputedStyle(kids[i]).position === 'absolute' && kids[i].offsetHeight > window.innerHeight / 2) { out.push(kids[i]); }
+      }
+      return out;
+    }
+
     function fitBody() {
+      var hidden = bar.style.display === 'none';
       if (bar.classList.contains('abp-pos-bottom')) {
-        document.body.style.paddingBottom = bar.style.display === 'none' ? '' : bar.offsetHeight + 'px';
+        var pad = hidden ? '' : bar.offsetHeight + 'px';
+        document.body.style.paddingBottom = pad;
+        wrappers().forEach(function (w) {
+          if (w.getAttribute('data-abp-pad') === null) { w.setAttribute('data-abp-pad', window.getComputedStyle(w).paddingBottom); }
+          w.style.paddingBottom = hidden ? '' : 'calc(' + w.getAttribute('data-abp-pad') + ' + ' + pad + ')';
+        });
+      }
+      if (bar.classList.contains('abp-sticky')) {
+        // CSS sticky works only when <body> is as tall as the page; otherwise pin the bar and keep its space.
+        var broken = document.body.offsetHeight < document.documentElement.scrollHeight - 2 || wrappers().length > 0;
+        bar.classList.toggle('abp-pinned', broken && !hidden);
+        var spacer = bar.nextElementSibling && bar.nextElementSibling.className === 'abp-spacer' ? bar.nextElementSibling : null;
+        if (broken && !hidden) {
+          if (!spacer) { spacer = document.createElement('div'); spacer.className = 'abp-spacer'; bar.parentNode.insertBefore(spacer, bar.nextSibling); }
+          spacer.style.height = bar.offsetHeight + 'px';
+        } else if (spacer) {
+          spacer.parentNode.removeChild(spacer);
+        }
       }
     }
 
@@ -47,7 +75,11 @@
         max = Math.max(max, list[i].offsetHeight);
         list[i].style.display = was;
       }
-      if (max) { track.style.minHeight = max + 'px'; }
+      // Reserve the tallest height only when messages are similar; one very long message must not
+      // turn every short one into a huge bar (e.g. on phones).
+      var min = Infinity;
+      for (var j = 0; j < list.length; j++) { var was2 = list[j].style.display; list[j].style.display = 'block'; min = Math.min(min, list[j].offsetHeight); list[j].style.display = was2; }
+      if (max && max <= min * 2.5) { track.style.minHeight = max + 'px'; }
     }
 
     function show(i) {

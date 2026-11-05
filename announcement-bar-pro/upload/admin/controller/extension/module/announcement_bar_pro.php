@@ -1,10 +1,10 @@
 <?php
 /**
  * Announcement Bar Pro — admin controller (OpenCart 3.0.x)
- * @version 2.0.4
+ * @version 2.0.5
  */
 class ControllerExtensionModuleAnnouncementBarPro extends Controller {
-	const VERSION    = '2.0.4';
+	const VERSION    = '2.0.5';
 	const CODE       = 'module_announcement_bar_pro';
 	const EVENT_CODE = 'announcement_bar_pro';
 	const ROUTE      = 'extension/module/announcement_bar_pro';
@@ -15,6 +15,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 	const MAX_ROUTES   = 50;
 
 	private $error = array();
+	private $orphaned = array('stores' => false, 'customer_groups' => false);
 
 	/** @var \Announcementbarpro\Sanitizer  Declared property: kept out of the shared registry. */
 	private $abp;
@@ -113,10 +114,11 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 	public function form() {
 		$this->bootstrap();
 
-		$message_id = isset($this->request->get['message_id']) ? (int)$this->request->get['message_id'] : 0;
+		$raw_id     = isset($this->request->get['message_id']) && is_string($this->request->get['message_id']) ? $this->request->get['message_id'] : '';
+		$message_id = preg_match('/^\d{1,10}$/', $raw_id) ? (int)$raw_id : 0;
 		$message    = $message_id ? $this->model_extension_module_announcement_bar_pro->getMessage($message_id) : array();
 
-		if ($message_id && !$message) {
+		if (($raw_id !== '' && !$message_id) || ($message_id && !$message)) {
 			$this->load->language(self::ROUTE);
 			$this->session->data['abp_error'] = $this->language->get('error_not_found');
 			$this->response->redirect($this->link(self::ROUTE, '&tab=messages'));
@@ -124,6 +126,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 
 		$languages = $this->model_localisation_language->getLanguages();
 		$post_data = $this->normalizeMessagePost($this->request->post);
+		$this->orphaned = $this->orphanedTargets($message);
 
 		if ($this->request->server['REQUEST_METHOD'] == 'POST' && $this->validateMessage($post_data, $languages)) {
 			$clean = $this->sanitizeMessage($post_data, $languages);
@@ -151,6 +154,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		$data['max_link_text'] = self::MAX_LINK_TEXT;
 		$data['allow_html']    = (bool)$this->config->get(self::CODE . '_allow_html');
 		$data['datepicker']    = $this->language->get('datepicker');
+		$data['orphaned']      = $this->orphaned;
 
 		// Stores (0 = default)
 		$this->load->model('setting/store');
@@ -385,6 +389,14 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 
 			if (array_diff($posted, $valid) || preg_grep('/^\d{1,9}$/', array_map('strval', $raw), PREG_GREP_INVERT)) {
 				$this->error[$key] = $this->language->get('error_value');
+			}
+		}
+
+		// A message limited to stores/groups that were all deleted must not silently become "all".
+		foreach ($this->orphaned as $key => $is_orphaned) {
+			if ($is_orphaned && empty($p[$key])) {
+				$this->error['orphan_' . $key] = $this->language->get('error_orphan_' . $key);
+				$this->error[$key] = $this->language->get('error_orphan_' . $key);
 			}
 		}
 
@@ -639,6 +651,20 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		$posted = is_array($posted) ? array_map('intval', array_filter($posted, 'is_scalar')) : array();
 
 		return array_values(array_unique(array_intersect($posted, $valid)));
+	}
+
+	/**
+	 * For each of stores / customer_groups: true when the saved message was limited to IDs that no longer exist.
+	 */
+	private function orphanedTargets(array $message){
+		$out = array();
+
+		foreach (array('stores' => $this->storeIds(), 'customer_groups' => $this->customerGroupIds()) as $key => $valid) {
+			$saved = isset($message[$key]) && is_array($message[$key]) ? $message[$key] : array();
+			$out[$key] = $saved && !array_intersect($saved, $valid);
+		}
+
+		return $out;
 	}
 
 	private function storeIds() {

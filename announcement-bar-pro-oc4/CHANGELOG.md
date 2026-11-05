@@ -1,5 +1,17 @@
 # Changelog (OpenCart 4 package)
 
+## 2.0.5 — 2026-11-05
+Fixes from the black-box test on OpenCart 4.1.0.4 (all apply to both packages):
+- Sticky top works on themes that wrap the page in an absolutely positioned container (OpenCart 4.1 `#container`). The bar is pinned with `position:fixed` plus a spacer when CSS sticky cannot work.
+- Bottom position: the extra bottom space is also added to such a wrapper, so the end of the footer stays reachable.
+- Visible keyboard focus on the close button, button and links, even where the theme removes `button:focus` outlines.
+- HTML mode: an unclosed `<svg>`, `<math>`, `<form>` or `<button>` no longer swallows the rest of the text; these tags are unwrapped.
+- Plain mode: text such as "x < y and y > z" is no longer taken for a tag.
+- A message limited to stores or customer groups that were later deleted no longer silently becomes "all stores/groups" on the next save. The form warns and asks for a choice.
+- A non-numeric `message_id` is rejected.
+- Delete with nothing selected shows an error, and a successful delete shows a confirmation (OC4).
+- Rotation reserves the tallest message height only when messages are of similar height, so one very long message no longer makes short ones huge on phones.
+
 ## 2.0.4 — 2026-11-05
 Fixes from the second round of independent reviews:
 - **Security/stability:** the HTML sanitizer could loop forever on `xml:lang` or `xmlns` attributes. Elements are now rebuilt, and nested links are unwrapped.
