@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.0.1 — 2026-11-05
+Supersedes: 2.0.0, 1.0.0 (upload over the old version, then open the module page once in admin).
+
+Fixes from an independent code review and extended testing:
+- Emoji and other 4-byte characters were stored as "????". OpenCart's DB link uses 3-byte utf8, so they are now saved as numeric entities.
+- Text was double-encoded (shown as `&amp;`) when "Allow HTML" was on and the text had no tags, or when HTML was switched off later.
+- Closing the bar now applies on all pages. Before, it only applied to the page where it was closed.
+- A stale localStorage entry no longer overrides a sessionStorage dismiss.
+- Upgrading from v1 no longer creates an empty message when v1 had no text.
+- The storefront guard now catches `\Throwable`, so PHP errors cannot break the shop page.
+- Array values in POST fields no longer raise "Array to string conversion" notices.
+- Users without "modify" permission can no longer trigger table creation or migration.
+- Invalid UTF-8 no longer makes a message silently disappear.
+- Links with non-ASCII paths (e.g. `/akcija-šodien`) are now accepted and percent-encoded.
+- `{countdown}` is replaced only in text, never inside a tag attribute.
+- Schema 3: `link_text` changed to TEXT.
+
 ## 2.0.0 — 2026-11-05
 Supersedes: 1.0.0 (upgrade in place — upload over v1, then open the module once in admin; the v1 text is migrated to the first message automatically).
 

@@ -1,10 +1,10 @@
 <?php
 /**
  * Announcement Bar Pro — admin controller (OpenCart 3.0.x)
- * @version 2.0.0
+ * @version 2.0.1
  */
 class ControllerExtensionModuleAnnouncementBarPro extends Controller {
-	const VERSION    = '2.0.0';
+	const VERSION    = '2.0.1';
 	const CODE       = 'module_announcement_bar_pro';
 	const EVENT_CODE = 'announcement_bar_pro';
 	const ROUTE      = 'extension/module/announcement_bar_pro';
@@ -70,7 +70,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 				$state = 'active';
 			}
 
-			$text = $this->sanitizer->plain((string)$message['text']);
+			$text = $this->sanitizer->plain($this->sanitizer->decode((string)$message['text']));
 
 			$data['messages'][] = array(
 				'message_id' => (int)$message['message_id'],
@@ -103,9 +103,10 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		}
 
 		$languages = $this->model_localisation_language->getLanguages();
+		$post_data = $this->normalizeMessagePost($this->request->post);
 
-		if ($this->request->server['REQUEST_METHOD'] == 'POST' && $this->validateMessage($languages)) {
-			$clean = $this->sanitizeMessage($this->request->post, $languages);
+		if ($this->request->server['REQUEST_METHOD'] == 'POST' && $this->validateMessage($post_data, $languages)) {
+			$clean = $this->sanitizeMessage($post_data, $languages);
 
 			if ($message_id) {
 				$this->model_extension_module_announcement_bar_pro->editMessage($message_id, $clean);
@@ -141,7 +142,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		$data['customer_group_list'] = $this->model_customer_customer_group->getCustomerGroups();
 
 		$post = $this->request->server['REQUEST_METHOD'] == 'POST';
-		$src  = $post ? $this->request->post : $message;
+		$src  = $post ? $post_data : $message;
 
 		$defaults = array(
 			'status'          => 1,
@@ -280,13 +281,12 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		return !$this->error;
 	}
 
-	protected function validateMessage(array $languages) {
+	protected function validateMessage(array $p, array $languages) {
 		if (!$this->user->hasPermission('modify', self::ROUTE)) {
 			$this->error['warning'] = $this->language->get('error_permission');
 			return false;
 		}
 
-		$p          = $this->request->post;
 		$allow_html = (bool)$this->config->get(self::CODE . '_allow_html');
 		$descs      = isset($p['message_description']) && is_array($p['message_description']) ? $p['message_description'] : array();
 		$has_text   = false;
@@ -410,9 +410,10 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			$text = isset($row['text']) && is_string($row['text']) ? $this->sanitizer->decode($row['text']) : '';
 			$link = isset($row['link_text']) && is_string($row['link_text']) ? $this->sanitizer->decode($row['link_text']) : '';
 
+			// encode4byte: OpenCart's DB link is 3-byte utf8, emoji would be stored as "?".
 			$description[$id] = array(
-				'text'      => $allow_html ? $this->sanitizer->html($text) : $this->sanitizer->plain($text),
-				'link_text' => $this->substr($this->sanitizer->plain($link), self::MAX_LINK_TEXT)
+				'text'      => $this->sanitizer->encode4byte($allow_html ? $this->sanitizer->html($text) : $this->sanitizer->plain($text)),
+				'link_text' => $this->sanitizer->encode4byte($this->substr($this->sanitizer->plain($link), self::MAX_LINK_TEXT))
 			);
 		}
 
@@ -452,7 +453,47 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		$this->load->model(self::ROUTE);
 		$this->load->library('announcementbarpro/sanitizer');
 
-		$this->model_extension_module_announcement_bar_pro->ensureSchema();
+		// Creating/migrating tables writes to the DB: only for users with "modify" permission.
+		if ($this->user->hasPermission('modify', self::ROUTE)) {
+			$this->model_extension_module_announcement_bar_pro->ensureSchema();
+		} elseif (!$this->model_extension_module_announcement_bar_pro->isSchemaCurrent()) {
+			$this->session->data['abp_error'] = $this->language->get('error_permission');
+			$this->response->redirect($this->link('marketplace/extension', '&type=module'));
+		}
+	}
+
+	/**
+	 * Scalars must be strings, lists must be arrays — crafted array input is neutralised here,
+	 * so later casts never raise "Array to string conversion".
+	 */
+	private function normalizeMessagePost(array $post) {
+		$out = array();
+
+		foreach (array('status', 'sort_order', 'date_start', 'date_end', 'bg_color', 'text_color', 'link', 'link_new_tab', 'icon', 'countdown', 'page_mode', 'page_routes') as $key) {
+			if (isset($post[$key])) {
+				$out[$key] = is_string($post[$key]) ? $post[$key] : '';
+			}
+		}
+
+		foreach (array('stores', 'customer_groups') as $key) {
+			if (isset($post[$key])) {
+				$out[$key] = is_array($post[$key]) ? array_filter($post[$key], 'is_scalar') : array();
+			}
+		}
+
+		$out['message_description'] = array();
+		if (isset($post['message_description']) && is_array($post['message_description'])) {
+			foreach ($post['message_description'] as $language_id => $row) {
+				if (is_array($row)) {
+					$out['message_description'][(int)$language_id] = array(
+						'text'      => isset($row['text']) && is_string($row['text']) ? $row['text'] : '',
+						'link_text' => isset($row['link_text']) && is_string($row['link_text']) ? $row['link_text'] : ''
+					);
+				}
+			}
+		}
+
+		return $out;
 	}
 
 	private function commonData() {

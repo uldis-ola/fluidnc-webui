@@ -13,6 +13,6 @@
   </div>
   {% if dismissible %}<button type="button" class="abp-close" aria-label="{{ close|e }}" title="{{ close|e }}" style="color:{{ items[0].text_color }};">&times;</button>{% endif %}
 </div>
-<script>(function(){try{var b=document.getElementById('abp-bar'),k='abp_dismiss',v=null,s=b.getAttribute('data-hash');try{v=JSON.parse(localStorage.getItem(k)||sessionStorage.getItem(k)||'null');}catch(e){}if(v&&v.h===s&&(!v.t||v.t>Date.now())){b.style.display='none';b.setAttribute('data-dismissed','1');}}catch(e){}})();</script>
+<script>(function(){try{var b=document.getElementById('abp-bar'),h=b.getAttribute('data-hash'),n=Date.now();function ok(st){try{var v=JSON.parse(window[st].getItem('abp_dismiss')||'null');return !!v&&v.h===h&&(!v.t||v.t>n);}catch(e){return false;}}if(ok('localStorage')||ok('sessionStorage')){b.style.display='none';b.setAttribute('data-dismissed','1');}}catch(e){}})();</script>
 <link rel="stylesheet" href="catalog/view/javascript/announcement_bar_pro/announcement_bar_pro.css?v={{ version|e('url') }}" />
 <script src="catalog/view/javascript/announcement_bar_pro/announcement_bar_pro.js?v={{ version|e('url') }}" defer></script>

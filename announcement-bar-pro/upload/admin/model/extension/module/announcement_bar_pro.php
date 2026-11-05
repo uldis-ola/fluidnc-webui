@@ -2,11 +2,11 @@
 /**
  * Announcement Bar Pro — admin model (OpenCart 3.0.x)
  * Tables: {prefix}abp_message, {prefix}abp_message_description
- * @version 2.0.0
+ * @version 2.0.1
  */
 class ModelExtensionModuleAnnouncementBarPro extends Model {
 	const CODE           = 'module_announcement_bar_pro';
-	const SCHEMA_VERSION = 2;
+	const SCHEMA_VERSION = 3;
 
 	/**
 	 * Creates tables (if missing), migrates v1 settings, fills missing default settings.
@@ -17,7 +17,7 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 
 		$settings = $this->model_setting_setting->getSetting(self::CODE);
 
-		if (isset($settings[self::CODE . '_schema']) && (int)$settings[self::CODE . '_schema'] >= self::SCHEMA_VERSION && $this->tablesExist()) {
+		if ($this->isSchemaCurrent($settings)) {
 			return;
 		}
 
@@ -47,18 +47,25 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 			`message_id` INT(11) NOT NULL,
 			`language_id` INT(11) NOT NULL,
 			`text` TEXT NOT NULL,
-			`link_text` VARCHAR(64) NOT NULL DEFAULT '',
+			`link_text` TEXT NOT NULL,
 			PRIMARY KEY (`message_id`, `language_id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
 
+		// Schema 3: link_text VARCHAR(64) → TEXT (emoji are stored as entities and can exceed 64 bytes).
+		$this->db->query("ALTER TABLE `" . DB_PREFIX . "abp_message_description` MODIFY `link_text` TEXT NOT NULL");
+
 		$defaults = $this->getDefaultSettings();
 
-		// v1.0.0 → v2: legacy single text becomes the first message.
-		if (isset($settings[self::CODE . '_text']) && is_array($settings[self::CODE . '_text']) && !$this->getTotalMessages()) {
+		// v1.0.0 → v2: legacy single text becomes the first message (only if any text was actually set).
+		$legacy_text = isset($settings[self::CODE . '_text']) && is_array($settings[self::CODE . '_text']) ? array_filter($settings[self::CODE . '_text'], function ($text) {
+			return is_string($text) && trim($text) !== '';
+		}) : array();
+
+		if ($legacy_text && !$this->getTotalMessages()) {
 			$description = array();
 
-			foreach ($settings[self::CODE . '_text'] as $language_id => $text) {
-				$description[(int)$language_id] = array('text' => (string)$text, 'link_text' => '');
+			foreach ($legacy_text as $language_id => $text) {
+				$description[(int)$language_id] = array('text' => $text, 'link_text' => '');
 			}
 
 			$this->addMessage(array(
@@ -133,6 +140,15 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 	public function dropTables() {
 		$this->db->query("DROP TABLE IF EXISTS `" . DB_PREFIX . "abp_message_description`");
 		$this->db->query("DROP TABLE IF EXISTS `" . DB_PREFIX . "abp_message`");
+	}
+
+	public function isSchemaCurrent($settings = null) {
+		if ($settings === null) {
+			$this->load->model('setting/setting');
+			$settings = $this->model_setting_setting->getSetting(self::CODE);
+		}
+
+		return isset($settings[self::CODE . '_schema']) && (int)$settings[self::CODE . '_schema'] >= self::SCHEMA_VERSION && $this->tablesExist();
 	}
 
 	public function tablesExist() {

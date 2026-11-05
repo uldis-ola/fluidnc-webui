@@ -1,4 +1,4 @@
-/* Announcement Bar Pro v2.0.0 — no dependencies */
+/* Announcement Bar Pro v2.0.1 — no dependencies */
 (function () {
   'use strict';
 
@@ -96,7 +96,11 @@
       close.addEventListener('click', function () {
         var days = parseInt(bar.getAttribute('data-days'), 10) || 0;
         var value = JSON.stringify({ h: bar.getAttribute('data-hash'), t: days > 0 ? Date.now() + days * 86400000 : 0 });
-        try { (days > 0 ? localStorage : sessionStorage).setItem('abp_dismiss', value); } catch (e) { /* storage blocked */ }
+        try {
+          var keep = days > 0 ? localStorage : sessionStorage, drop = days > 0 ? sessionStorage : localStorage;
+          keep.setItem('abp_dismiss', value);
+          drop.removeItem('abp_dismiss');
+        } catch (e) { /* storage blocked: bar just hides for this page view */ }
         hideBar();
       });
     }

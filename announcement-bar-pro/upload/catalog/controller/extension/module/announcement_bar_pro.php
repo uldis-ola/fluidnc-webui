@@ -2,10 +2,10 @@
 /**
  * Announcement Bar Pro — catalog controller (OpenCart 3.0.x)
  * Injected via event: catalog/view/common/header/after
- * @version 2.0.0
+ * @version 2.0.1
  */
 class ControllerExtensionModuleAnnouncementBarPro extends Controller {
-	const VERSION = '2.0.0';
+	const VERSION = '2.0.1';
 	const CODE    = 'module_announcement_bar_pro';
 
 	/**
@@ -18,7 +18,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 
 		try {
 			$html = $this->render();
-		} catch (\Exception $e) {
+		} catch (\Throwable $e) {
 			// Never break the storefront because of this module.
 			$this->log->write('Announcement Bar Pro: ' . $e->getMessage());
 			return;
@@ -62,7 +62,13 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		$current_route     = isset($this->request->get['route']) && is_string($this->request->get['route']) ? strtolower($this->request->get['route']) : 'common/home';
 
 		$items = array();
-		$hash  = '';
+
+		// Dismiss key covers ALL active messages (not only this page's), so closing the bar
+		// on one page keeps it closed on others until any message changes.
+		$hash = '';
+		foreach ($rows as $row) {
+			$hash .= $row['message_id'] . ':' . $row['date_modified'] . ';';
+		}
 
 		foreach ($rows as $row) {
 			if (!$this->inList($row['stores'], $store_id) || !$this->inList($row['customer_groups'], $customer_group_id) || !$this->pageMatches($row['page_mode'], $row['page_routes'], $current_route)) {
@@ -79,19 +85,19 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 				}
 			}
 
-			if ($countdown !== '' && strpos($html, '{countdown}') !== false) {
-				$html = preg_replace('/\{countdown\}/', $countdown, $html, 1);
+			// Replace {countdown} only in text, never inside a tag/attribute.
+			list($html, $replaced) = $this->sanitizer->replaceToken($html, '{countdown}', $countdown);
+
+			if ($replaced) {
 				$countdown = '';
 			}
-
-			$html = str_replace('{countdown}', '', $html);
 
 			if (trim(strip_tags($html)) === '' && $countdown === '') {
 				continue;
 			}
 
 			$link      = $this->sanitizer->url($row['link']);
-			$link_text = $this->sanitizer->plain($row['link_text']);
+			$link_text = $this->sanitizer->plain($this->sanitizer->decode($row['link_text']));
 
 			$items[] = array(
 				'id'         => (int)$row['message_id'],
@@ -105,8 +111,6 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 				'new_tab'    => !empty($row['link_new_tab']),
 				'wrap_link'  => $link !== '' && $link_text === '' && stripos($html, '<a ') === false
 			);
-
-			$hash .= $row['message_id'] . ':' . $row['date_modified'] . ';';
 		}
 
 		if (!$items) {
