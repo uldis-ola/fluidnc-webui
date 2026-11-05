@@ -41,12 +41,19 @@
     function fitBody() {
       var hidden = bar.style.display === 'none';
       if (bar.classList.contains('abp-pos-bottom')) {
-        var pad = hidden ? '' : bar.offsetHeight + 'px';
-        document.body.style.paddingBottom = pad;
-        wrappers().forEach(function (w) {
-          if (w.getAttribute('data-abp-pad') === null) { w.setAttribute('data-abp-pad', window.getComputedStyle(w).paddingBottom); }
-          w.style.paddingBottom = hidden ? '' : 'calc(' + w.getAttribute('data-abp-pad') + ' + ' + pad + ')';
-        });
+        document.body.style.paddingBottom = hidden ? '' : bar.offsetHeight + 'px';
+        // With an absolutely positioned page wrapper, body padding does not extend the page: add an
+        // invisible block below the wrapper instead, so the footer can scroll above the fixed bar.
+        var ws = wrappers(), end = 0;
+        ws.forEach(function (w) { end = Math.max(end, w.offsetTop + w.offsetHeight); });
+        var sp = document.getElementById('abp-bottom-spacer');
+        if (ws.length && !hidden) {
+          if (!sp) { sp = document.createElement('div'); sp.id = 'abp-bottom-spacer'; sp.className = 'abp-spacer'; sp.setAttribute('aria-hidden', 'true'); document.body.appendChild(sp); }
+          sp.style.cssText = 'position:absolute;left:0;width:1px;pointer-events:none;top:' + end + 'px;height:' + bar.offsetHeight + 'px;';
+          if (window.ResizeObserver && !bar.abpRo) { bar.abpRo = new ResizeObserver(function () { fitBody(); }); ws.forEach(function (w) { bar.abpRo.observe(w); }); }
+        } else if (sp) {
+          sp.parentNode.removeChild(sp);
+        }
       }
       if (bar.classList.contains('abp-sticky')) {
         // CSS sticky works only when <body> is as tall as the page; otherwise pin the bar and keep its space.
