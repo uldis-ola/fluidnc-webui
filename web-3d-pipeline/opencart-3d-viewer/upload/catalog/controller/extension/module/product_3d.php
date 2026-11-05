@@ -8,7 +8,7 @@
  * Tēmām pieejami mainīgie: {{ model_3d }} (URL), {{ product_3d }} (masīvs), {{ product_3d_html }}.
  */
 class ControllerExtensionModuleProduct3d extends Controller {
-	const VERSION = '1.0.0';
+	const VERSION = '1.0.1';
 
 	public function eventProductView(&$route, &$data, &$code) {
 		if (!$this->config->get('module_product_3d_status') || empty($data['product_id'])) {
@@ -33,7 +33,10 @@ class ControllerExtensionModuleProduct3d extends Controller {
 			$placement = 'replace';
 		}
 
+		// tikai ceļš (bez protokola un domēna): strādā arī ar www/bez-www, http/https un citu hostu
 		$server = $this->request->server['HTTPS'] ? $this->config->get('config_ssl') : $this->config->get('config_url');
+		$path = trim((string)parse_url((string)$server, PHP_URL_PATH), '/');
+		$server = '/' . ($path !== '' ? $path . '/' : '');
 		$image_base = $server . 'image/';
 		$js_base = $server . 'catalog/view/javascript/product_3d/';
 

@@ -2,55 +2,95 @@
 (function () {
   'use strict';
 
-  function findTarget(selector) {
-    var el = null;
-    if (selector) {
-      try { el = document.querySelector(selector); } catch (e) { el = null; }
-    }
-    return el;
+  var READY_TIMEOUT = 15000;
+
+  function query(selector) {
+    if (!selector) { return null; }
+    try { return document.querySelector(selector); } catch (e) { return null; }
   }
 
-  function fallbackTarget() {
-    // ja galerija nav atrasta: pirms produkta virsraksta vai #content sākumā
-    return document.querySelector('#content h1') || document.querySelector('#product') ||
-      document.querySelector('#content') || document.querySelector('main') || document.body;
+  function closest(el, selector) {
+    while (el && el.nodeType === 1) {
+      if (el.matches && el.matches(selector)) { return el; }
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  /** Ja galerija nav atrasta (piem. produktam nav attēlu): produkta lapas kreisā/pirmā kolonna */
+  function fallbackSpot() {
+    var h1 = document.querySelector('#content h1');
+    var row = h1 ? closest(h1, '.row') : document.querySelector('#content .row');
+
+    if (row && row.firstElementChild && row.firstElementChild.contains(h1) === false) {
+      return { parent: row.firstElementChild, before: row.firstElementChild.firstChild };
+    }
+    if (h1) {
+      return { parent: h1.parentNode, before: h1 };
+    }
+    var content = document.querySelector('#content') || document.querySelector('main') || document.body;
+    return { parent: content, before: content.firstChild };
   }
 
   function place() {
     var box = document.getElementById('product-3d');
     if (!box || box.getAttribute('data-placed') === '1') { return; }
-
-    var mode = box.getAttribute('data-placement') || 'replace';
     box.setAttribute('data-placed', '1');
 
-    if (mode === 'manual') {
-      box.hidden = false;
+    var mode = box.getAttribute('data-placement') || 'replace';
+    var viewer = box.querySelector('model-viewer');
+    var target = mode === 'manual' ? null : query(box.getAttribute('data-selector'));
+
+    if (mode !== 'manual') {
+      if (target) {
+        target.parentNode.insertBefore(box, mode === 'after' ? target.nextSibling : target);
+      } else {
+        var spot = fallbackSpot();
+        spot.parent.insertBefore(box, spot.before);
+      }
+    }
+
+    // pārlūks bez Custom Elements / ES moduļiem: atstājam tikai galeriju
+    if (!window.customElements || !('noModule' in document.createElement('script'))) {
+      box.parentNode && box.parentNode.removeChild(box);
       return;
     }
 
-    var target = findTarget(box.getAttribute('data-selector'));
+    box.hidden = false;
+    var settled = false;
 
-    if (target) {
-      if (mode === 'after') {
-        target.parentNode.insertBefore(box, target.nextSibling);
-      } else {
-        target.parentNode.insertBefore(box, target);
-        if (mode === 'replace') {
-          target.style.display = 'none';
-          target.setAttribute('data-product-3d-hidden', '1');
-        }
-      }
-    } else {
-      var fb = fallbackTarget();
-      if (fb === document.body || fb.id === 'content' || fb.tagName === 'MAIN') {
-        fb.insertBefore(box, fb.firstChild);
-      } else {
-        fb.parentNode.insertBefore(box, fb);
-      }
+    function fail() {
+      if (settled) { return; }
+      settled = true;
+      if (target) { target.style.display = ''; }   // galerija atpakaļ
+      box.parentNode && box.parentNode.removeChild(box);
+      document.dispatchEvent(new CustomEvent('product3d:failed', { detail: { mode: mode } }));
     }
 
-    box.hidden = false;
-    document.dispatchEvent(new CustomEvent('product3d:placed', { detail: { mode: mode, target: target } }));
+    function ok() {
+      if (settled) { return; }
+      settled = true;
+      // "replace": galeriju slēpjam, kad model-viewer skripts strādā; ja modelis neielādējas ('error'), atjaunojam
+      if (mode === 'replace' && target) {
+        target.style.display = 'none';
+        target.setAttribute('data-product-3d-hidden', '1');
+      }
+      document.dispatchEvent(new CustomEvent('product3d:placed', { detail: { mode: mode, target: target } }));
+    }
+
+    if (viewer) {
+      viewer.addEventListener('error', function () { settled = false; fail(); });
+    }
+
+    // ja model-viewer skripts netiek ielādēts (bloķēts, CSP, tīkls) - atjaunojam galeriju
+    var timer = setTimeout(function () {
+      if (!window.customElements.get('model-viewer')) { fail(); }
+    }, READY_TIMEOUT);
+
+    window.customElements.whenDefined('model-viewer').then(function () {
+      clearTimeout(timer);
+      ok();
+    });
   }
 
   if (document.readyState === 'loading') {

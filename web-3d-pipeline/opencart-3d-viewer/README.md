@@ -8,7 +8,7 @@ Pievieno produktam **3D modeli (.glb / .gltf)** administrācijā un rāda to pro
 - **Sava tabula `oc_product_3d`.** Tabula `oc_product` netiek mainīta.
 - **Valodas:** EN / LV / RU.
 
-Pakotne: `dist/product_3d_viewer_v1.0.0.ocmod.zip` (~0,7 MB).
+Pakotne: `dist/product_3d_viewer_v1.0.1.ocmod.zip` (~0,7 MB).
 
 ## Kā tas strādā
 
@@ -17,6 +17,7 @@ Pakotne: `dist/product_3d_viewer_v1.0.0.ocmod.zip` (~0,7 MB).
 | Admin produkta forma | `admin/view/catalog/product_form/before` | pievieno cilni **3D modelis** (augšupielāde, izvēle, priekšskatījums) |
 | Produkta saglabāšana | `admin/model/catalog/product/addProduct/after`, `editProduct/after` | saglabā `product_3d[...]` laukus tabulā `oc_product_3d` |
 | Produkta dzēšana | `admin/model/catalog/product/deleteProduct/after` | dzēš 3D ierakstu (failus atstāj) |
+| Produkta kopēšana | `admin/model/catalog/product/copyProduct/after` | kopē 3D ierakstu uz jauno produktu |
 | Admin izvēlne | `admin/view/common/column_left/before` | Catalog → 3D Product Viewer |
 | Veikala produkta lapa | `catalog/view/product/product/before` | pievieno skatītāju; `product_3d.js` to novieto pie galerijas pēc CSS selektora |
 
@@ -42,7 +43,7 @@ Tabulu izveido moduļa **Install**. Ar roku nekas nav jāizpilda; `oc_` prefikss
 
 Produkta lapas Twig skatā (`product/product.twig`) ir pieejami:
 
-- `{{ model_3d }}` — modeļa URL (atbilst `$product_info['model_3d']`);
+- `{{ model_3d }}` — modeļa URL (ceļš no veikala saknes, piem. `/image/catalog/3d/kresls.glb`). `$product_info` netiek mainīts;
 - `{{ product_3d }}` — masīvs (`src`, `ios_src`, `poster`, `placement` …);
 - `{{ product_3d_html }}` — gatavs skatītāja HTML (izmanto, ja novietojums ir **Manuāli**).
 
@@ -68,9 +69,13 @@ Ja Installer nav pieejams (FTP), nokopē `upload/` saturu veikala saknē un turp
 
 - **OpenCart:** 3.0.x, PHP 7.3+ (pārbaudīts ar PHP 8.3), MySQL/MariaDB ar InnoDB.
 - **Augšupielādes limits:** `upload_max_filesize` un `post_max_size` jābūt ≥ modeļa izmēram. Faktiskais limits redzams iestatījumu lapā.
-- **MIME tipi:** Apache tos iestata ar `image/catalog/3d/.htaccess`, ko izveido modulis. **Nginx** gadījumā pievieno:
+- **MIME tipi:** Apache tos iestata ar `image/catalog/3d/.htaccess`, ko izveido modulis (Apache 2.2 un 2.4). **Nginx** gadījumā pievieno servera blokā
+  (atsevišķā `location`, lai nepārrakstītu pārējos MIME tipus):
   ```nginx
-  types { model/gltf-binary glb; model/gltf+json gltf; model/vnd.usdz+zip usdz; }
+  location ~* \.(glb|gltf|usdz)$ {
+      types { model/gltf-binary glb; model/gltf+json gltf; model/vnd.usdz+zip usdz; }
+      add_header X-Content-Type-Options nosniff;
+  }
   ```
 - **AR:** prasa HTTPS.
 
@@ -86,7 +91,11 @@ Ja Installer nav pieejams (FTP), nokopē `upload/` saturu veikala saknē un turp
   Faila nosaukums tiek attīrīts, un esošie faili netiek pārrakstīti.
 - **Saglabātie ceļi** drīkst norādīt tikai uz esošiem failiem `image/` mapē ar atļautu paplašinājumu (`..` un ceļi ārpus `image/` tiek noraidīti).
 - **Mapē `image/catalog/3d/`** `.htaccess` aizliedz izpildīt skriptus (Apache).
-- **Twig izvade** visur tiek escape (`|e`).
+- **Twig izvade:** visas no DB un lietotāja nākošās vērtības tiek escape (`|e`). Valodas teksti un servera ceļi tiek izvadīti tieši, jo tie nāk no moduļa failiem.
+- **Uninstall/Install** pa tiešo maršrutu prasa `modify` tiesības uz Extensions > Modules.
+- **Galerijas aizstāšana ir droša:** ja model-viewer skripts neielādējas (CSP, bloķētājs, sens pārlūks) vai modelis nav nolasāms, produkta attēli atkal tiek parādīti.
+- **Domēnam jāsakrīt ar `config_url`** (www/bez-www, http/https). OpenCart lapā ir `<base href>`, tāpēc citā hostā CORS bloķē gan moduli, gan paša OpenCart fontus un AJAX. Modulis tad atstāj redzamus parastos attēlus, bet risinājums ir 301 pāradresācija uz vienu domēnu.
+- **CDN režīmā** skripti nāk no `ajax.googleapis.com` un `cdn.jsdelivr.net` bez SRI. Drošākai lietošanai paliec pie noklusējuma (lokālie faili).
 
 ## Atinstalēšana
 
@@ -110,13 +119,21 @@ Pēc tam produkta cilnē augšupielādē `.web.glb`, `.usdz` un `.poster.webp`.
 ```bash
 python build.py                                   # php -l + dist/product_3d_viewer_vX.Y.Z.ocmod.zip
 python tests/e2e_opencart.py --base http://127.0.0.1:8080/ --user admin --password ... \
-    --zip dist/product_3d_viewer_v1.0.0.ocmod.zip --glb ../models/chair.web.glb
+    --zip dist/product_3d_viewer_v1.0.1.ocmod.zip --glb ../models/chair.web.glb
 ```
 
-E2E tests darbojas uz **testa** veikala: tas instalē moduli un maina produkta 42 3D laukus. Nepalaid to dzīvā veikalā.
+Regresijas testi (neatkarīgās pārbaudes atradumi):
+
+```bash
+python tests/e2e_regression.py --zip dist/product_3d_viewer_v1.0.1.ocmod.zip --glb ../models/chair.web.glb \
+    --site-root /ceļš/uz/testa/veikalu --mysql "mysql -uroot oc_test"
+```
+
+E2E testi darbojas uz **testa** veikala: tas instalē moduli un maina produkta 42 3D laukus. Nepalaid to dzīvā veikalā.
 
 ## Zināmie ierobežojumi
 
-- **Produkta kopēšana** (*Copy*) nekopē 3D modeli. OC3 `copyProduct` neatgriež jauno ID, tāpēc modelis jāpiesaista ar roku.
+- **Produkta kopēšana** piešķir 3D ierakstu produktam ar lielāko `product_id` (OC3 `copyProduct` jauno ID neatgriež). Ja vienlaikus produktus pievieno vairāki administratori, pārbaudi kopiju.
+- **Nederīgs ceļš** (fails uz brīdi nav pieejams, kļūdains URL) saglabājot produktu **netiek dzēsts**: paliek iepriekšējā vērtība, un sistēmas žurnālā (System > Maintenance > Error Logs) parādās `[product_3d]` ieraksts.
 - **Citas tēmas:** ja galerijas selektors nav atrasts, skatītājs tiek ievietots pirms produkta virsraksta. Precīzam novietojumam iestati selektoru vai izmanto **Manuāli** + `{{ product_3d_html }}`.
 - **Viens modelis uz produktu.** Opciju/variantu modeļi netiek atbalstīti; krāsu varianti vienā `.glb` gan strādā (`KHR_materials_variants`).

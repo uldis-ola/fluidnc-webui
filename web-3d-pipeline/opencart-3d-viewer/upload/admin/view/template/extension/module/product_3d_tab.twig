@@ -70,10 +70,7 @@
         <label>{{ p3d_preview|e }}</label>
         <div style="border:1px solid #ddd; border-radius:4px; background:#f5f6f8">
           <model-viewer id="p3d-preview" camera-controls auto-rotate shadow-intensity="1" environment-image="neutral"
-            style="width:100%; height:360px; --poster-color:transparent"
-            {% if model_3d %} src="{{ image_base ~ model_3d|e }}"{% endif %}
-            {% if poster_3d %} poster="{{ image_base ~ poster_3d|e }}"{% endif %}
-            {% if camera_orbit %} camera-orbit="{{ camera_orbit|e }}"{% endif %}></model-viewer>
+            style="width:100%; height:360px; --poster-color:transparent"></model-viewer>
         </div>
       </div>
     </div>
@@ -204,5 +201,6 @@ $(function () {
   });
 
   $('#p3d-orbit').on('change', refreshPreview);
+  refreshPreview(); // sākotnējais src ar URL kodētu ceļu
 });
 </script>

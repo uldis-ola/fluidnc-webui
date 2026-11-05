@@ -13,7 +13,7 @@
  * - AJAX: upload (augšupielāde ar validāciju), files (esošo failu saraksts)
  */
 class ControllerExtensionModuleProduct3d extends Controller {
-	const VERSION = '1.0.0';
+	const VERSION = '1.0.1';
 	const EVENT_CODE = 'product_3d';
 
 	private $error = array();
@@ -130,12 +130,13 @@ class ControllerExtensionModuleProduct3d extends Controller {
 		$bg = (string)$get('bg_color');
 		$folder = trim(str_replace('\\', '/', (string)$get('folder')), '/') . '/';
 		$orbit = (string)$get('camera_orbit');
-		$selector = trim((string)$get('selector'));
+		// OpenCart Request klase POST datus apstrādā ar htmlspecialchars ('>' -> '&gt;'); selektoram vajag oriģinālu
+		$selector = trim(html_entity_decode((string)$get('selector'), ENT_QUOTES, 'UTF-8'));
 
 		return array(
 			'module_product_3d_status'          => (int)!empty($post['module_product_3d_status']),
 			'module_product_3d_placement'       => in_array($placement, $this->placements) ? $placement : $d['placement'],
-			'module_product_3d_selector'        => ($selector !== '' && strlen($selector) <= 200 && !preg_match('/[<>]/', $selector)) ? $selector : $d['selector'],
+			'module_product_3d_selector'        => ($selector !== '' && strlen($selector) <= 200 && strpos($selector, '<') === false) ? $selector : $d['selector'],
 			'module_product_3d_height'          => max(200, min(1200, (int)$get('height'))),
 			'module_product_3d_bg_color'        => preg_match('/^(#[0-9a-fA-F]{3,8}|transparent)$/', $bg) ? $bg : $d['bg_color'],
 			'module_product_3d_ar'              => (int)!empty($post['module_product_3d_ar']),
@@ -154,7 +155,20 @@ class ControllerExtensionModuleProduct3d extends Controller {
 
 	/* ================================================================ install / uninstall */
 
+	/**
+	 * Izsauc core Extensions > Modules (tas pārbauda tiesības). Tieša izsaukšana pa maršrutu
+	 * ir pieejama ar `access` tiesībām, tāpēc pārbaudām `modify` uz extension/extension/module
+	 * (moduļa paša tiesības pirmās instalēšanas pieprasījumā vēl nav ielādētas).
+	 */
+	private function canManageExtensions() {
+		return $this->user->hasPermission('modify', 'extension/extension/module');
+	}
+
 	public function install() {
+		if (!$this->canManageExtensions()) {
+			return;
+		}
+
 		$this->load->model('extension/module/product_3d');
 		$this->load->model('setting/event');
 		$this->load->model('setting/setting');
@@ -169,6 +183,7 @@ class ControllerExtensionModuleProduct3d extends Controller {
 			'admin/model/catalog/product/addProduct/after'    => 'extension/module/product_3d/eventAdminAdd',
 			'admin/model/catalog/product/editProduct/after'   => 'extension/module/product_3d/eventAdminEdit',
 			'admin/model/catalog/product/deleteProduct/after' => 'extension/module/product_3d/eventAdminDelete',
+			'admin/model/catalog/product/copyProduct/after'   => 'extension/module/product_3d/eventAdminCopy',
 			'admin/view/common/column_left/before'            => 'extension/module/product_3d/eventAdminMenu',
 			'catalog/view/product/product/before'             => 'extension/module/product_3d/eventProductView'
 		);
@@ -192,6 +207,10 @@ class ControllerExtensionModuleProduct3d extends Controller {
 	}
 
 	public function uninstall() {
+		if (!$this->canManageExtensions()) {
+			return;
+		}
+
 		$this->load->model('setting/event');
 
 		$this->model_setting_event->deleteEventByCode(self::EVENT_CODE);
@@ -239,7 +258,7 @@ class ControllerExtensionModuleProduct3d extends Controller {
 			}
 		}
 
-		$catalog = $this->request->server['HTTPS'] ? HTTPS_CATALOG : HTTP_CATALOG;
+		$catalog = $this->catalogPath();
 
 		$view['image_base'] = $catalog . 'image/';
 		$view['js_base'] = $catalog . 'catalog/view/javascript/product_3d/';
@@ -274,6 +293,18 @@ class ControllerExtensionModuleProduct3d extends Controller {
 		$this->model_extension_module_product_3d->deleteProduct3d((int)$args[0]);
 	}
 
+	/** Produkta kopēšana: core copyProduct() izsauc addProduct() iekšēji (bez notikuma), tāpēc kopējam šeit */
+	public function eventAdminCopy(&$route, &$args, &$output) {
+		$source_id = isset($args[0]) ? (int)$args[0] : 0;
+
+		if ($source_id <= 0) {
+			return;
+		}
+
+		$this->load->model('extension/module/product_3d');
+		$this->model_extension_module_product_3d->copyProduct3d($source_id);
+	}
+
 	/** Ieraksts kreisajā izvēlnē: Catalog > 3D Product Viewer */
 	public function eventAdminMenu(&$route, &$data, &$code) {
 		if (!isset($data['menus']) || !$this->user->hasPermission('access', 'extension/module/product_3d')) {
@@ -303,7 +334,22 @@ class ControllerExtensionModuleProduct3d extends Controller {
 		}
 
 		$this->load->model('extension/module/product_3d');
-		$this->model_extension_module_product_3d->saveProduct3d($product_id, $this->cleanProductInput($input));
+
+		$clean = $this->cleanProductInput($input);
+		$current = $this->model_extension_module_product_3d->getProduct3d($product_id);
+
+		// Ja lauks bija aizpildīts, bet ceļš nav derīgs (fails uz brīdi nav, pilns URL u.c.),
+		// neko neizdzēšam klusām: paturam iepriekšējo vērtību un ierakstām žurnālā.
+		foreach (array('model_3d', 'ios_3d', 'poster_3d') as $key) {
+			$submitted = isset($input[$key]) ? trim((string)$input[$key]) : '';
+
+			if ($submitted !== '' && $clean[$key] === '') {
+				$clean[$key] = isset($current[$key]) ? $current[$key] : '';
+				$this->log->write('[product_3d] product_id=' . $product_id . ': ignored invalid ' . $key . ' path "' . substr($submitted, 0, 200) . '"');
+			}
+		}
+
+		$this->model_extension_module_product_3d->saveProduct3d($product_id, $clean);
 	}
 
 	private function cleanProductInput(array $input) {
@@ -323,7 +369,15 @@ class ControllerExtensionModuleProduct3d extends Controller {
 	/** Ceļš relatīvi pret image/; tikai esoši faili ar atļautu paplašinājumu image/ mapē */
 	private function cleanPath($path, $type) {
 		$path = trim(str_replace('\\', '/', html_entity_decode((string)$path, ENT_QUOTES, 'UTF-8')));
-		$path = preg_replace('#^(https?://[^/]+/)?(image/)?#', '', ltrim($path, '/'));
+		// pieņem arī pilnu URL vai ceļu ar image/ (arī veikalam apakšmapē: .../shop/image/...)
+		$path = preg_replace('#^https?://[^/]+#i', '', $path);
+		$pos = strpos($path, '/image/');
+
+		if ($pos !== false) {
+			$path = substr($path, $pos + 7);
+		}
+
+		$path = preg_replace('#^image/#', '', ltrim($path, '/'));
 
 		if ($path === '' || strpos($path, '..') !== false || strpos($path, "\0") !== false || strlen($path) > 255) {
 			return '';
@@ -410,20 +464,31 @@ class ControllerExtensionModuleProduct3d extends Controller {
 			$target = $folder . $base . '.' . $ext;
 			$i = 1;
 
-			while (is_file(DIR_IMAGE . $target)) {
+			// rezervē nosaukumu atomāri (fopen 'x'), lai paralēlas augšupielādes nepārrakstītu viena otru
+			$handle = false;
+
+			while ($i < 1000 && !($handle = @fopen(DIR_IMAGE . $target, 'x'))) {
 				$target = $folder . $base . '-' . $i++ . '.' . $ext;
 			}
 
-			if (move_uploaded_file($file['tmp_name'], DIR_IMAGE . $target)) {
+			if ($handle) {
+				fclose($handle);
+			}
+
+			if ($handle && move_uploaded_file($file['tmp_name'], DIR_IMAGE . $target)) {
 				@chmod(DIR_IMAGE . $target, 0644);
 
-				$catalog = $this->request->server['HTTPS'] ? HTTPS_CATALOG : HTTP_CATALOG;
+				$catalog = $this->catalogPath();
 
 				$json['path'] = $target;
 				$json['url'] = $catalog . 'image/' . $this->encodePath($target);
 				$json['size'] = (int)$file['size'];
 				$json['success'] = $this->language->get('text_uploaded');
 			} else {
+				if ($handle && is_file(DIR_IMAGE . $target) && !filesize(DIR_IMAGE . $target)) {
+					@unlink(DIR_IMAGE . $target); // tikai mūsu rezervētais tukšais fails
+				}
+
 				$json['error'] = $this->language->get('error_upload');
 			}
 		}
@@ -483,7 +548,8 @@ class ControllerExtensionModuleProduct3d extends Controller {
 	private function validateContent($tmp, $ext) {
 		$head = (string)file_get_contents($tmp, false, null, 0, 16);
 
-		if (preg_match('/<\?php|<\?=|<script/i', (string)file_get_contents($tmp, false, null, 0, 4096)) && $ext != 'glb') {
+		// skriptu marķieri visā failā (izņemot bināro .glb, kur tie var būt nejauši datos)
+		if ($ext != 'glb' && $this->containsScript($tmp)) {
 			return 'error_content';
 		}
 
@@ -499,7 +565,21 @@ class ControllerExtensionModuleProduct3d extends Controller {
 					return 'error_glb';
 				}
 
-				return '';
+				// pirmais chunk ir JSON - pārbaudām ārējās atsauces
+				$chunk = (string)file_get_contents($tmp, false, null, 12, 8);
+				$info = strlen($chunk) == 8 ? unpack('Vlength/Vtype', $chunk) : null;
+
+				if (!$info || $info['type'] != 0x4E4F534A || $info['length'] > 64 * 1048576) {
+					return 'error_glb';
+				}
+
+				$json = json_decode((string)file_get_contents($tmp, false, null, 20, $info['length']), true);
+
+				if (!is_array($json)) {
+					return 'error_glb';
+				}
+
+				return $this->hasExternalUri($json) ? 'error_gltf_external' : '';
 
 			case 'gltf':
 				$json = json_decode((string)file_get_contents($tmp), true);
@@ -509,30 +589,76 @@ class ControllerExtensionModuleProduct3d extends Controller {
 				}
 
 				// .gltf ar ārējiem .bin/.png failiem pārlūkā nestrādās - prasām pašpietiekamu failu
-				foreach (array('buffers', 'images') as $key) {
-					if (isset($json[$key]) && is_array($json[$key])) {
-						foreach ($json[$key] as $item) {
-							if (isset($item['uri']) && strpos((string)$item['uri'], 'data:') !== 0) {
-								return 'error_gltf_external';
-							}
-						}
-					}
-				}
-
-				return '';
+				return $this->hasExternalUri($json) ? 'error_gltf_external' : '';
 
 			case 'usdz':
-				return substr($head, 0, 4) === "PK\x03\x04" ? '' : 'error_usdz';
+				if (substr($head, 0, 4) !== "PK\x03\x04") {
+					return 'error_usdz';
+				}
+
+				// USDZ: pirmajam ZIP ierakstam jābūt USD failam
+				$name_len = unpack('v', (string)file_get_contents($tmp, false, null, 26, 2));
+				$first = $name_len ? (string)file_get_contents($tmp, false, null, 30, min(255, $name_len[1])) : '';
+
+				return preg_match('/\.(usd|usda|usdc)$/i', $first) ? '' : 'error_usdz';
 
 			default:
 				$info = @getimagesize($tmp);
+				$expected = array('jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp');
 
-				if (!$info || !in_array($info['mime'], array('image/jpeg', 'image/png', 'image/webp'))) {
+				// attēla tipam jāsakrīt ar paplašinājumu
+				if (!$info || !isset($expected[$ext]) || $info['mime'] !== $expected[$ext]) {
 					return 'error_image';
 				}
 
 				return '';
 		}
+	}
+
+	private function containsScript($file) {
+		$handle = @fopen($file, 'rb');
+
+		if (!$handle) {
+			return true;
+		}
+
+		$tail = '';
+		$found = false;
+
+		while (!feof($handle)) {
+			$block = $tail . (string)fread($handle, 1048576);
+
+			if (preg_match('/<\?php|<script/i', $block)) {
+				$found = true;
+				break;
+			}
+
+			$tail = substr($block, -16);
+		}
+
+		fclose($handle);
+
+		return $found;
+	}
+
+	/** true, ja glTF JSON atsaucas uz ārējiem failiem/URL (atļauts tikai data: un bufferView) */
+	private function hasExternalUri(array $json) {
+		foreach (array('buffers', 'images') as $key) {
+			if (isset($json[$key]) && is_array($json[$key])) {
+				foreach ($json[$key] as $index => $item) {
+					if (!isset($item['uri'])) {
+						continue;
+					}
+
+					// GLB: buffers[0] bez uri ir BIN chunk; jebkurš cits uri, kas nav data:, ir ārējs
+					if (strpos((string)$item['uri'], 'data:') !== 0) {
+						return true;
+					}
+				}
+			}
+		}
+
+		return false;
 	}
 
 	private function safeName($name) {
@@ -557,6 +683,14 @@ class ControllerExtensionModuleProduct3d extends Controller {
 		return $name !== '' ? substr($name, 0, 80) : 'model-' . date('YmdHis');
 	}
 
+	/** Veikala saknes ceļš bez protokola un domēna (piem. "/" vai "/shop/") - nav CORS problēmu */
+	private function catalogPath() {
+		$url = $this->request->server['HTTPS'] ? HTTPS_CATALOG : HTTP_CATALOG;
+		$path = (string)parse_url($url, PHP_URL_PATH);
+
+		return '/' . trim($path, '/') . ($path !== '' && trim($path, '/') !== '' ? '/' : '');
+	}
+
 	private function encodePath($path) {
 		return implode('/', array_map('rawurlencode', explode('/', $path)));
 	}
@@ -571,15 +705,26 @@ class ControllerExtensionModuleProduct3d extends Controller {
 		// MIME tipi un PHP bloķēšana (Apache). Nginx gadījumā skat. README.
 		$htaccess = $dir . '.htaccess';
 
-		if (!is_file($htaccess)) {
+		// raksta, ja nav vai ja to izveidojis šis modulis (atjaunināšana); svešu .htaccess neaiztiek
+		if (!is_file($htaccess) || strpos((string)@file_get_contents($htaccess, false, null, 0, 64), '# OpenCart 3D Product Viewer') === 0) {
 			@file_put_contents($htaccess, "# OpenCart 3D Product Viewer\n"
 				. "<IfModule mod_mime.c>\n"
 				. "  AddType model/gltf-binary .glb\n"
 				. "  AddType model/gltf+json .gltf\n"
 				. "  AddType model/vnd.usdz+zip .usdz\n"
 				. "</IfModule>\n"
+				. "Options -Indexes\n"
+				. "<IfModule mod_headers.c>\n"
+				. "  Header set X-Content-Type-Options \"nosniff\"\n"
+				. "</IfModule>\n"
 				. "<FilesMatch \"\\.(php[0-9]?|phtml|phar|pl|py|cgi|sh)$\">\n"
-				. "  Require all denied\n"
+				. "  <IfModule mod_authz_core.c>\n"
+				. "    Require all denied\n"
+				. "  </IfModule>\n"
+				. "  <IfModule !mod_authz_core.c>\n"
+				. "    Order Deny,Allow\n"
+				. "    Deny from all\n"
+				. "  </IfModule>\n"
 				. "</FilesMatch>\n");
 		}
 

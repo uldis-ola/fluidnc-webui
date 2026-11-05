@@ -52,6 +52,22 @@ class ModelExtensionModuleProduct3d extends Model {
 			`date_modified` = NOW()");
 	}
 
+	/** Kopē 3D ierakstu uz jaunāko produktu (core copyProduct() tikko izveidoja to ar addProduct()) */
+	public function copyProduct3d($source_id) {
+		$row = $this->getProduct3d($source_id);
+
+		if (!$row) {
+			return;
+		}
+
+		$query = $this->db->query("SELECT MAX(`product_id`) AS product_id FROM `" . DB_PREFIX . "product`");
+		$new_id = isset($query->row['product_id']) ? (int)$query->row['product_id'] : 0;
+
+		if ($new_id > 0 && $new_id != (int)$source_id) {
+			$this->saveProduct3d($new_id, $row);
+		}
+	}
+
 	public function deleteProduct3d($product_id) {
 		$this->db->query("DELETE FROM `" . DB_PREFIX . "product_3d` WHERE `product_id` = '" . (int)$product_id . "'");
 	}
