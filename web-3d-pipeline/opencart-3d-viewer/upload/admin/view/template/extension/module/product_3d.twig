@@ -1,0 +1,152 @@
+{{ header }}{{ column_left }}
+<div id="content">
+  <div class="page-header">
+    <div class="container-fluid">
+      <div class="pull-right">
+        <button type="submit" form="form-product-3d" data-toggle="tooltip" title="{{ button_save|e }}" class="btn btn-primary"><i class="fa fa-save"></i></button>
+        <a href="{{ cancel }}" data-toggle="tooltip" title="{{ button_cancel|e }}" class="btn btn-default"><i class="fa fa-reply"></i></a>
+      </div>
+      <h1>{{ heading_title }} <small>v{{ version }}</small></h1>
+      <ul class="breadcrumb">
+        {% for breadcrumb in breadcrumbs %}
+        <li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="container-fluid">
+    {% if error_warning %}
+    <div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> {{ error_warning|e }}
+      <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endif %}
+    {% if module_product_3d_source == 'local' and not local_assets %}
+    <div class="alert alert-warning"><i class="fa fa-exclamation-triangle"></i> {{ text_local_missing }}</div>
+    {% endif %}
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title"><i class="fa fa-cube"></i> {{ text_edit }}</h3>
+        <span class="pull-right text-muted">{{ text_products|format(total_products) }}</span>
+      </div>
+      <div class="panel-body">
+        <form action="{{ action }}" method="post" enctype="multipart/form-data" id="form-product-3d" class="form-horizontal">
+          <fieldset>
+            <legend>{{ text_general }}</legend>
+            <div class="form-group">
+              <label class="col-sm-3 control-label" for="p3d-status">{{ entry_status }}</label>
+              <div class="col-sm-9">
+                <select name="module_product_3d_status" id="p3d-status" class="form-control">
+                  <option value="1"{% if module_product_3d_status %} selected="selected"{% endif %}>{{ text_enabled }}</option>
+                  <option value="0"{% if not module_product_3d_status %} selected="selected"{% endif %}>{{ text_disabled }}</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label" for="p3d-placement">{{ entry_placement }}</label>
+              <div class="col-sm-9">
+                <select name="module_product_3d_placement" id="p3d-placement" class="form-control">
+                  {% for value in ['replace', 'before', 'after', 'manual'] %}
+                  <option value="{{ value }}"{% if module_product_3d_placement == value %} selected="selected"{% endif %}>{{ attribute(_context, 'text_placement_' ~ value) }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label" for="p3d-selector"><span data-toggle="tooltip" title="{{ help_selector|e }}">{{ entry_selector }}</span></label>
+              <div class="col-sm-9">
+                <input type="text" name="module_product_3d_selector" value="{{ module_product_3d_selector|e }}" id="p3d-selector" class="form-control" maxlength="200" />
+                <p class="help-block">{{ help_selector }}</p>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label" for="p3d-source">{{ entry_source }}</label>
+              <div class="col-sm-9">
+                <select name="module_product_3d_source" id="p3d-source" class="form-control">
+                  <option value="local"{% if module_product_3d_source == 'local' %} selected="selected"{% endif %}>{{ text_local }}</option>
+                  <option value="cdn"{% if module_product_3d_source == 'cdn' %} selected="selected"{% endif %}>{{ text_cdn }}</option>
+                </select>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>{{ text_viewer }}</legend>
+            <div class="form-group">
+              <label class="col-sm-3 control-label" for="p3d-height">{{ entry_height }}</label>
+              <div class="col-sm-9">
+                <input type="number" min="200" max="1200" name="module_product_3d_height" value="{{ module_product_3d_height|e }}" id="p3d-height" class="form-control" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label" for="p3d-bg">{{ entry_bg_color }}</label>
+              <div class="col-sm-9">
+                <input type="text" name="module_product_3d_bg_color" value="{{ module_product_3d_bg_color|e }}" id="p3d-bg" class="form-control" placeholder="#f5f6f8 / transparent" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label" for="p3d-shadow">{{ entry_shadow }}</label>
+              <div class="col-sm-9">
+                <input type="number" step="0.1" min="0" max="2" name="module_product_3d_shadow" value="{{ module_product_3d_shadow|e }}" id="p3d-shadow" class="form-control" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label" for="p3d-exposure">{{ entry_exposure }}</label>
+              <div class="col-sm-9">
+                <input type="number" step="0.1" min="0.1" max="3" name="module_product_3d_exposure" value="{{ module_product_3d_exposure|e }}" id="p3d-exposure" class="form-control" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label" for="p3d-orbit">{{ entry_camera_orbit }}</label>
+              <div class="col-sm-9">
+                <input type="text" name="module_product_3d_camera_orbit" value="{{ module_product_3d_camera_orbit|e }}" id="p3d-orbit" class="form-control" placeholder="30deg 75deg auto" />
+                <p class="help-block">{{ help_camera_orbit }}</p>
+              </div>
+            </div>
+            {% for key in ['ar', 'auto_rotate', 'camera_controls', 'poster_fallback'] %}
+            {% set field = 'module_product_3d_' ~ key %}
+            <div class="form-group">
+              <label class="col-sm-3 control-label">{{ attribute(_context, 'entry_' ~ key) }}</label>
+              <div class="col-sm-9">
+                <div class="checkbox">
+                  <label><input type="checkbox" name="{{ field }}" value="1"{% if attribute(_context, field) %} checked="checked"{% endif %} /> {{ text_enabled }}</label>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </fieldset>
+
+          <fieldset>
+            <legend>{{ text_files }}</legend>
+            <div class="form-group">
+              <label class="col-sm-3 control-label" for="p3d-folder">{{ entry_folder }}</label>
+              <div class="col-sm-9">
+                <div class="input-group">
+                  <span class="input-group-addon">image/</span>
+                  <input type="text" name="module_product_3d_folder" value="{{ module_product_3d_folder|e }}" id="p3d-folder" class="form-control" />
+                </div>
+                <p class="help-block">{{ help_folder }}</p>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label" for="p3d-max">{{ entry_max_size }}</label>
+              <div class="col-sm-9">
+                <input type="number" min="1" max="500" name="module_product_3d_max_size" value="{{ module_product_3d_max_size|e }}" id="p3d-max" class="form-control" />
+                <p class="help-block">{{ help_max_size|format(upload_limit) }}</p>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">{{ entry_delete_data }}</label>
+              <div class="col-sm-9">
+                <div class="checkbox">
+                  <label><input type="checkbox" name="module_product_3d_delete_data" value="1"{% if module_product_3d_delete_data %} checked="checked"{% endif %} /> {{ text_enabled }}</label>
+                </div>
+                <p class="help-block">{{ help_delete_data }}</p>
+              </div>
+            </div>
+          </fieldset>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{{ footer }}

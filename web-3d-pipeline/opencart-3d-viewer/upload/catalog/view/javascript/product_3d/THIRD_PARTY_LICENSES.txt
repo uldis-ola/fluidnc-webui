@@ -1,0 +1,7 @@
+OpenCart 3D Product Viewer bundles the following third-party files (unmodified):
+
+model-viewer.min.js        @google/model-viewer 4.0.0      Apache License 2.0   https://github.com/google/model-viewer
+                           (includes three.js, MIT License, https://github.com/mrdoob/three.js)
+meshopt_decoder.js         meshoptimizer 0.21.0            MIT License          https://github.com/zeux/meshoptimizer
+draco/*                    Draco decoder (via three@0.169.0) Apache License 2.0 https://github.com/google/draco
+basis/*                    Basis Universal transcoder (via three@0.169.0) Apache License 2.0 https://github.com/BinomialLLC/basis_universal

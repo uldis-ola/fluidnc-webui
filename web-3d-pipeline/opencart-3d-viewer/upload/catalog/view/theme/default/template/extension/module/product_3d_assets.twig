@@ -1,0 +1,13 @@
+<link rel="stylesheet" href="{{ js_base }}product_3d.css?v={{ version }}">
+<script>
+  window.ModelViewerElement = window.ModelViewerElement || {};
+  {% if source == 'cdn' %}
+  window.ModelViewerElement.meshoptDecoderLocation = 'https://cdn.jsdelivr.net/npm/meshoptimizer@0.21.0/meshopt_decoder.js';
+  {% else %}
+  window.ModelViewerElement.dracoDecoderLocation = '{{ js_base }}draco/';
+  window.ModelViewerElement.ktx2TranscoderLocation = '{{ js_base }}basis/';
+  window.ModelViewerElement.meshoptDecoderLocation = '{{ js_base }}meshopt_decoder.js';
+  {% endif %}
+</script>
+<script type="module" src="{% if source == 'cdn' %}https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js{% else %}{{ js_base }}model-viewer.min.js?v={{ version }}{% endif %}"></script>
+<script src="{{ js_base }}product_3d.js?v={{ version }}"></script>

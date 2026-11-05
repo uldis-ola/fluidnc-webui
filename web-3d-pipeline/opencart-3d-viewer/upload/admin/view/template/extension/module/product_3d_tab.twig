@@ -1,0 +1,208 @@
+{# OpenCart 3D Product Viewer — cilne produkta formā. JS to pārvieto formas cilnēs. #}
+<div id="product-3d-source" style="display:none">
+  <li id="product-3d-tab-li"><a href="#tab-product-3d" data-toggle="tab"><i class="fa fa-cube"></i> {{ p3d_tab|e }}</a></li>
+  <div class="tab-pane" id="tab-product-3d">
+    {% if not can_modify %}
+    <div class="alert alert-warning"><i class="fa fa-lock"></i> {{ p3d_readonly|e }}</div>
+    {% endif %}
+    <div class="row">
+      <div class="col-md-7">
+        {% for field in [
+          {key: 'model_3d', type: 'model', label: p3d_model, accept: '.glb,.gltf,model/gltf-binary,model/gltf+json'},
+          {key: 'ios_3d', type: 'ios', label: p3d_ios, accept: '.usdz,model/vnd.usdz+zip'},
+          {key: 'poster_3d', type: 'poster', label: p3d_poster, accept: '.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp'}
+        ] %}
+        <div class="form-group p3d-file" data-type="{{ field.type }}">
+          <label class="col-sm-3 control-label" for="p3d-{{ field.key }}">{{ field.label|e }}</label>
+          <div class="col-sm-9">
+            <div class="input-group">
+              <span class="input-group-addon">image/</span>
+              <input type="text" name="product_3d[{{ field.key }}]" value="{{ attribute(_context, field.key)|e }}" id="p3d-{{ field.key }}" class="form-control p3d-path" maxlength="255"{% if not can_modify %} readonly{% endif %} />
+              <span class="input-group-btn">
+                {% if can_modify %}
+                <button type="button" class="btn btn-primary p3d-upload" title="{{ p3d_upload|e }}"><i class="fa fa-upload"></i></button>
+                {% endif %}
+                <button type="button" class="btn btn-default p3d-choose" title="{{ p3d_choose|e }}"><i class="fa fa-folder-open"></i></button>
+                {% if can_modify %}
+                <button type="button" class="btn btn-danger p3d-clear" title="{{ p3d_clear|e }}"><i class="fa fa-times"></i></button>
+                {% endif %}
+              </span>
+            </div>
+            <input type="file" class="p3d-input" accept="{{ field.accept }}" style="display:none" />
+            <select class="form-control p3d-list" style="display:none; margin-top:6px"></select>
+            <div class="p3d-progress progress" style="display:none; margin:6px 0 0"><div class="progress-bar progress-bar-striped active" style="width:100%">{{ p3d_uploading|e }}</div></div>
+            <div class="p3d-msg help-block"></div>
+          </div>
+        </div>
+        {% endfor %}
+
+        <div class="form-group">
+          <label class="col-sm-3 control-label" for="p3d-placement">{{ p3d_placement|e }}</label>
+          <div class="col-sm-9">
+            <select name="product_3d[placement]" id="p3d-placement" class="form-control">
+              <option value="">{{ p3d_placement_default|e }}</option>
+              {% for value in placements %}
+              <option value="{{ value }}"{% if placement == value %} selected="selected"{% endif %}>{{ attribute(_context, 'p3d_place_' ~ value)|default(value) }}</option>
+              {% endfor %}
+              <option value="disabled"{% if placement == 'disabled' %} selected="selected"{% endif %}>{{ p3d_placement_disabled|e }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="col-sm-3 control-label" for="p3d-orbit">{{ p3d_camera_orbit|e }}</label>
+          <div class="col-sm-9">
+            <input type="text" name="product_3d[camera_orbit]" value="{{ camera_orbit|e }}" id="p3d-orbit" class="form-control" placeholder="30deg 75deg auto" maxlength="64" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="col-sm-3 control-label" for="p3d-auto">{{ p3d_auto_rotate|e }}</label>
+          <div class="col-sm-9">
+            <select name="product_3d[auto_rotate]" id="p3d-auto" class="form-control">
+              <option value="">{{ p3d_inherit|e }}</option>
+              <option value="1"{% if auto_rotate == '1' %} selected="selected"{% endif %}>{{ p3d_yes|e }}</option>
+              <option value="0"{% if auto_rotate == '0' %} selected="selected"{% endif %}>{{ p3d_no|e }}</option>
+            </select>
+          </div>
+        </div>
+        <p class="text-muted"><i class="fa fa-info-circle"></i> {{ p3d_hint|e }} {{ p3d_max|format(max_size)|e }}. <a href="{{ settings_url }}" target="_blank">{{ p3d_settings|e }}</a></p>
+      </div>
+      <div class="col-md-5">
+        <label>{{ p3d_preview|e }}</label>
+        <div style="border:1px solid #ddd; border-radius:4px; background:#f5f6f8">
+          <model-viewer id="p3d-preview" camera-controls auto-rotate shadow-intensity="1" environment-image="neutral"
+            style="width:100%; height:360px; --poster-color:transparent"
+            {% if model_3d %} src="{{ image_base ~ model_3d|e }}"{% endif %}
+            {% if poster_3d %} poster="{{ image_base ~ poster_3d|e }}"{% endif %}
+            {% if camera_orbit %} camera-orbit="{{ camera_orbit|e }}"{% endif %}></model-viewer>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  window.ModelViewerElement = window.ModelViewerElement || {};
+  {% if source == 'cdn' %}
+  window.ModelViewerElement.meshoptDecoderLocation = 'https://cdn.jsdelivr.net/npm/meshoptimizer@0.21.0/meshopt_decoder.js';
+  {% else %}
+  window.ModelViewerElement.dracoDecoderLocation = '{{ js_base }}draco/';
+  window.ModelViewerElement.ktx2TranscoderLocation = '{{ js_base }}basis/';
+  window.ModelViewerElement.meshoptDecoderLocation = '{{ js_base }}meshopt_decoder.js';
+  {% endif %}
+</script>
+<script type="module" src="{% if source == 'cdn' %}https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js{% else %}{{ js_base }}model-viewer.min.js?v={{ version }}{% endif %}"></script>
+<script>
+$(function () {
+  var $src = $('#product-3d-source');
+  var $tabs = $('#form-product > .nav-tabs').first();
+  var $content = $('#form-product > .tab-content').first();
+
+  if (!$tabs.length || !$content.length) {
+    return;
+  }
+
+  // cilne pēc "Design" (vai beigās)
+  var $li = $('#product-3d-tab-li');
+  var $design = $tabs.find('a[href="#tab-design"]').closest('li');
+  if ($design.length) { $design.after($li); } else { $tabs.append($li); }
+  $content.append($('#tab-product-3d'));
+  $src.remove();
+
+  var imageBase = {{ image_base|json_encode }};
+  var uploadUrl = {{ upload_url|json_encode }};
+  var filesUrl = {{ files_url|json_encode }};
+  var noneText = {{ p3d_none|json_encode }};
+  var maxBytes = {{ max_size }} * 1024 * 1024;
+  var preview = document.getElementById('p3d-preview');
+
+  function encodePath(p) {
+    return p.split('/').map(encodeURIComponent).join('/');
+  }
+
+  function refreshPreview() {
+    var model = $.trim($('#p3d-model_3d').val());
+    var poster = $.trim($('#p3d-poster_3d').val());
+    var orbit = $.trim($('#p3d-orbit').val());
+    if (model) { preview.setAttribute('src', imageBase + encodePath(model)); } else { preview.removeAttribute('src'); }
+    if (poster) { preview.setAttribute('poster', imageBase + encodePath(poster)); } else { preview.removeAttribute('poster'); }
+    if (orbit) { preview.setAttribute('camera-orbit', orbit); }
+  }
+
+  function message($row, text, isError) {
+    $row.find('.p3d-msg').toggleClass('text-danger', !!isError).toggleClass('text-success', !isError).text(text || '');
+  }
+
+  $('#tab-product-3d .p3d-file').each(function () {
+    var $row = $(this);
+    var type = $row.data('type');
+    var $path = $row.find('.p3d-path');
+    var $file = $row.find('.p3d-input');
+    var $list = $row.find('.p3d-list');
+
+    $row.find('.p3d-upload').on('click', function () { $file.trigger('click'); });
+
+    $file.on('change', function () {
+      var f = this.files[0];
+      if (!f) { return; }
+      if (f.size > maxBytes) {
+        message($row, {{ p3d_max|format(max_size)|json_encode }}, true);
+        this.value = '';
+        return;
+      }
+      var fd = new FormData();
+      fd.append('file', f);
+      $row.find('.p3d-progress').show();
+      message($row, '');
+      $.ajax({
+        url: uploadUrl + '&type=' + encodeURIComponent(type),
+        type: 'post',
+        data: fd,
+        dataType: 'json',
+        cache: false,
+        contentType: false,
+        processData: false
+      }).done(function (json) {
+        if (json.error) {
+          message($row, json.error, true);
+        } else {
+          $path.val(json.path).trigger('change');
+          message($row, json.success + ' (' + Math.round(json.size / 1024) + ' KB)');
+        }
+      }).fail(function (xhr, status, err) {
+        message($row, err || status, true);
+      }).always(function () {
+        $row.find('.p3d-progress').hide();
+        $file.val('');
+      });
+    });
+
+    $row.find('.p3d-choose').on('click', function () {
+      if ($list.is(':visible')) { $list.hide(); return; }
+      $.getJSON(filesUrl + '&type=' + encodeURIComponent(type)).done(function (json) {
+        $list.empty();
+        if (json.error) { message($row, json.error, true); return; }
+        if (!json.files.length) {
+          $list.append($('<option>').text(noneText).val(''));
+        } else {
+          $list.append($('<option>').text('—').val(''));
+          $.each(json.files, function (i, f) { $list.append($('<option>').text(f).val(f)); });
+        }
+        $list.show().focus();
+      });
+    });
+
+    $list.on('change', function () {
+      if (this.value) { $path.val(this.value).trigger('change'); }
+      $list.hide();
+    });
+
+    $row.find('.p3d-clear').on('click', function () {
+      $path.val('').trigger('change');
+      message($row, '');
+    });
+
+    $path.on('change', refreshPreview);
+  });
+
+  $('#p3d-orbit').on('change', refreshPreview);
+});
+</script>

@@ -1,0 +1,88 @@
+<?php
+// Heading
+$_['heading_title']         = '3D-просмотр товаров';
+
+// Text
+$_['text_extension']        = 'Расширения';
+$_['text_success']          = 'Настройки 3D-просмотра сохранены!';
+$_['text_edit']             = 'Редактировать 3D-просмотр товаров';
+$_['text_uploaded']         = 'Файл загружен.';
+$_['text_products']         = 'Товаров с 3D-моделью: %s';
+$_['text_local']            = 'Локальные файлы (рекомендуется, без внешних запросов)';
+$_['text_cdn']              = 'Google CDN';
+$_['text_local_missing']    = 'В catalog/view/javascript/product_3d/ нет файлов model-viewer — загрузите модуль повторно или используйте CDN.';
+$_['text_placement_replace'] = 'Вместо галереи изображений';
+$_['text_placement_before'] = 'Над галереей изображений';
+$_['text_placement_after']  = 'Под галереей изображений';
+$_['text_placement_manual'] = 'Вручную (тема выводит {{ product_3d_html }})';
+$_['text_general']          = 'Общие';
+$_['text_viewer']           = 'Просмотрщик';
+$_['text_files']            = 'Файлы';
+
+// Entry
+$_['entry_status']          = 'Статус';
+$_['entry_placement']       = 'Расположение на странице товара';
+$_['entry_selector']        = 'CSS-селектор галереи';
+$_['entry_height']          = 'Высота (px)';
+$_['entry_bg_color']        = 'Цвет фона';
+$_['entry_ar']              = 'Кнопка дополненной реальности (AR)';
+$_['entry_auto_rotate']     = 'Автовращение';
+$_['entry_camera_controls'] = 'Вращение / масштаб мышью и касанием';
+$_['entry_shadow']          = 'Интенсивность тени (0–2)';
+$_['entry_exposure']        = 'Экспозиция (0,1–3)';
+$_['entry_camera_orbit']    = 'Угол камеры по умолчанию';
+$_['entry_poster_fallback'] = 'Основное изображение товара как постер';
+$_['entry_source']          = 'Источник model-viewer';
+$_['entry_folder']          = 'Папка загрузки (внутри image/)';
+$_['entry_max_size']        = 'Макс. размер файла (МБ)';
+$_['entry_delete_data']     = 'Удалить 3D-связи при удалении модуля';
+
+// Help
+$_['help_selector']         = 'Элемент с изображениями товара. Тема default: .thumbnails. Для Journal и др. проверьте инспектором браузера.';
+$_['help_camera_orbit']     = 'напр. "30deg 75deg auto" (по горизонтали, по вертикали, расстояние). Пусто = автоматически.';
+$_['help_max_size']         = 'Лимит сервера (upload_max_filesize / post_max_size): %s МБ.';
+$_['help_delete_data']      = 'Удаляется только таблица связей товар ↔ модель. Загруженные файлы в image/ не удаляются.';
+$_['help_folder']           = 'Должна начинаться с catalog/, напр. catalog/3d/';
+
+// Product form tab
+$_['p3d_tab']               = '3D-модель';
+$_['p3d_menu']              = '3D-просмотр товаров';
+$_['p3d_model']             = '3D-модель (.glb / .gltf)';
+$_['p3d_ios']               = 'Файл AR для iOS (.usdz, необязательно)';
+$_['p3d_poster']            = 'Постер (необязательно)';
+$_['p3d_placement']         = 'Расположение';
+$_['p3d_placement_default'] = '— как в настройках модуля —';
+$_['p3d_place_replace']     = 'Вместо галереи';
+$_['p3d_place_before']      = 'Над галереей';
+$_['p3d_place_after']       = 'Под галереей';
+$_['p3d_place_manual']      = 'Вручную (тема)';
+$_['p3d_placement_disabled'] = 'Не показывать для этого товара';
+$_['p3d_camera_orbit']      = 'Угол камеры';
+$_['p3d_auto_rotate']       = 'Автовращение';
+$_['p3d_inherit']           = '— как в настройках модуля —';
+$_['p3d_yes']               = 'Да';
+$_['p3d_no']                = 'Нет';
+$_['p3d_upload']            = 'Загрузить';
+$_['p3d_choose']            = 'Выбрать существующий…';
+$_['p3d_clear']             = 'Убрать';
+$_['p3d_preview']           = 'Предпросмотр';
+$_['p3d_uploading']         = 'Загрузка…';
+$_['p3d_none']              = 'Файлы не найдены';
+$_['p3d_hint']              = 'Совет: оптимизируйте модель перед загрузкой (напр. web-3d-pipeline/optimize.py): ≤ 5 МБ, текстуры ≤ 2048 px. Изменения применяются после сохранения товара.';
+$_['p3d_max']               = 'Макс. %s МБ';
+$_['p3d_settings']          = 'Настройки модуля';
+$_['p3d_readonly']          = 'У вас нет прав изменять 3D-модели.';
+
+// Error
+$_['error_permission']      = 'Внимание: у вас нет прав изменять 3D-просмотр товаров!';
+$_['error_type']            = 'Неизвестный тип файла.';
+$_['error_upload']          = 'Не удалось загрузить файл.';
+$_['error_size']            = 'Файл слишком большой (макс. %s МБ).';
+$_['error_extension']       = 'Допустимые типы файлов: %s';
+$_['error_content']         = 'Недопустимое содержимое файла.';
+$_['error_glb']             = 'Неверный файл .glb (ожидается glTF 2.0 binary).';
+$_['error_gltf']            = 'Неверный файл .gltf (ожидается glTF 2.0 JSON).';
+$_['error_gltf_external']   = 'Этот .gltf ссылается на внешние файлы (.bin / текстуры). Загрузите один файл .glb.';
+$_['error_usdz']            = 'Неверный файл .usdz.';
+$_['error_image']           = 'Постер должен быть JPG, PNG или WebP.';
+$_['error_folder']          = 'Нет прав записи в папку %s.';
