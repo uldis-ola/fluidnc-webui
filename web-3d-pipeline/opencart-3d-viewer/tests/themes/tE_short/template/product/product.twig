@@ -1,0 +1,15 @@
+{{ header }}
+<style>.te-row{display:flex;flex-wrap:wrap;gap:24px;max-width:1170px;margin:0 auto;padding:16px}.te-l{flex:1 1 520px;min-width:0}.te-r{flex:1 1 280px}
+.te-row ul.thumbnails{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:8px}.te-row ul.thumbnails li:first-child{flex:0 0 100%}</style>
+<div class="te-row" id="content">
+  <div class="te-l">
+    {% if thumb or images %}<ul class="thumbnails">
+      {% if thumb %}<li><a class="thumbnail" href="{{ popup }}"><img src="{{ thumb }}" alt=""></a></li>{% endif %}
+      {% for image in images %}<li><a href="{{ image.popup }}"><img src="{{ image.thumb }}" alt=""></a></li>{% endfor %}
+    </ul>{% endif %}
+    <ul class="nav nav-tabs"><li class="active"><a href="#tab-description">Apraksts</a></li></ul>
+    <div class="tab-content"><div class="tab-pane active" id="tab-description">Īss apraksts.</div></div>
+  </div>
+  <div class="te-r"><h1>{{ heading_title }}</h1><div class="price">{{ price }}</div><button id="button-cart" class="btn btn-primary">Grozā</button></div>
+</div>
+{{ footer }}

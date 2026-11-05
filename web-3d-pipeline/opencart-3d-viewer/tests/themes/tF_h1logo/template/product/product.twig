@@ -1,0 +1,13 @@
+{{ header }}
+<style>.tf{max-width:1170px;margin:0 auto;padding:16px}.tf-logo{font-size:22px;margin:0 0 12px}.tf-row{display:flex;flex-wrap:wrap;gap:24px}.tf-g{flex:1 1 500px;min-width:0}.tf-i{flex:1 1 300px}
+.tf-g img.main{width:100%;max-width:520px;display:block}.tf-name{font-size:26px;font-weight:700}</style>
+<div class="tf">
+  <h1 class="tf-logo">Mans Veikals</h1>
+  <div class="tf-row">
+    <div class="tf-g">{% if popup %}<img class="main" src="{{ popup }}" alt="">{% endif %}
+      <div>{% for image in images %}<img src="{{ image.thumb }}" alt="">{% endfor %}</div></div>
+    <div class="tf-i"><div class="tf-name">{{ heading_title }}</div><div class="price">{{ price }}</div>
+      <button id="button-cart" class="btn btn-primary">Grozā</button><div class="about">{{ description }}</div></div>
+  </div>
+</div>
+{{ footer }}

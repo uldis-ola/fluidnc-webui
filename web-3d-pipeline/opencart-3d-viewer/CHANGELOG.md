@@ -13,6 +13,8 @@ Atjaunināšana: Installer → Uninstall → Install (dati paliek). Ja iestatīj
   Manuālajā režīmā, ja tēma neizvada `{{ product_3d_html }}`, skatītājs tiek ievietots automātiski.
 - Valodas: ja veikala kods ir `lv`, `lv-LV` u.c., tiek izmantoti `lv-lv` teksti (tāpat RU, EN).
 - Saderība: 1.0.x notikums turpina strādāt, ja faili atjaunināti bez Uninstall/Install.
+- Galerijas atrašana neapstājas pie kolonnas ar īsu aprakstu (cilnes/apraksts vairs netiek paslēpti).
+- Produkta nosaukums tiek atpazīts tikai pēc teksta sakritības (ne pirmais `<h1>` lapā — tas var būt logo).
 
 ## 1.0.1 — 2026-11-05
 Supersedes 1.0.0. Labojumi pēc neatkarīgas drošības un pareizības pārbaudes.

@@ -46,11 +46,30 @@
 
   /* ---------------------------------------------------------------- produkta informācija */
 
+  function normalize(text) {
+    return (text || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  }
+
+  /**
+   * Produkta nosaukuma elements: virsraksts (h1/h2) vai elements ar to pašu tekstu kā produkta nosaukums.
+   * Pirmo h1 lapā NEŅEM bez teksta sakritības - dažās tēmās h1 ir logo vai bloka virsraksts.
+   */
   function productTitle(box) {
-    var alt = (box.querySelector('model-viewer') || {}).getAttribute ? box.querySelector('model-viewer').getAttribute('alt') : '';
-    var h1s = $$('h1').filter(function (h) { return !box.contains(h); });
-    var match = h1s.filter(function (h) { return alt && h.textContent.trim().indexOf(alt.trim()) !== -1; });
-    return match[0] || h1s[0] || null;
+    var mv = box.querySelector('model-viewer');
+    var name = normalize(mv ? mv.getAttribute('alt') : '');
+    if (!name) { return null; }
+
+    var candidates = $$('h1, h2, [itemprop="name"], .product-title, .page-title, [class*="product-name"], [class*="title"]')
+      .filter(function (el) { return !box.contains(el) && !(el.closest && el.closest('header, nav, footer')); });
+
+    var exact = null;
+    var partial = null;
+    candidates.forEach(function (el) {
+      var t = normalize(el.textContent);
+      if (!exact && t === name) { exact = el; }
+      if (!partial && t.length < name.length + 40 && t.indexOf(name) !== -1) { partial = el; }
+    });
+    return exact || partial;
   }
 
   function infoElements(box) {
@@ -74,6 +93,28 @@
 
   function textLength(el) {
     return (el.textContent || '').replace(/\s+/g, ' ').trim().length;
+  }
+
+  /**
+   * Vai vecākelementā ir saturs, kas nav galerija (virsraksti, apraksts, cilnes, formas...).
+   * Tad galerija ir tikai `node`, nevis viss vecākelements - pat ja teksta ir maz.
+   */
+  var CONTENT_MARKERS = 'h1, h2, h3, h4, h5, h6, p, table, form, iframe, video, textarea, select, ' +
+    '.nav-tabs, [role="tablist"], [role="tabpanel"], .tab-content, [id^="tab-"], ' +
+    '[class*="desc"], [id*="desc"], [class*="review"], [class*="tabs"], [class*="spec"], [class*="attribute"]';
+
+  function hasOtherContent(parent, node) {
+    var found = $$(CONTENT_MARKERS, parent);
+    for (var i = 0; i < found.length; i++) {
+      var el = found[i];
+      if (!node.contains(el) && el.id !== 'product-3d' && !(el.closest && el.closest('#product-3d'))) {
+        // tukši / neredzami marķieri (piem. tukšs <p>) netiek skaitīti
+        if (textLength(el) > 0 || /^(TABLE|FORM|IFRAME|VIDEO|SELECT|TEXTAREA)$/.test(el.tagName)) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   /* ---------------------------------------------------------------- attēlu atpazīšana */
@@ -140,7 +181,8 @@
     var parent = node.parentElement;
 
     while (parent && parent !== document.body && parent.tagName !== 'MAIN' &&
-           !containsAny(parent, info) && textLength(parent) < 200 && parent.id !== 'content') {
+           !containsAny(parent, info) && textLength(parent) < 200 && parent.id !== 'content' &&
+           !hasOtherContent(parent, node)) {
       node = parent;
       parent = node.parentElement;
     }

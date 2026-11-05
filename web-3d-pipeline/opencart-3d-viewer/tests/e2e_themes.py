@@ -119,6 +119,10 @@ with sync_playwright() as pw:
                                         problems.append(f"replace: {big} lieli produkta attēli joprojām redzami")
                                 if mode != "replace" and st["productImagesVisible"] == 0:
                                     problems.append("before/after: galerija pazudusi")
+                            tabs_hidden = page.evaluate("() => [...document.querySelectorAll('.nav-tabs, .tab-content')]"
+                                                        ".some(e => getComputedStyle(e).display === 'none' || e.closest('[data-product-3d-hidden]'))")
+                            if tabs_hidden:
+                                problems.append("apraksta cilnes paslēptas")
                             if st["hscroll"]:
                                 problems.append("horizontāla ritināšana")
                         if errors:

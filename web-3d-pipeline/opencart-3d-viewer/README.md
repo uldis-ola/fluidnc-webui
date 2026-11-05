@@ -38,11 +38,13 @@ Tēmas failus nav jāmaina. `product_3d.js` atrod galeriju šādā secībā:
 
 **Ja skatītājs neielādējas,** produkta attēli atkal tiek parādīti.
 
-**Pārbaudīts** uz default tēmas un 4 krasi atšķirīgām testa tēmām (`tests/themes/`):
+**Pārbaudīts** uz default tēmas un 6 krasi atšķirīgām testa tēmām (`tests/themes/`):
 - flex + lazy-load + slaideris;
 - CSS grid + `background-image` + bez `h1`;
 - tēma bez `{{ footer }}`;
-- vienas kolonnas tēma.
+- vienas kolonnas tēma;
+- īss apraksts blakus galerijai;
+- logo kā `<h1>`.
 
 Katrā tēmā pārbaudīti 3 novietojumi, produkti ar un bez attēliem, dators un telefons. Journal un citas maksas tēmas nav testētas.
 
@@ -157,7 +159,7 @@ python tests/e2e_regression.py --zip dist/product_3d_viewer_v1.1.0.ocmod.zip --g
 Tēmu tests (vispirms nokopē `tests/themes/*` uz testa veikala `catalog/view/theme/`):
 
 ```bash
-python tests/e2e_themes.py --themes default,tA_flex,tB_grid,tC_nofooter,tD_stacked --mysql "mysql -uroot oc_test"
+python tests/e2e_themes.py --themes default,tA_flex,tB_grid,tC_nofooter,tD_stacked,tE_short,tF_h1logo --mysql "mysql -uroot oc_test"
 ```
 
 E2E testi darbojas uz **testa** veikala: tas instalē moduli un maina produkta 42 3D laukus. Nepalaid to dzīvā veikalā.
