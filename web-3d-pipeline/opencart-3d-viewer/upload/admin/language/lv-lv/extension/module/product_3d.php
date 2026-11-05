@@ -38,7 +38,7 @@ $_['entry_max_size']        = 'Maks. faila izmērs (MB)';
 $_['entry_delete_data']     = 'Atinstalējot dzēst 3D saites';
 
 // Help
-$_['help_selector']         = 'Elements, kurā ir produkta attēli. Default tēmai: .thumbnails. Journal / citām tēmām pārbaudi ar pārlūka inspektoru.';
+$_['help_selector']         = 'Atstāj tukšu automātiskai atrašanai (ieteicams — strādā ar jebkuru tēmu: modulis lapā atrod šī produkta attēlus). CSS selektoru norādi tikai, ja vajag noteiktu vietu, piem. .thumbnails';
 $_['help_camera_orbit']     = 'piem. "30deg 75deg auto" (horizontāli, vertikāli, attālums). Tukšs = automātiski.';
 $_['help_max_size']         = 'Servera limits (upload_max_filesize / post_max_size): %s MB.';
 $_['help_delete_data']      = 'Tiek dzēsta tikai produktu ↔ modeļu saišu tabula. Augšupielādētie faili image/ mapē netiek dzēsti nekad.';

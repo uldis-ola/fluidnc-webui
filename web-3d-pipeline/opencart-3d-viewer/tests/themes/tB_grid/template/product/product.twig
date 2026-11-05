@@ -1,0 +1,16 @@
+{{ header }}
+<style>.pb{display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:1200px;margin:0 auto;padding:20px}.pb-gal .big{height:420px;background-size:contain;background-repeat:no-repeat;background-position:center}.pb-gal .sm{display:inline-block;width:70px;height:70px;background-size:cover}
+.pb-name{font-size:28px;font-weight:700}</style>
+<section class="pb">
+  <div class="pb-gal">
+    {% if popup %}<div class="big" style="background-image:url('{{ popup }}')"></div>{% endif %}
+    {% for image in images %}<span class="sm" style="background-image:url('{{ image.thumb }}')"></span>{% endfor %}
+  </div>
+  <div class="pb-info">
+    <div class="pb-name">{{ heading_title }}</div>
+    <div class="price-new">{{ price }}</div>
+    <button type="button" onclick="cart.add('{{ product_id }}')" class="btn">Buy</button>
+    <article>{{ description }}</article>
+  </div>
+</section>
+{{ footer }}

@@ -13,7 +13,7 @@
  * - AJAX: upload (augšupielāde ar validāciju), files (esošo failu saraksts)
  */
 class ControllerExtensionModuleProduct3d extends Controller {
-	const VERSION = '1.0.1';
+	const VERSION = '1.1.0';
 	const EVENT_CODE = 'product_3d';
 
 	private $error = array();
@@ -31,6 +31,11 @@ class ControllerExtensionModuleProduct3d extends Controller {
 
 	public function index() {
 		$this->load->language('extension/module/product_3d');
+
+		// ja administrācijas valodas kods neatbilst mapei (piem. "lv" pret "lv-lv"), ņem tuvāko
+		foreach ($this->isolatedLanguage() as $key => $value) {
+			$this->language->set($key, $value);
+		}
 
 		$this->document->setTitle($this->language->get('heading_title'));
 
@@ -103,7 +108,7 @@ class ControllerExtensionModuleProduct3d extends Controller {
 		return array(
 			'status'          => 1,
 			'placement'       => 'replace',
-			'selector'        => '.thumbnails',
+			'selector'        => '',
 			'height'          => 480,
 			'bg_color'        => '#f5f6f8',
 			'ar'              => 1,
@@ -136,7 +141,7 @@ class ControllerExtensionModuleProduct3d extends Controller {
 		return array(
 			'module_product_3d_status'          => (int)!empty($post['module_product_3d_status']),
 			'module_product_3d_placement'       => in_array($placement, $this->placements) ? $placement : $d['placement'],
-			'module_product_3d_selector'        => ($selector !== '' && strlen($selector) <= 200 && strpos($selector, '<') === false) ? $selector : $d['selector'],
+			'module_product_3d_selector'        => (strlen($selector) <= 200 && strpos($selector, '<') === false) ? $selector : $d['selector'],
 			'module_product_3d_height'          => max(200, min(1200, (int)$get('height'))),
 			'module_product_3d_bg_color'        => preg_match('/^(#[0-9a-fA-F]{3,8}|transparent)$/', $bg) ? $bg : $d['bg_color'],
 			'module_product_3d_ar'              => (int)!empty($post['module_product_3d_ar']),
@@ -185,7 +190,8 @@ class ControllerExtensionModuleProduct3d extends Controller {
 			'admin/model/catalog/product/deleteProduct/after' => 'extension/module/product_3d/eventAdminDelete',
 			'admin/model/catalog/product/copyProduct/after'   => 'extension/module/product_3d/eventAdminCopy',
 			'admin/view/common/column_left/before'            => 'extension/module/product_3d/eventAdminMenu',
-			'catalog/view/product/product/before'             => 'extension/module/product_3d/eventProductView'
+			'catalog/view/product/product/before'             => 'extension/module/product_3d/eventProductViewBefore',
+			'catalog/view/product/product/after'              => 'extension/module/product_3d/eventProductViewAfter'
 		);
 
 		foreach ($events as $trigger => $action) {
@@ -539,9 +545,32 @@ class ControllerExtensionModuleProduct3d extends Controller {
 	 * lapas globālos tekstus (heading_title, text_success u.c.).
 	 */
 	private function isolatedLanguage() {
-		$this->language->load('extension/module/product_3d', 'product_3d_lang');
+		$file = 'extension/module/product_3d.php';
+		$code = preg_replace('/[^a-zA-Z0-9_\-]/', '', (string)$this->config->get('config_admin_language'));
+		$candidates = array(DIR_LANGUAGE . 'en-gb/' . $file);
 
-		return $this->language->get('product_3d_lang')->all();
+		if ($code !== '') {
+			$prefix = strtolower(substr($code, 0, 2));
+			$exact = array(DIR_LANGUAGE . $code . '/' . $file, DIR_LANGUAGE . strtolower($code) . '/' . $file);
+			$similar = (array)glob(DIR_LANGUAGE . $prefix . '*/' . $file);
+
+			foreach (array_merge($exact, $similar) as $path) {
+				if ($path && is_file($path)) {
+					$candidates[] = $path;
+					break;
+				}
+			}
+		}
+
+		$_ = array();
+
+		foreach (array_unique($candidates) as $path) {
+			if (is_file($path)) {
+				require($path);   // vēlākais (konkrētākais) pārraksta angļu tekstus
+			}
+		}
+
+		return $_;
 	}
 
 	/** Pārbauda faila saturu, ne tikai paplašinājumu. Atgriež valodas atslēgu vai ''. */

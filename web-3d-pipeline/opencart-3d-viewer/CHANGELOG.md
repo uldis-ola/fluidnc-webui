@@ -1,5 +1,19 @@
 # Changelog — OpenCart 3D Product Viewer
 
+## 1.1.0 — 2026-11-05
+Supersedes 1.0.1. Darbojas neatkarīgi no tēmas.
+Atjaunināšana: Installer → Uninstall → Install (dati paliek). Ja iestatījumos bija `.thumbnails`, vari to izdzēst (tukšs = automātiski).
+
+- Automātiska galerijas atrašana jebkurā tēmā: pēc šī produkta attēlu failu nosaukumiem
+  (src, data-src/lazy-load, srcset, href, data-zoom-image, background-image, citi izmēri/webp).
+- Ja galerija ir režģa kolonna (Bootstrap/flex/grid), skatītājs tiek ievietots kolonnā, izkārtojums netiek salauzts.
+- Telefonā, ja tēmas kolonna ir par šauru, skatītājs tiek parādīts pilnā platumā virs produkta bloka (arī pēc pagriešanas).
+- Produktam bez attēliem: kreisā/galvenā kolonna blakus produkta informācijai.
+- HTML tiek ievietots lapas izvadē pirms `</body>` (`view/product/product/after`) — strādā arī tēmām bez `{{ footer }}`.
+  Manuālajā režīmā, ja tēma neizvada `{{ product_3d_html }}`, skatītājs tiek ievietots automātiski.
+- Valodas: ja veikala kods ir `lv`, `lv-LV` u.c., tiek izmantoti `lv-lv` teksti (tāpat RU, EN).
+- Saderība: 1.0.x notikums turpina strādāt, ja faili atjaunināti bez Uninstall/Install.
+
 ## 1.0.1 — 2026-11-05
 Supersedes 1.0.0. Labojumi pēc neatkarīgas drošības un pareizības pārbaudes.
 Atjaunināšana: augšupielādē pakotni caur Installer, pēc tam Extensions > Modules > 3D Product Viewer **Uninstall → Install**

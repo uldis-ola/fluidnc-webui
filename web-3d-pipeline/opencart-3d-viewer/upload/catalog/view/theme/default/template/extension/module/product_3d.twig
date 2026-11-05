@@ -1,5 +1,5 @@
 {# OpenCart 3D Product Viewer — skatītājs. Tēma var pārrakstīt: catalog/view/theme/<tēma>/template/extension/module/product_3d.twig #}
-<div id="product-3d" class="product-3d" data-placement="{{ viewer.placement|e }}" data-selector="{{ viewer.selector|e }}"{% if viewer.placement != 'manual' %} hidden{% endif %}
+<div id="product-3d" class="product-3d" data-placement="{{ viewer.placement|e }}" data-selector="{{ viewer.selector|e }}" data-image-keys="{{ viewer.image_keys|e }}"{% if viewer.placement != 'manual' %} hidden{% endif %}
   style="--p3d-height: {{ viewer.height }}px; --p3d-bg: {{ viewer.bg_color|e }}">
   <model-viewer
     src="{{ viewer.src|e }}"

@@ -8,7 +8,7 @@ Pievieno produktam **3D modeli (.glb / .gltf)** administrācijā un rāda to pro
 - **Sava tabula `oc_product_3d`.** Tabula `oc_product` netiek mainīta.
 - **Valodas:** EN / LV / RU.
 
-Pakotne: `dist/product_3d_viewer_v1.0.1.ocmod.zip` (~0,7 MB).
+Pakotne: `dist/product_3d_viewer_v1.1.0.ocmod.zip` (~0,7 MB).
 
 ## Kā tas strādā
 
@@ -19,7 +19,32 @@ Pakotne: `dist/product_3d_viewer_v1.0.1.ocmod.zip` (~0,7 MB).
 | Produkta dzēšana | `admin/model/catalog/product/deleteProduct/after` | dzēš 3D ierakstu (failus atstāj) |
 | Produkta kopēšana | `admin/model/catalog/product/copyProduct/after` | kopē 3D ierakstu uz jauno produktu |
 | Admin izvēlne | `admin/view/common/column_left/before` | Catalog → 3D Product Viewer |
-| Veikala produkta lapa | `catalog/view/product/product/before` | pievieno skatītāju; `product_3d.js` to novieto pie galerijas pēc CSS selektora |
+| Veikala produkta lapa | `catalog/view/product/product/before` | mainīgie tēmām (`model_3d`, `product_3d`, `product_3d_html`) |
+| Veikala produkta lapa | `catalog/view/product/product/after` | ievieto skatītāju un skriptus lapā pirms `</body>` |
+
+### Darbojas ar jebkuru tēmu
+
+Tēmas failus nav jāmaina. `product_3d.js` atrod galeriju šādā secībā:
+1. CSS selektors no iestatījumiem, ja tas ir norādīts. **Tukšs selektors nozīmē automātisku režīmu (ieteicams).**
+2. **Automātiski:**
+   - Lapā tiek atrasti šī produkta attēli pēc faila nosaukuma: `src`, `data-src` (lazy-load), `srcset`, `href`, `data-zoom-image`, `background-image`. Der jebkurš izmērs, arī `.webp`.
+   - No lielākā attēla skripts kāpj uz augšu līdz blokam, kurā nav produkta nosaukuma, cenas, pirkšanas pogas un garu tekstu.
+3. Zināmie selektori (`.thumbnails`, `.product-gallery` u.c.).
+4. **Produktam bez attēliem:** kolonna blakus produkta informācijai.
+
+**Izkārtojums:**
+- Ja galerija ir režģa kolonna, skatītājs tiek ievietots tās iekšpusē, lai izkārtojums nesalūztu.
+- Telefonā, ja kolonna ir šaurāka par ~300 px, skatītājs tiek parādīts pilnā platumā.
+
+**Ja skatītājs neielādējas,** produkta attēli atkal tiek parādīti.
+
+**Pārbaudīts** uz default tēmas un 4 krasi atšķirīgām testa tēmām (`tests/themes/`):
+- flex + lazy-load + slaideris;
+- CSS grid + `background-image` + bez `h1`;
+- tēma bez `{{ footer }}`;
+- vienas kolonnas tēma.
+
+Katrā tēmā pārbaudīti 3 novietojumi, produkti ar un bez attēliem, dators un telefons. Journal un citas maksas tēmas nav testētas.
 
 ### Tabula `oc_product_3d`
 
@@ -125,8 +150,14 @@ python tests/e2e_opencart.py --base http://127.0.0.1:8080/ --user admin --passwo
 Regresijas testi (neatkarīgās pārbaudes atradumi):
 
 ```bash
-python tests/e2e_regression.py --zip dist/product_3d_viewer_v1.0.1.ocmod.zip --glb ../models/chair.web.glb \
+python tests/e2e_regression.py --zip dist/product_3d_viewer_v1.1.0.ocmod.zip --glb ../models/chair.web.glb \
     --site-root /ceļš/uz/testa/veikalu --mysql "mysql -uroot oc_test"
+```
+
+Tēmu tests (vispirms nokopē `tests/themes/*` uz testa veikala `catalog/view/theme/`):
+
+```bash
+python tests/e2e_themes.py --themes default,tA_flex,tB_grid,tC_nofooter,tD_stacked --mysql "mysql -uroot oc_test"
 ```
 
 E2E testi darbojas uz **testa** veikala: tas instalē moduli un maina produkta 42 3D laukus. Nepalaid to dzīvā veikalā.
@@ -135,5 +166,6 @@ E2E testi darbojas uz **testa** veikala: tas instalē moduli un maina produkta 4
 
 - **Produkta kopēšana** piešķir 3D ierakstu produktam ar lielāko `product_id` (OC3 `copyProduct` jauno ID neatgriež). Ja vienlaikus produktus pievieno vairāki administratori, pārbaudi kopiju.
 - **Nederīgs ceļš** (fails uz brīdi nav pieejams, kļūdains URL) saglabājot produktu **netiek dzēsts**: paliek iepriekšējā vērtība, un sistēmas žurnālā (System > Maintenance > Error Logs) parādās `[product_3d]` ieraksts.
-- **Citas tēmas:** ja galerijas selektors nav atrasts, skatītājs tiek ievietots pirms produkta virsraksta. Precīzam novietojumam iestati selektoru vai izmanto **Manuāli** + `{{ product_3d_html }}`.
+- **Tēmas, kas produkta lapu veido tikai ar JavaScript** (piem. attēlus ielādē AJAX pēc `load`) var prasīt CSS selektoru iestatījumos.
+- **Quick view** (produkts uznirstošā logā) netiek atbalstīts, skatītājs ir tikai pilnajā produkta lapā.
 - **Viens modelis uz produktu.** Opciju/variantu modeļi netiek atbalstīti; krāsu varianti vienā `.glb` gan strādā (`KHR_materials_variants`).

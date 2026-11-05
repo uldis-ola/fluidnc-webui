@@ -1,0 +1,10 @@
+{{ header }}
+<div class="container" id="content" style="max-width:720px">
+  <h1>{{ heading_title }}</h1>
+  <div class="gallery-stack">{% if popup %}<img src="{{ popup }}" style="width:100%" alt="">{% endif %}
+    <div>{% for image in images %}<img src="{{ image.thumb }}" alt="">{% endfor %}</div></div>
+  <p class="price">{{ price }}</p>
+  <button id="button-cart" class="btn btn-primary">Add to cart</button>
+  <div class="description">{{ description }}</div>
+</div>
+{{ footer }}

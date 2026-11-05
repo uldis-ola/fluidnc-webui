@@ -1,0 +1,20 @@
+{{ header }}
+<style>.pa-wrap{display:flex;gap:30px;max-width:1200px;margin:0 auto;padding:20px}.pa-left{flex:0 0 58%}.pa-right{flex:1}
+.swiper{display:flex;overflow:hidden}.swiper-slide{flex:0 0 100%}.swiper-slide img{width:100%;display:block}.pa-thumbs{display:flex;gap:6px;margin-top:8px}.pa-thumbs img{width:80px}</style>
+<div class="product-page pa-wrap" id="product-page">
+  <div class="pa-left product-left">
+    <div class="product-image main-image swiper">
+      {% if popup %}<div class="swiper-slide"><img class="lazyload" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" data-src="{{ popup }}" alt="{{ heading_title }}" width="500" height="500"></div>{% endif %}
+    </div>
+    <div class="pa-thumbs">{% for image in images %}<a href="{{ image.popup }}"><img src="{{ image.thumb }}" alt=""></a>{% endfor %}</div>
+  </div>
+  <div class="pa-right product-info">
+    <div class="title page-title"><h1>{{ heading_title }}</h1></div>
+    <div class="product-price">{{ price }}</div>
+    <input type="hidden" name="product_id" value="{{ product_id }}"><input type="text" name="quantity" value="1">
+    <button type="button" id="button-cart" class="btn btn-cart">Add</button>
+    <div class="desc">{{ description }}</div>
+  </div>
+</div>
+<script>document.querySelectorAll('img.lazyload').forEach(function(i){setTimeout(function(){i.src=i.dataset.src},300)});</script>
+{{ footer }}

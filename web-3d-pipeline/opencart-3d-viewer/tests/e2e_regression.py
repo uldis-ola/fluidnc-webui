@@ -87,9 +87,9 @@ with sync_playwright() as pw:
         row = page.locator("#extension tr", has_text="3D Product Viewer")
         row.locator(btn).click()
         page.wait_for_timeout(1500)
-    assert sql("SELECT COUNT(*) FROM oc_event WHERE code='product_3d'") == "7"
+    assert sql("SELECT COUNT(*) FROM oc_event WHERE code='product_3d'") == "8"
     assert sql("SELECT COUNT(*) FROM oc_product_3d WHERE product_id=42") == "1", "dati pazuduši pēc reinstall"
-    step("atjaunināšana uz 1.0.1: 7 notikumi, dati saglabāti")
+    step("atjaunināšana uz 1.1.0: 8 notikumi, dati saglabāti")
 
     # --- S1: lietotājs tikai ar access tiesībām nevar uninstall
     perms = json.dumps({"access": ["extension/module/product_3d", "catalog/product"], "modify": []})
@@ -103,7 +103,7 @@ with sync_playwright() as pw:
     lpage, ladmin = login("p3d_limited", "limited123")
     lpage.goto(ladmin("extension/module/product_3d/uninstall"))
     lpage.goto(ladmin("extension/module/product_3d/install"))
-    assert sql("SELECT COUNT(*) FROM oc_event WHERE code='product_3d'") == "7"
+    assert sql("SELECT COUNT(*) FROM oc_event WHERE code='product_3d'") == "8"
     assert sql("SELECT COUNT(*) FROM oc_product_3d WHERE product_id=42") == "1"
     lpage.context.close()
     sql("DELETE FROM oc_user WHERE username='p3d_limited'; DELETE FROM oc_user_group WHERE name='p3d_limited';")

@@ -1,0 +1,9 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{ heading_title }}</title>
+<style>body{font-family:sans-serif;margin:0}.wrap{max-width:1100px;margin:auto;padding:16px}.cols{display:flex;flex-wrap:wrap;gap:20px}.c1{flex:1 1 480px}.c2{flex:1 1 300px}.c1 img{max-width:100%}</style></head>
+<body><div class="wrap"><div class="cols">
+<div class="c1"><figure class="gallery">{% if thumb %}<a href="{{ popup }}"><img src="{{ thumb }}" srcset="{{ thumb }} 1x, {{ popup }} 2x" alt=""></a>{% endif %}</figure>
+<div class="thumbs-row">{% for image in images %}<img src="{{ image.thumb }}" alt="">{% endfor %}</div></div>
+<div class="c2"><h1>{{ heading_title }}</h1><p class="price">{{ price }}</p><button id="button-cart">Cart</button><div>{{ description }}</div></div>
+</div></div>
+<footer><p>Custom footer without OpenCart footer variable</p></footer>
+</body></html>
