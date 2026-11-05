@@ -1,3 +1,4 @@
+# Pamata atkarības (optimize.py)
 trimesh>=4.0
 numpy
 pillow

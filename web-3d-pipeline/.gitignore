@@ -1,4 +1,7 @@
-models/*.glb
-models/*.gltf
+models/*
+!models/.gitkeep
+vendor/
+tests/fixtures/
 *.web.glb
 __pycache__/
+.pytest_cache/

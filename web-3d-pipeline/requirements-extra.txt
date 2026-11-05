@@ -1,0 +1,5 @@
+# Papildus iespējas (nav obligātas)
+-r requirements.txt
+playwright>=1.40      # --poster un e2e testi; pēc tam: playwright install chromium
+pytest>=8             # testi
+# bpy                 # FBX/USDZ bez Blender instalācijas; pip install bpy (vajag atbilstošu Python versiju)
