@@ -268,6 +268,28 @@
 
   /* ---------------------------------------------------------------- ievietošana */
 
+  /**
+   * Ja skatītājs nonāk grid/flex konteinera iekšā (piem. galerija = sīktēlu josla + galvenais attēls),
+   * tam jāaizņem visa konteinera platums, nevis viena šaura šūna.
+   */
+  function spanContainer(box) {
+    var parent = box.parentElement;
+    if (!parent) { return; }
+    var cs = window.getComputedStyle(parent);
+    if (cs.display.indexOf('grid') !== -1) {
+      box.style.gridColumn = '1 / -1';
+      box.style.width = '100%';
+    } else if (cs.display.indexOf('flex') !== -1) {
+      box.style.flex = '0 0 100%';
+      box.style.width = '100%';
+      box.style.maxWidth = '100%';
+      if (cs.flexWrap === 'nowrap' && cs.flexDirection.indexOf('row') === 0 && parent.children.length > 1 &&
+          box.getAttribute('data-placement') !== 'replace') {
+        parent.style.flexWrap = 'wrap';   // citādi blakus elementi tiktu saspiesti
+      }
+    }
+  }
+
   function insert(box, el, how) {
     if (how === 'after') {
       el.parentNode.insertBefore(box, el.nextSibling);
@@ -278,6 +300,7 @@
     } else {
       el.parentNode.insertBefore(box, el);
     }
+    spanContainer(box);
   }
 
   function place(final) {
