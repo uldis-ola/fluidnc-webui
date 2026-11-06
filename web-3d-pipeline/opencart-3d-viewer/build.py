@@ -47,6 +47,12 @@ def main() -> int:
     dist.mkdir(exist_ok=True)
     out = dist / f"product_3d_viewer_v{version}.ocmod.zip"
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
+        # dokumentācija zip saknē (OpenCart instalētājs apstrādā tikai upload/ un install.xml)
+        for extra, name in ((ROOT / "docs" / "USER_GUIDE.md", "USER_GUIDE.md"),
+                            (ROOT / "docs" / "CHANGELOG_EN.md", "CHANGELOG.md"),
+                            (ROOT / "LICENSE.txt", "LICENSE.txt")):
+            if extra.is_file():
+                z.write(extra, name)
         for f in sorted(UPLOAD.rglob("*")):
             if f.is_file() and f.name not in (".DS_Store", "Thumbs.db"):
                 z.write(f, "upload/" + f.relative_to(UPLOAD).as_posix())

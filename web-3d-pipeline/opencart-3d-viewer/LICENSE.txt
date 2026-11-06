@@ -1,0 +1,60 @@
+3D Product Viewer for OpenCart — Commercial Licence
+==================================================
+
+DRAFT — fill in the bracketed fields and have this text reviewed before you sell.
+
+Licensor: [Seller name / company name, registration number, address, e-mail]
+Product:  3D Product Viewer for OpenCart 3.0.x ("the Software"), all versions 1.x
+
+1. Licence grant
+   On payment of the licence fee, the Licensor grants the purchaser ("you") a non-exclusive,
+   non-transferable licence to install and use the Software on ONE OpenCart store
+   (one production domain), plus any number of non-public development or staging copies of that store.
+   A separate licence is required for each additional store or domain.
+
+2. Permitted
+   - Install, configure and use the Software on the licensed store.
+   - Modify the Software's code and templates for use on the licensed store.
+   - Make backup copies.
+
+3. Not permitted
+   - Resell, sublicense, share, publish or otherwise distribute the Software or modified versions of it,
+     in whole or in part, free of charge or for a fee.
+   - Remove copyright or licence notices.
+   - Use the Software to build a competing product for distribution.
+
+4. Third-party components
+   The Software includes third-party open-source components (Google model-viewer, three.js, Draco,
+   Basis Universal, meshoptimizer). They remain under their own licences (Apache License 2.0 / MIT),
+   listed in catalog/view/javascript/product_3d/THIRD_PARTY_LICENSES.txt. Nothing in this licence limits
+   your rights under those licences for those components.
+
+5. Updates and support
+   Updates for the 1.x version line are provided free of charge for [12 months / the lifetime of version 1.x]
+   from the date of purchase. Support is provided by e-mail at [support e-mail] for [6 / 12] months.
+   Support covers installation and use of the Software; it does not cover custom development,
+   theme customisation or third-party extensions.
+
+6. Warranty
+   The Software is provided "as is" to the extent permitted by applicable law. The Licensor does not
+   warrant that the Software is free of errors or will work with every theme, extension or server
+   configuration. Always make a backup before installing or updating.
+   Nothing in this licence limits rights you have as a consumer under mandatory law.
+
+7. Liability
+   To the extent permitted by applicable law, the Licensor's total liability is limited to the licence
+   fee you paid. The Licensor is not liable for indirect or consequential damage, loss of data,
+   revenue or profit.
+
+8. Refunds
+   [State your refund policy, in line with the marketplace's rules and, for consumers, EU Directive 2011/83/EU
+   (digital content: the right of withdrawal ends once download starts with the buyer's prior consent).]
+
+9. Termination
+   This licence ends automatically if you breach it. On termination you must stop using and delete the Software.
+
+10. Governing law
+    This licence is governed by the laws of [Latvia], without prejudice to mandatory consumer protection
+    rules of the buyer's country of residence.
+
+Copyright (c) 2026 [Seller name]. All rights reserved (except the third-party components listed in section 4).

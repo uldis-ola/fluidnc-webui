@@ -1,5 +1,12 @@
 # Changelog — OpenCart 3D Product Viewer
 
+## 1.2.0 — 2026-11-06
+Supersedes 1.1.0. Gatavs pārdošanai.
+- Iestatījumu lapā "Sistēmas pārbaude" (OpenCart/PHP versija, notikumi, tabula, mape, lokālie faili, augšupielādes limits) ar padomiem.
+- Neitrāli teksti (bez atsaucēm uz iekšējiem rīkiem).
+- Pārbaudīts: OpenCart 3.0.3.8 (PHP 7.4), 3.0.4.1 un 3.0.5.x (PHP 8.3) — pamata e2e, regresija un 7 tēmas katrā; Meshopt modeļi ar lokālo dekoderi.
+- Pakotnē: USER_GUIDE.md (EN), CHANGELOG.md (EN), LICENSE.txt (melnraksts).
+
 ## 1.1.0 — 2026-11-05
 Supersedes 1.0.1. Darbojas neatkarīgi no tēmas.
 Atjaunināšana: Installer → Uninstall → Install (dati paliek). Ja iestatījumos bija `.thumbnails`, vari to izdzēst (tukšs = automātiski).
