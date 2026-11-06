@@ -254,8 +254,32 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 	}
 
 	/**
-	 * Statistics endpoint (POST id + type). Counters only: no personal data is read or stored. Each message
-	 * counts at most one view and one click per OpenCart session, and a session counts at most 100 events.
+	 * Only requests from the shop's own pages count (the browser's Sec-Fetch-Site, or Origin/Referer host).
+	 * Scripts and other sites cannot inflate the statistics with cookie-less requests.
+	 */
+	private function sameOrigin(): bool {
+		$server = $this->request->server;
+		$host   = isset($server['HTTP_HOST']) && is_string($server['HTTP_HOST']) ? strtolower($server['HTTP_HOST']) : '';
+
+		if (isset($server['HTTP_SEC_FETCH_SITE']) && is_string($server['HTTP_SEC_FETCH_SITE'])) {
+			return $server['HTTP_SEC_FETCH_SITE'] === 'same-origin';
+		}
+
+		foreach (array('HTTP_ORIGIN', 'HTTP_REFERER') as $key) {
+			if (!empty($server[$key]) && is_string($server[$key])) {
+				$from = parse_url($server[$key], PHP_URL_HOST);
+				$port = parse_url($server[$key], PHP_URL_PORT);
+
+				return $host !== '' && is_string($from) && strtolower($from . ($port ? ':' . $port : '')) === $host;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Statistics endpoint (POST id + type). Counters only: no personal data is read or stored, the session
+	 * is not touched. Only same-origin requests for messages that are on and inside their date window count.
 	 * Always answers with an empty 204 response and never outputs errors.
 	 */
 	public function track(): void {
@@ -264,17 +288,11 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 				$id   = isset($this->request->post['id']) && is_string($this->request->post['id']) && preg_match('/^\d{1,10}$/', $this->request->post['id']) ? (int)$this->request->post['id'] : 0;
 				$type = isset($this->request->post['type']) && is_string($this->request->post['type']) ? $this->request->post['type'] : '';
 
-				if ($id > 0 && in_array($type, ['view', 'click'], true)) {
-					$done = isset($this->session->data['abp_track']) && is_array($this->session->data['abp_track']) ? $this->session->data['abp_track'] : [];
-					$key  = $type[0] . $id;
-
-					if (!isset($done[$key]) && count($done) < 100) {
-						$done[$key] = 1;
-						$this->session->data['abp_track'] = $done;
-
-						$this->load->model(self::ROUTE);
-						$this->model_extension_announcement_bar_pro_module_announcement_bar_pro->track($id, $type);
-					}
+				if ($id > 0 && in_array($type, array('view', 'click'), true) && $this->sameOrigin()) {
+					// No session write here: a parallel request (cart, login) must never lose its session data.
+					// The browser sends each message's view/click at most once per tab session (sessionStorage).
+					$this->load->model(self::ROUTE);
+					$this->model_extension_announcement_bar_pro_module_announcement_bar_pro->track($id, $type);
 				}
 			}
 		} catch (\Throwable $e) {

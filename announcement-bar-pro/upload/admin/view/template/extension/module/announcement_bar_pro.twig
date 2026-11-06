@@ -85,8 +85,8 @@
                       <td class="text-right hidden-xs">{{ message.ctr != '' ? message.ctr|e ~ ' %' : '—' }}</td>
                       <td class="text-right" style="white-space:nowrap;">
                         <a href="{{ message.edit }}" data-toggle="tooltip" title="{{ button_edit|e }}" class="btn btn-primary btn-sm"><i class="fa fa-pencil"></i></a>
-                        <button type="submit" form="form-delete" formaction="{{ duplicate }}" name="message_id" value="{{ message.message_id }}" data-toggle="tooltip" title="{{ button_duplicate|e }}" class="btn btn-default btn-sm abp-duplicate"><i class="fa fa-copy"></i></button>
-                        <button type="submit" form="form-delete" formaction="{{ reset }}" name="message_id" value="{{ message.message_id }}" data-toggle="tooltip" title="{{ button_reset_stats|e }}" class="btn btn-warning btn-sm abp-reset"{% if not message.views and not message.clicks %} disabled="disabled"{% endif %}><i class="fa fa-eraser"></i></button>
+                        <button type="button" data-abp-post="{{ duplicate }}" value="{{ message.message_id }}" data-toggle="tooltip" title="{{ button_duplicate|e }}" class="btn btn-default btn-sm abp-duplicate"><i class="fa fa-copy"></i></button>
+                        <button type="button" data-abp-post="{{ reset }}" data-abp-confirm="1" value="{{ message.message_id }}" data-toggle="tooltip" title="{{ button_reset_stats|e }}" class="btn btn-warning btn-sm abp-reset"{% if not message.views and not message.clicks %} disabled="disabled"{% endif %}><i class="fa fa-eraser"></i></button>
                       </td>
                     </tr>
                     {% else %}
@@ -252,6 +252,21 @@
 (function ($) {
   var hex = /^#[0-9a-fA-F]{6}$/;
 
+  // Duplicate / reset: plain buttons that POST their own small form. They must not be type="submit":
+  // OpenCart 3 admin common.js submits every form-* on the page when any submit button is clicked.
+  // One request only (a double click must not create two copies).
+  var abpSent = false;
+  $('[data-abp-post]').on('click', function () {
+    if (abpSent || this.disabled) { return; }
+    if ($(this).data('abp-confirm') && !confirm('{{ text_confirm_reset|e('js') }}')) { return; }
+    abpSent = true;
+    $(this).prop('disabled', true);
+    var f = $('<form method="post" style="display:none"></form>').attr('action', $(this).data('abp-post'));
+    f.append($('<input type="hidden" name="message_id">').val(this.value));
+    $('body').append(f);
+    f.get(0).submit();
+  });
+
   $('.abp-color').each(function () {
     var picker = $(this).find('input[type=color]'), text = $(this).find('input[type=text]');
     picker.on('input change', function () { text.val(this.value); });
@@ -265,10 +280,6 @@
   }
   $('#input-mode, #input-position').on('change', toggle);
   toggle();
-
-  $('.abp-reset').on('click', function (e) {
-    if (!confirm('{{ text_confirm_reset|e('js') }}')) { e.preventDefault(); }
-  });
 
   $('#abp-delete').on('click', function () {
     if (!$('#form-delete input[name="selected[]"]:checked').length) { return; }

@@ -47,4 +47,4 @@
 /* 2.2.0 — optional phone text and device targeting (breakpoint 768 px; the script uses the same one). */
 .abp-text-m{display:none;}
 @media (max-width:767px){.abp-text-m{display:inline;}.abp-text-d{display:none;}.abp-item[data-device="desktop"]{display:none!important;}}
-@media (min-width:768px){.abp-item[data-device="mobile"]{display:none!important;}}
+@media not all and (max-width:767px){.abp-item[data-device="mobile"]{display:none!important;}}

@@ -33,7 +33,7 @@
        link in it is used. Nothing is sent when the visitor asks not to be tracked (Do Not Track / GPC);
        every failure is silent. No cookies or storage besides sessionStorage "abp_track". */
     var trackUrl = bar.getAttribute('data-track') || '';
-    var noTrack = navigator.doNotTrack === '1' || navigator.globalPrivacyControl === true;
+    var noTrack = (function (d) { return d === '1' || d === 'yes'; })(navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack) || navigator.globalPrivacyControl === true;
     var sent = {};
     function track(el, type) {
       try {

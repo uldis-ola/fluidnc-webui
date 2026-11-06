@@ -8,6 +8,8 @@
 - DB schema 6: new columns `abp_message.device`, `views`, `clicks` and `abp_message_description.mobile_text`. Upgraded shops get them through an idempotent migration (`SHOW COLUMNS` check before each `ALTER TABLE … ADD COLUMN`), run when a user with *modify* permission opens the module page. Until then the storefront keeps working with the 2.1 columns.
 - `mobile_text` is `TEXT NOT NULL` without a `DEFAULT`: MySQL refuses a literal default on `TEXT` columns. Existing rows get `''` when the column is added and every insert sets the value.
 - New admin strings in English, Latvian and Russian.
+- Hardening after review and real-shop tests: the statistics endpoint never touches the visitor's session (no race with cart or login), counts only same-origin requests and messages inside their date window; older browsers' Do-Not-Track values are honoured; no width gap between the phone and computer rules; a double click on Duplicate creates one copy (both versions). OpenCart 3: Duplicate and Reset are plain buttons that post their own form (the admin's "submit every form" helper for IE submitted the settings form instead).
+- Tested on real OpenCart: 3.0.5.1 upgrade 2.1.2 → 2.2.0 with 2 existing messages (migration, idempotency, phone text, device, statistics, duplicate, reset, error log) 22/22; 4.1.0.4 fresh install 15/15.
 
 ## 2.1.2 — 2026-11-06
 - **Readable automatic colours:** the text colour is now the one with the higher WCAG contrast (white or near-black), not a fixed brightness threshold. On the OpenCart 4 default blue this changes white text (3.2:1) to dark text (5.9:1).

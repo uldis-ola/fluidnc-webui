@@ -42,7 +42,7 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 	public function track(int $message_id, string $type): void {
 		$column = $type === 'click' ? 'clicks' : 'views';
 
-		$this->db->query("UPDATE `" . DB_PREFIX . "abp_message` SET `" . $column . "` = IF(`" . $column . "` < 4294967295, `" . $column . "` + 1, `" . $column . "`) WHERE `message_id` = '" . (int)$message_id . "' AND `status` = '1'");
+		$this->db->query("UPDATE `" . DB_PREFIX . "abp_message` SET `" . $column . "` = IF(`" . $column . "` < 4294967295, `" . $column . "` + 1, `" . $column . "`) WHERE `message_id` = '" . (int)$message_id . "' AND `status` = '1' AND (`date_start` IS NULL OR `date_start` <= NOW()) AND (`date_end` IS NULL OR `date_end` > NOW())");
 	}
 
 	/**

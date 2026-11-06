@@ -277,18 +277,23 @@ $(function () {
   }
 
   // Duplicate / reset statistics of one message (POST, then reload the list with the session message).
+  var abpBusy = false; // one request at a time: a double click must not create two copies
   $('[data-abp-action]').on('click', function () {
     var action = $(this).data('abp-action');
+    if (abpBusy) { return; }
     if (action === 'reset' && !confirm('{{ text_confirm_reset|e('js') }}')) { return; }
+    abpBusy = true;
+    $(this).prop('disabled', true);
     $.ajax({
       url: (action === 'reset' ? '{{ reset|e('js') }}' : '{{ duplicate|e('js') }}').replace(/&amp;/g, '&'),
       type: 'post',
       dataType: 'json',
       data: { message_id: String($(this).data('id')) },
       success: function (json) {
-        if (json['error']) { alertError(json['error']); }
+        if (json['error']) { alertError(json['error']); abpBusy = false; $('[data-abp-action]').prop('disabled', false); }
         if (json['success']) { location = '{{ reload|e('js') }}'.replace(/&amp;/g, '&'); }
-      }
+      },
+      error: function () { abpBusy = false; $('[data-abp-action]').prop('disabled', false); }
     });
   });
 
