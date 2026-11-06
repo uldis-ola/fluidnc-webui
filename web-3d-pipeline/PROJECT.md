@@ -33,9 +33,9 @@ Pilns kopsavilkums nākamajam Claude Code čatam. Datums: 2026-11-06.
 - **Testi:** `web-3d-pipeline/tests/` (pytest, 20 testi, visi iziet).
 - **Demo lapa:** `web-3d-pipeline/index.html` ar varianti, anotācijām, LV/EN un katalogu.
 
-### B) OpenCart modulis `web-3d-pipeline/opencart-3d-viewer/` — v1.2.0
+### B) OpenCart modulis `web-3d-pipeline/opencart-3d-viewer/` — v1.2.1
 
-- **Pakotne:** `dist/product_3d_viewer_v1.2.0.ocmod.zip` (~0,7 MB).
+- **Pakotne:** `dist/product_3d_viewer_v1.2.1.ocmod.zip` (~0,7 MB).
 - **Admin:**
   - produkta formā cilne "3D modelis": .glb/.gltf, .usdz un poster augšupielāde ar satura pārbaudi;
   - priekšskatījums;
@@ -48,7 +48,7 @@ Pilns kopsavilkums nākamajam Claude Code čatam. Datums: 2026-11-06.
   - tikai OpenCart events (nav OCMOD, nav kodola izmaiņu);
   - sava tabula `oc_product_3d`;
   - model-viewer un dekoderi iekļauti lokāli (CDN pēc izvēles);
-  - valodas EN/LV/RU.
+  - valodas: admin EN/LV/RU; veikalā EN, LV, RU, DE, LT, ET, PL.
 - **Drošība:**
   - tiesības un `user_token` pārbaude;
   - satura validācija;
@@ -71,7 +71,8 @@ Pilns kopsavilkums nākamajam Claude Code čatam. Datums: 2026-11-06.
 
 - **Veikals:** OpenCart 3, tēma "meistars", produkta galerija `.mt-gallery`, drošības modulis "Sargs".
 - **Sausais izmēģinājums** (tikai pārlūkā, serverī nekas nemainīts): modulis tēmu atpazīst. Tas atklāja šauras galerijas kļūdu, kas ir izlabota.
-- **Modulis 3dp.lv NAV instalēts.** Pārbaudīts: `https://3dp.lv/catalog/view/javascript/product_3d/product_3d.js` atgriež 404.
+- **Modulis 3dp.lv INSTALĒTS 2026-11-06 (v1.2.1), Uldis apstiprināja.** Faili caur FTP (3dp-ws `tools/deploy.sh p3d`), Install adminā; System check 8/8 OK; produkts 79 “Oak cutting board” ar 3D modeli no veikala foto; pārbaudīts 1366 px un 360 px (0 kļūdu), teksti 7 valodās.
+- v1.2.1 izmaiņas: veikala teksti DE/LT/ET/PL, admin valodas kods `lv`, drošības pārskata labojumi (notikumu metodes bez parametriem nedod 500; `index.html` augšupielādes mapē `Options -Indexes` vietā).
 
 ### D) Demo
 
@@ -81,10 +82,10 @@ Pilns kopsavilkums nākamajam Claude Code čatam. Datums: 2026-11-06.
 
 ## 3. Kas jāizdara
 
-### 3.1 Uzlikt 3dp.lv (prasa admin pieeju, tāpēc Claude in Chrome vai pats)
+### 3.1 Uzlikt 3dp.lv — IZDARĪTS 2026-11-06 (atliek: AR uz īsta telefona; īsti modeļi citiem produktiem)
 
 1. Rezerves kopija (DB + faili).
-2. **Extensions → Installer → Upload** `product_3d_viewer_v1.2.0.ocmod.zip`.
+2. **Extensions → Installer → Upload** `product_3d_viewer_v1.2.1.ocmod.zip`.
 3. **Extensions → Modules → 3D Product Viewer → + (Install) → Edit**:
    - Placement = **Above the image gallery**;
    - selektors = **tukšs**;
@@ -139,7 +140,7 @@ Pilns kopsavilkums nākamajam Claude Code čatam. Datums: 2026-11-06.
 - OpenCart 3.0.3.8 vajag PHP 7.4, piem. Docker `thecodingmachine/php:7.4-v4-cli` ar `PHP_EXTENSIONS="mysqli gd zip"`.
 - Testi:
   ```
-  python tests/e2e_opencart.py --base http://127.0.0.1:8080/ --zip dist/product_3d_viewer_v1.2.0.ocmod.zip --glb ../models/chair.web.glb
+  python tests/e2e_opencart.py --base http://127.0.0.1:8080/ --zip dist/product_3d_viewer_v1.2.1.ocmod.zip --glb ../models/chair.web.glb
   python tests/e2e_regression.py ... --site-root /ceļš/uz/veikalu --mysql "mysql -uroot <db>"
   python tests/e2e_themes.py --themes default,tA_flex,tB_grid,tC_nofooter,tD_stacked,tE_short,tF_h1logo --mysql "mysql -uroot <db>"
   ```

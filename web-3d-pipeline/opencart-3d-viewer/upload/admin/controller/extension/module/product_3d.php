@@ -13,7 +13,7 @@
  * - AJAX: upload (augšupielāde ar validāciju), files (esošo failu saraksts)
  */
 class ControllerExtensionModuleProduct3d extends Controller {
-	const VERSION = '1.2.0';
+	const VERSION = '1.2.1';
 	const EVENT_CODE = 'product_3d';
 
 	private $error = array();
@@ -767,7 +767,6 @@ class ControllerExtensionModuleProduct3d extends Controller {
 				. "  AddType model/gltf+json .gltf\n"
 				. "  AddType model/vnd.usdz+zip .usdz\n"
 				. "</IfModule>\n"
-				. "Options -Indexes\n"
 				. "<IfModule mod_headers.c>\n"
 				. "  Header set X-Content-Type-Options \"nosniff\"\n"
 				. "</IfModule>\n"
@@ -780,6 +779,11 @@ class ControllerExtensionModuleProduct3d extends Controller {
 				. "    Deny from all\n"
 				. "  </IfModule>\n"
 				. "</FilesMatch>\n");
+		}
+
+		// mapes saraksta vietā tukša lapa (Options -Indexes dažos serveros dod 500)
+		if (!is_file($dir . 'index.html')) {
+			@file_put_contents($dir . 'index.html', '');
 		}
 
 		return is_writable($dir);

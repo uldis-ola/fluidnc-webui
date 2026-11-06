@@ -1,5 +1,8 @@
 # Changelog — 3D Product Viewer for OpenCart
 
+## 1.2.1 — 2026-11-06
+- Storefront texts in German, Lithuanian, Estonian and Polish.
+
 ## 1.2.0 — 2026-11-06
 - System check panel on the settings page (OpenCart/PHP version, events, database table, upload folder,
   bundled viewer files, server upload limit) with hints for each problem.

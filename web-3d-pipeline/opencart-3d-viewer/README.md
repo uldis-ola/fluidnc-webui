@@ -6,9 +6,9 @@ Pievieno produktam **3D modeli (.glb / .gltf)** administrācijā un rāda to pro
 - **Bez kodola un tēmas failu labošanas.** Tiek izmantoti tikai OpenCart notikumi (events), OCMOD nav vajadzīgs.
 - **Bez ārējiem CDN.** model-viewer un dekoderi ir iekļauti pakotnē (CDN var ieslēgt iestatījumos).
 - **Sava tabula `oc_product_3d`.** Tabula `oc_product` netiek mainīta.
-- **Valodas:** EN / LV / RU.
+- **Valodas:** admin EN / LV / RU; veikalā EN, LV, RU, DE, LT, ET, PL.
 
-Pakotne: `dist/product_3d_viewer_v1.2.0.ocmod.zip`. Angļu dokumentācija pircējiem: `docs/USER_GUIDE.md`; Marketplace apraksts un ekrānuzņēmumi: `marketplace/`. (~0,7 MB).
+Pakotne: `dist/product_3d_viewer_v1.2.1.ocmod.zip`. Angļu dokumentācija pircējiem: `docs/USER_GUIDE.md`; Marketplace apraksts un ekrānuzņēmumi: `marketplace/`. (~0,7 MB).
 
 ## Kā tas strādā
 
@@ -146,13 +146,13 @@ Pēc tam produkta cilnē augšupielādē `.web.glb`, `.usdz` un `.poster.webp`.
 ```bash
 python build.py                                   # php -l + dist/product_3d_viewer_vX.Y.Z.ocmod.zip
 python tests/e2e_opencart.py --base http://127.0.0.1:8080/ --user admin --password ... \
-    --zip dist/product_3d_viewer_v1.2.0.ocmod.zip --glb ../models/chair.web.glb
+    --zip dist/product_3d_viewer_v1.2.1.ocmod.zip --glb ../models/chair.web.glb
 ```
 
 Regresijas testi (neatkarīgās pārbaudes atradumi):
 
 ```bash
-python tests/e2e_regression.py --zip dist/product_3d_viewer_v1.2.0.ocmod.zip --glb ../models/chair.web.glb \
+python tests/e2e_regression.py --zip dist/product_3d_viewer_v1.2.1.ocmod.zip --glb ../models/chair.web.glb \
     --site-root /ceļš/uz/testa/veikalu --mysql "mysql -uroot oc_test"
 ```
 

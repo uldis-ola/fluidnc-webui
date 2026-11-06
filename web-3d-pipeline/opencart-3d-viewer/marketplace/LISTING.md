@@ -62,7 +62,7 @@ button opens augmented reality (Android Scene Viewer, iOS Quick Look).
 The settings page checks your OpenCart and PHP versions, events, database table, upload folder, and the
 server upload limit — and tells you how to fix anything that is wrong.
 
-**Languages:** English, Latvian, Russian (admin and storefront). Easy to translate.
+**Languages:** admin in English, Latvian, Russian; storefront in English, Latvian, Russian, German, Lithuanian, Estonian, Polish. Easy to translate.
 
 **Clean uninstall:** removes events and settings. Your product–model links are kept for a later
 re-install, unless you choose otherwise. Uploaded files are never deleted.

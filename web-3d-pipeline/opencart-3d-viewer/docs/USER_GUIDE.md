@@ -1,6 +1,6 @@
 # 3D Product Viewer for OpenCart 3.0.x — User Guide
 
-Version 1.2.0
+Version 1.2.1
 
 Show an interactive 3D model (.glb / .gltf) on your product pages. Customers can rotate and zoom
 the product, and on supported phones place it in their room with augmented reality (AR).
@@ -28,7 +28,7 @@ system only, so there is nothing to refresh under *Extensions → Modifications*
 
 > Make a backup of your files and database before installing any extension.
 
-1. In the admin go to **Extensions → Installer** and upload `product_3d_viewer_v1.2.0.ocmod.zip`.
+1. In the admin go to **Extensions → Installer** and upload `product_3d_viewer_v1.2.1.ocmod.zip`.
    Wait for the green *Success* message.
 2. Go to **Extensions → Extensions**, choose **Modules** in the filter, find **3D Product Viewer**
    and click the green **+** (Install).
@@ -119,7 +119,7 @@ File names are cleaned, and existing files are never overwritten.
 - **If the 3D viewer cannot load** (old browser, blocked script, damaged file): the normal product photos are shown again automatically.
 - **Products without a 3D model** are not changed at all.
 
-Texts on the storefront are in English, Latvian and Russian. Other languages fall back to English.
+Texts on the storefront are in English, Latvian, Russian, German, Lithuanian, Estonian and Polish. Other languages fall back to English.
 You can add your own translation by copying
 `catalog/language/en-gb/extension/module/product_3d.php` into your language folder.
 

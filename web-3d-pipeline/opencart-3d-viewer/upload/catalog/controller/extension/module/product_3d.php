@@ -11,12 +11,16 @@
  * atrašana pēc šī produkta attēlu failu nosaukumiem (neatkarīgi no tēmas marķējuma).
  */
 class ControllerExtensionModuleProduct3d extends Controller {
-	const VERSION = '1.2.0';
+	const VERSION = '1.2.1';
 
 	/** Viena pieprasījuma kešs (before + after notikumi) */
 	private static $cache = array();
 
-	public function eventProductViewBefore(&$route, &$data, &$code) {
+	public function eventProductViewBefore(&$route = null, &$data = null, &$code = null) {
+		if (!is_array($data)) {
+			return null;
+		}
+
 		$viewer = $this->buildViewer($data);
 
 		if ($viewer) {
@@ -28,7 +32,11 @@ class ControllerExtensionModuleProduct3d extends Controller {
 		return null;
 	}
 
-	public function eventProductViewAfter(&$route, &$data, &$output) {
+	public function eventProductViewAfter(&$route = null, &$data = null, &$output = null) {
+		if (!is_array($data)) {
+			return null;
+		}
+
 		$viewer = $this->buildViewer($data);
 
 		if (!$viewer || !is_string($output) || strpos($output, 'data-product-3d-assets') !== false) {
@@ -51,7 +59,11 @@ class ControllerExtensionModuleProduct3d extends Controller {
 	}
 
 	/** Saderība ar 1.0.x notikumu (ja modulis atjaunināts bez Uninstall/Install) */
-	public function eventProductView(&$route, &$data, &$code) {
+	public function eventProductView(&$route = null, &$data = null, &$code = null) {
+		if (!is_array($data)) {
+			return null;
+		}
+
 		$this->eventProductViewBefore($route, $data, $code);
 
 		$viewer = $this->buildViewer($data);

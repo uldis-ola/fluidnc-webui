@@ -1,5 +1,8 @@
 # Changelog — OpenCart 3D Product Viewer
 
+## 1.2.1 — 2026-11-06
+- Veikala teksti arī DE, LT, ET, PL (3dp.lv 7 valodas); admin LV arī valodas kodam `lv`. Drošības pārskata labojumi: veikala notikumu metodes bez parametriem vairs nedod 500; augšupielādes mapē `index.html` `Options -Indexes` vietā (dažos serveros 500).
+
 ## 1.2.0 — 2026-11-06
 Supersedes 1.1.0. Gatavs pārdošanai.
 - Iestatījumu lapā "Sistēmas pārbaude" (OpenCart/PHP versija, notikumi, tabula, mape, lokālie faili, augšupielādes limits) ar padomiem.
