@@ -1,5 +1,6 @@
 <?php
 namespace Opencart\Admin\Model\Extension\AnnouncementBarPro\Module;
+\defined('VERSION') || exit; // not callable directly
 /**
  * Announcement Bar Pro — admin model (OpenCart 4.0.2+ / 4.1)
  * Tables: {prefix}abp_message, {prefix}abp_message_description
@@ -8,7 +9,7 @@ namespace Opencart\Admin\Model\Extension\AnnouncementBarPro\Module;
  */
 class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 	public const CODE           = 'module_announcement_bar_pro';
-	public const SCHEMA_VERSION = 4;
+	public const SCHEMA_VERSION = 5;
 
 	/**
 	 * Creates tables (if missing) and fills missing default settings. Idempotent.
@@ -54,7 +55,8 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 
 		// Schema 4: shops upgraded from any older version (incl. 1.0.0, which had no schema key) keep
 		// their own message colours; only a fresh install starts with automatic colours.
-		if ($settings && !isset($settings[self::CODE . '_color_mode'])) {
+		// A reinstall that kept its messages (settings were deleted on uninstall) also keeps their colours.
+		if (($settings || $this->getTotalMessages()) && !isset($settings[self::CODE . '_color_mode'])) {
 			$settings[self::CODE . '_color_mode'] = 'custom';
 		}
 
@@ -63,7 +65,7 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 
 		$this->model_setting_setting->editSetting(self::CODE, $settings);
 
-		// Schema 4 adds the footer fallback event: re-register events, but only while the module is installed.
+		// Schema 4/5 add the footer fallback events: re-register events, but only while the module is installed.
 		$this->registerEvents();
 	}
 
@@ -83,11 +85,17 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 		$this->load->model('setting/event');
 		$this->model_setting_event->deleteEventByCode('announcement_bar_pro');
 
-		foreach (['header' => 'injectBar', 'footer' => 'injectBarFooter'] as $view => $method) {
+		$events = [
+			'common/header' => ['injectBar', 'inject the bar after <body>'],
+			'common/footer' => ['injectBarFooter', 'mark the end of <body> (fallback)'],
+			'*'             => ['resolveFallback', 'use the marker if the header had no <body>']
+		];
+
+		foreach ($events as $view => [$method, $text]) {
 			$event = [
 				'code'        => 'announcement_bar_pro',
-				'description' => 'Announcement Bar Pro: ' . ($view === 'header' ? 'inject the bar after <body>' : 'fallback when the header has no <body>'),
-				'trigger'     => 'catalog/view/common/' . $view . '/after',
+				'description' => 'Announcement Bar Pro: ' . $text,
+				'trigger'     => 'catalog/view/' . $view . '/after',
 				'action'      => $route . $sep . $method,
 				'status'      => 1,
 				'sort_order'  => 0

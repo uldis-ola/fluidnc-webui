@@ -28,54 +28,47 @@
        - "Automatic" colours take the theme's main colour and a readable text colour;
        - icons are dropped when the theme has no Font Awesome (no empty squares). */
     var isTop = !bar.classList.contains('abp-pos-bottom');
-    var touched = [];   // elements whose inline "top" we changed: {el, value, priority}
+    var cache = { top: [], bottom: [] }, lastScan = 0;
 
     function px(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }
 
     function candidates() {
-      return document.querySelectorAll('body > *, body > * > *, body > * > * > *, header, nav, [class*="sticky"], [class*="fixed"], [id*="header"], [class*="header"], [class*="navbar"], [class*="cookie"], [id*="cookie"], [class*="consent"]');
+      return document.querySelectorAll('body > *, body > * > *, header, nav, [class*="sticky"], [class*="fixed"], [id*="header"], [class*="header"], [class*="navbar"], [class*="cookie"], [id*="cookie"], [class*="consent"]');
     }
 
-    // Visible, wide fixed/sticky elements resting on the top (or bottom) edge of the window.
-    function edgeElements(edge) {
-      var out = [], list = candidates(), vw = window.innerWidth, vh = window.innerHeight;
+    // Find wide fixed/sticky bars resting near the top (a stack of them is fine) or on the bottom edge.
+    // Runs on load, resize and at most once a second while scrolling — never on every frame.
+    function rescan() {
+      lastScan = Date.now();
+      var list = candidates(), vw = window.innerWidth, vh = window.innerHeight, top = [], bottom = [];
+      var known = cache.top.map(function (e) { return e.el; });
       for (var i = 0; i < list.length; i++) {
         var el = list[i];
-        if (el === bar || bar.contains(el) || el.contains(bar) || (el.className && String(el.className).indexOf('abp-spacer') !== -1) || out.indexOf(el) !== -1) { continue; }
+        if (el === bar || bar.contains(el) || el.contains(bar) || (el.className && String(el.className).indexOf('abp-spacer') !== -1)) { continue; }
+        var k = known.indexOf(el);
+        if (k !== -1) { top.push(cache.top[k]); continue; } // keep what we already moved (to restore it later)
         var cs = window.getComputedStyle(el);
         if ((cs.position !== 'fixed' && cs.position !== 'sticky') || cs.display === 'none' || cs.visibility === 'hidden') { continue; }
         var r = el.getBoundingClientRect();
-        if (r.width < vw * 0.5 || r.height <= 0 || r.height > vh * 0.6) { continue; }
-        if (edge === 'top') {
-          var orig = el.getAttribute('data-abp-top');
-          var top = orig !== null ? px(orig) : (cs.top === 'auto' ? NaN : px(cs.top));
-          if (isNaN(top) || top > 2) { continue; }
-        } else {
-          if (cs.position !== 'fixed' || cs.bottom === 'auto' || px(cs.bottom) > 2) { continue; }
+        if (r.width < vw * 0.5 || r.height <= 0 || r.height > vh * 0.6 || r.bottom <= 0) { continue; }
+        if (cs.top !== 'auto' && px(cs.top) <= vh * 0.25 && r.top <= px(cs.top) + 2) {
+          top.push({ el: el, orig: px(cs.top), h: r.height, inline: el.style.getPropertyValue('top'), prio: el.style.getPropertyPriority('top'), last: null, z: parseInt(cs.zIndex, 10) });
+        } else if (cs.position === 'fixed' && cs.bottom !== 'auto' && px(cs.bottom) <= 2) {
+          bottom.push({ el: el, z: parseInt(cs.zIndex, 10) });
         }
-        // Skip elements nested in one we already have (the outer one moves them all).
-        var nested = false;
-        for (var j = 0; j < out.length; j++) { if (out[j].contains(el)) { nested = true; break; } }
-        if (!nested) { out.push(el); }
       }
-      return out;
-    }
-
-    function setTop(el, value) {
-      if (el.getAttribute('data-abp-top') === null) {
-        el.setAttribute('data-abp-top', '0');
-        touched.push({ el: el, value: el.style.getPropertyValue('top'), priority: el.style.getPropertyPriority('top') });
-      }
-      el.style.setProperty('top', value + 'px', 'important');
+      // Drop nested elements (the outer one moves them all).
+      cache.top = top.filter(function (a) { return !top.some(function (b) { return b !== a && b.el.contains(a.el); }); });
+      cache.bottom = bottom;
     }
 
     function restoreEdges() {
-      touched.forEach(function (t) {
-        t.el.style.removeProperty('top');
-        if (t.value) { t.el.style.setProperty('top', t.value, t.priority); }
-        t.el.removeAttribute('data-abp-top');
+      cache.top.forEach(function (e) {
+        if (e.last === null) { return; }
+        e.el.style.removeProperty('top');
+        if (e.inline) { e.el.style.setProperty('top', e.inline, e.prio); }
+        e.last = null;
       });
-      touched = [];
       bar.style.bottom = '';
     }
 
@@ -83,27 +76,35 @@
       if (bar.style.display === 'none') { restoreEdges(); return; }
       var maxZ = 0;
       if (isTop) {
+        // Reads first, writes after (no layout thrashing).
         var br = bar.getBoundingClientRect(), below = Math.max(0, Math.round(br.bottom));
-        edgeElements('top').forEach(function (el) {
-          // Only a header that actually covers the bar is moved; one the theme already pushes content
-          // below (body padding) leaves the bar visible underneath it and stays where it is.
-          var h = el.getBoundingClientRect().height, wasTouched = el.getAttribute('data-abp-top') !== null;
-          var covers = br.top < h - 1 && br.bottom > 0;
-          if (covers || wasTouched) { setTop(el, covers ? below : 0); }
-          var z = parseInt(window.getComputedStyle(el).zIndex, 10);
-          if (!isNaN(z)) { maxZ = Math.max(maxZ, z); }
+        // Move the header stack only if part of it actually sits over the bar; a header the theme already
+        // pads content for leaves the bar visible underneath it and stays where it is.
+        var covers = br.bottom > 0 && cache.top.some(function (e) { return e.orig < br.bottom - 1 && e.orig + e.h > br.top + 1; });
+        cache.top.forEach(function (e) {
+          if (!isNaN(e.z)) { maxZ = Math.max(maxZ, e.z); }
+          var want = covers ? e.orig + below : null;
+          if (want === e.last) { return; }
+          if (want === null) {
+            e.el.style.removeProperty('top');
+            if (e.inline) { e.el.style.setProperty('top', e.inline, e.prio); }
+          } else {
+            // Plain inline value (no !important): theme scripts that hide the header on scroll still win.
+            e.el.style.setProperty('top', want + 'px');
+          }
+          e.last = want;
         });
       } else {
-        var lift = 0;
-        edgeElements('bottom').forEach(function (el) {
-          lift = Math.max(lift, Math.round(el.getBoundingClientRect().height));
-          var z = parseInt(window.getComputedStyle(el).zIndex, 10);
-          if (!isNaN(z)) { maxZ = Math.max(maxZ, z); }
+        var lift = 0, vh = window.innerHeight;
+        cache.bottom.forEach(function (e) {
+          var r = e.el.getBoundingClientRect();
+          if (r.height > 0 && r.top < vh && window.getComputedStyle(e.el).display !== 'none') { lift = Math.max(lift, Math.round(vh - r.top)); }
+          if (!isNaN(e.z)) { maxZ = Math.max(maxZ, e.z); }
         });
         bar.style.bottom = lift ? lift + 'px' : '';
       }
-      // Stay above the theme's own fixed bars (default z-index is 1030).
-      bar.style.zIndex = maxZ >= 1030 ? String(maxZ + 1) : '';
+      // Stay above the theme's fixed bars, but below modal windows (Bootstrap backdrop 1040+).
+      bar.style.zIndex = maxZ >= 1030 ? String(Math.min(maxZ + 1, 1039)) : '';
     }
 
     function parseRgb(c) {
@@ -156,7 +157,10 @@
     // Font Awesome missing in the theme → remove icons instead of showing empty boxes.
     function checkIcons() {
       bar.querySelectorAll('i[class*="fa-"]').forEach(function (icon) {
-        if (!/awesome/i.test(window.getComputedStyle(icon).fontFamily || '')) { icon.parentNode.removeChild(icon); }
+        var font = window.getComputedStyle(icon).fontFamily || '', before = window.getComputedStyle(icon, '::before').content;
+        // Keep it if any icon font styles it or its ::before has a glyph (FA 4/5/6, other icon fonts, SVG kits).
+        if (/awesome|icon/i.test(font) || (before && before !== 'none' && before !== 'normal' && before !== '""')) { return; }
+        icon.parentNode.removeChild(icon);
       });
     }
 
@@ -264,7 +268,7 @@
       track.classList.add('abp-run');
     }
 
-    function relayout() { stabilise(); show(Math.min(index, Math.max(items().length - 1, 0))); startRotate(); startMarquee(); fitBody(); }
+    function relayout() { rescan(); stabilise(); show(Math.min(index, Math.max(items().length - 1, 0))); startRotate(); startMarquee(); fitBody(); }
 
     function hideBar() {
       stopRotate();
@@ -357,15 +361,19 @@
       resizeTimer = setTimeout(relayout, 200);
     });
 
-    // Headers that become fixed only after scrolling: re-check the edges while scrolling (throttled).
-    var edgeQueued = false, lastScan = 0;
+    // While scrolling only the cached elements are updated; the page is re-scanned at most once a second
+    // (headers that become fixed only after scrolling).
+    var edgeQueued = false, scanTimer = null;
     window.addEventListener('scroll', function () {
       if (edgeQueued) { return; }
       edgeQueued = true;
       window.requestAnimationFrame(function () {
         edgeQueued = false;
-        var t = Date.now();
-        if (touched.length || t - lastScan > 250) { lastScan = t; adaptEdges(); }
+        var wait = 1000 - (Date.now() - lastScan);
+        if (wait <= 0) { rescan(); } else if (!scanTimer) {
+          scanTimer = setTimeout(function () { scanTimer = null; rescan(); adaptEdges(); }, wait);
+        }
+        adaptEdges();
       });
     }, { passive: true });
 

@@ -1,4 +1,5 @@
 <?php
+defined('VERSION') || exit; // not callable directly
 // Heading
 $_['heading_title']              = 'Announcement Bar Pro';
 

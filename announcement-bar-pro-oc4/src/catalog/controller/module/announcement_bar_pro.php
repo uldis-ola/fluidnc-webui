@@ -1,5 +1,6 @@
 <?php
 namespace Opencart\Catalog\Controller\Extension\AnnouncementBarPro\Module;
+\defined('VERSION') || exit; // not callable directly
 /**
  * Announcement Bar Pro — catalog controller (OpenCart 4.0.x / 4.1.x)
  * Injected via events: catalog/view/common/header/after (footer/after as automatic fallback)
@@ -13,6 +14,9 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 
 	/** @var \Opencart\System\Library\Extension\AnnouncementBarPro\Sanitizer */
 	private $abp;
+
+	/** Placeholder the footer leaves for resolveFallback(); never shown (HTML comment). */
+	public const MARKER = '<!--abp-fallback-->';
 
 	/** Set once the bar is in this page, so the footer fallback never adds a second one. */
 	/** True while rendering from the footer fallback: the script then moves a top bar to the top of <body>. */
@@ -33,21 +37,40 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 	}
 
 	/**
-	 * Event handler (footer) — automatic fallback for themes whose header template has no <body> tag
-	 * (or that render the header through another route). The bar goes before </body>; the bar's own
-	 * script then moves it to the top of the page before the first paint.
+	 * Event handler (footer). OpenCart renders the footer BEFORE the header, so the bar is never placed
+	 * here: the footer only gets an invisible marker before </body>. resolveFallback() later removes it
+	 * (header worked) or replaces it with the bar (theme header without <body>).
 	 */
 	public function injectBarFooter(string &$route = '', array &$args = [], &$output = ''): void {
-		if (self::$injected || !$this->config->get(self::CODE . '_status') || !is_string($output) || $output === '') {
+		if (!$this->config->get(self::CODE . '_status') || !is_string($output) || $output === '' || strpos($output, self::MARKER) !== false) {
+			return;
+		}
+
+		$result = preg_replace_callback('#<!--.*?-->(*SKIP)(*FAIL)|<script\b.*?</script>(*SKIP)(*FAIL)|</body\s*>#is', function ($m) {
+			return self::MARKER . $m[0];
+		}, $output, 1, $count);
+
+		$output = (is_string($result) && $count) ? $result : $output . self::MARKER;
+	}
+
+	/**
+	 * Event handler (catalog/view/[any]/after, i.e. every view). Runs on the finished page template, which contains both the
+	 * header and the footer output: drop the marker, or use it when the header could not take the bar.
+	 */
+	public function resolveFallback(string &$route = '', array &$args = [], &$output = ''): void {
+		if (!is_string($output) || strpos($output, self::MARKER) === false || preg_match('#(^|/)common/(footer|header)$#', (string)$route)) {
+			return;
+		}
+
+		if (self::$injected || !$this->config->get(self::CODE . '_status')) {
+			$output = str_replace(self::MARKER, '', $output);
 			return;
 		}
 
 		$this->fallback = true;
 
-		if (!$this->inject($output, '#<!--.*?-->(*SKIP)(*FAIL)|<script\b.*?</script>(*SKIP)(*FAIL)|</body\s*>#is', false)) {
-			// No </body> in the footer either: append; the browser still puts it inside <body>.
-			$this->inject($output, '', false);
-		}
+		$output = str_replace(self::MARKER, '', $output);
+		$this->inject($output, '#<!--.*?-->(*SKIP)(*FAIL)|<script\b.*?</script>(*SKIP)(*FAIL)|</body\s*>#is', false) || $this->inject($output, '', false);
 	}
 
 	/**

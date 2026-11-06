@@ -1,5 +1,6 @@
 <?php
 namespace Opencart\Catalog\Model\Extension\AnnouncementBarPro\Module;
+\defined('VERSION') || exit; // not callable directly
 /**
  * Announcement Bar Pro — catalog model (OpenCart 4.0.x / 4.1.x)
  *

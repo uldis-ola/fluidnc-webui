@@ -1,5 +1,6 @@
 <?php
 namespace Opencart\Admin\Controller\Extension\AnnouncementBarPro\Module;
+\defined('VERSION') || exit; // not callable directly
 /**
  * Announcement Bar Pro — admin controller (OpenCart 4.0.x / 4.1.x)
  *

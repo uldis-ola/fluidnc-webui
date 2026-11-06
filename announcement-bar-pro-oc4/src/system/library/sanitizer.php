@@ -5,6 +5,7 @@
  * @version 2.1.0
  */
 namespace Opencart\System\Library\Extension\AnnouncementBarPro;
+\defined('VERSION') || exit; // not callable directly
 
 class Sanitizer {
 	/** Allowed inline tags. Everything else is unwrapped (content kept) or dropped. */
