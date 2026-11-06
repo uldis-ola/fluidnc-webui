@@ -483,9 +483,10 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 			$text = $this->abp->decode($row['text']);
 
 			$description[$id] = [
-				// OpenCart 4 talks utf8mb4 to MySQL, so emoji are stored as they are (no entity encoding needed).
-				'text'      => $allow_html ? $this->abp->html($text) : $this->abp->plain($text),
-				'link_text' => mb_substr($this->abp->plain($this->abp->decode($row['link_text'])), 0, self::MAX_LINK_TEXT, 'UTF-8')
+				// OpenCart 4.0.1+ talks utf8mb4 to MySQL, so emoji are stored as they are. 4.0.0.x still uses
+				// 3-byte "utf8" (emoji would become "????"), so there they are stored as numeric entities.
+				'text'      => $this->store4byte($allow_html ? $this->abp->html($text) : $this->abp->plain($text)),
+				'link_text' => $this->store4byte(mb_substr($this->abp->plain($this->abp->decode($row['link_text'])), 0, self::MAX_LINK_TEXT, 'UTF-8'))
 			];
 		}
 
@@ -600,6 +601,10 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 		$data['footer']      = $this->load->controller('common/footer');
 
 		return $data;
+	}
+
+	private function store4byte(string $value): string {
+		return version_compare(VERSION, '4.0.1.0', '<') ? $this->abp->encode4byte($value) : $value;
 	}
 
 	/** Method separator: "." from OpenCart 4.0.2.0, "|" in 4.0.0.x–4.0.1.x. */
