@@ -11,7 +11,7 @@
 
 ## Stāvoklis
 - Modulis v1.2.1 gatavs un notestēts uz OpenCart 3.0.3.8 (PHP 7.4), 3.0.4.1 un 3.0.5.x (PHP 8.3), 7 tēmās.
-- **3dp.lv: INSTALĒTS 2026-11-06 (v1.2.1), Ulda “Viss OK”.** Iestatījumi: virs galerijas, selektors tukšs, lokālie faili, auto-rotācija izslēgta; System check 8/8 OK. Produktam 79 “Oak cutting board” 3D modelis no veikala foto (30×20×2 cm). Tālāk instalēšanas uzdevums zemāk vairs nav jāpilda.
+- **3dp.lv: INSTALĒTS 2026-11-06 (v1.2.1), Ulda “Viss OK”.** Iestatījumi: virs galerijas, selektors tukšs, lokālie faili, auto-rotācija izslēgta; System check 8/8 OK. Pašlaik nevienam produktam modeļa nav (modeļi no foto noraidīti — vajag 1:1 no ražošanas failiem). Tālāk instalēšanas uzdevums zemāk vairs nav jāpilda.
 - 3dp.lv tēma "meistars", galerija `.mt-gallery` — sausajā izmēģinājumā modulis to atpazīst automātiski.
 
 ## Uzdevums nākamajam čatam (iekopē Claude in Chrome vai Claude Code ar pārlūka piekļuvi)

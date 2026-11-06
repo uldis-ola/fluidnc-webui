@@ -100,7 +100,7 @@ Pilns kopsavilkums nākamajam Claude Code čatam. Datums: 2026-11-06.
 
 ### 3.2 3D modeļi īstiem produktiem
 
-- **06.11 izdarīts:** 3dp.lv produktiem 79 (dēlis), 78 (ozola paliktnis), 335 (finiera paliktnis), 333 (alumīnija žetons), 332 (ādas piekariņš ar gredzenu) — modeļi no veikala foto (virspuse perspektīvi iztaisnota, izmēri no produkta datiem), dzīvajā, Uldis apstiprināja. Ģeneratori: `opencart-3d-viewer/tools3d/make_flat.py` (spec.json) un `make_board.py`. Atlikuši: 77 (tikai zīmējums), 334 (foto rokā), 336 (pagriezts foto) — vajag foto no augšas.
+- **06.11:** modeļi no foto (79, 78, 335, 333, 332) tika uzlikti, bet Uldis tos NORAIDĪJA (“nav viens pret viens”) un tie noņemti. Noteikums: 3D modeļi tikai 1:1 no ražošanas failiem (SVG/DXF/STL/Studio), nevis no foto. `tools3d/` skripti der tikai melnrakstiem.
 
 - Vajag īstus produktu modeļus (.fbx/.glb). Testa krēslu uz dzīvā veikala nelikt.
 - Sagatavošana:
