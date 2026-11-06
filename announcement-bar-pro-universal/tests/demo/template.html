@@ -1,0 +1,289 @@
+<title>Announcement Bar Pro</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: control desk on the left, a live shop window (iframe running the real module code) on the right; facts and test record below. */
+:root{
+  --bg:#f3f5f4; --surface:#ffffff; --ink:#18201d; --muted:#5d6a65; --line:#d8dfdc;
+  --accent:#0f7b5f; --accent-ink:#ffffff; --ok:#1e7d4f; --warn:#9a6b00;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111614; --surface:#18201d; --ink:#e7eeeb; --muted:#9aa8a2; --line:#2c3833;
+  --accent:#3fc59a; --accent-ink:#06261c; --ok:#4fd08f; --warn:#e2b44a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111614; --surface:#18201d; --ink:#e7eeeb; --muted:#9aa8a2; --line:#2c3833;
+  --accent:#3fc59a; --accent-ink:#06261c; --ok:#4fd08f; --warn:#e2b44a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.wrap{max-width:1220px;margin:0 auto;display:grid;gap:28px}
+header h1{font:700 clamp(28px,4vw,40px)/1.1 var(--display);margin:0 0 6px;letter-spacing:-.01em;text-wrap:balance}
+header p{margin:0;color:var(--muted);max-width:72ch}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{font:600 12px/1 var(--mono);letter-spacing:.04em;text-transform:uppercase;border:1px solid var(--line);background:var(--surface);padding:6px 9px;border-radius:999px;color:var(--muted)}
+.chip b{color:var(--ink)}
+.grid{display:grid;grid-template-columns:330px minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:920px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:14px}
+.panel h2{font:600 13px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
+.panel h3{font:600 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:6px 0 0;padding-top:12px;border-top:1px solid var(--line)}
+.field{display:grid;gap:6px;min-width:0}
+.field label,.field .lbl{font-weight:600;font-size:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+select,input[type=text]{font:inherit;font-size:15px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%;min-width:0}
+input[type=color]{width:42px;height:34px;border:1px solid var(--line);border-radius:6px;background:var(--bg);padding:2px}
+.seg{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{flex:1;font:600 13px var(--body);background:var(--bg);color:var(--ink);border:0;padding:8px 6px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.check{display:flex;gap:8px;align-items:center;font-size:15px}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{font:600 14px var(--body);border:1px solid var(--accent);background:transparent;color:var(--accent);padding:8px 12px;border-radius:7px;cursor:pointer}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.window{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0}
+.chrome{display:flex;gap:8px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--line);font:13px var(--mono);color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.url{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:var(--bg);border-radius:5px;padding:3px 8px}
+.stage{background:var(--bg);display:flex;justify-content:center}
+#shop{display:block;width:100%;height:520px;border:0;background:#fff}
+#shop.narrow{width:390px;max-width:100%}
+.what{font-size:14px;color:var(--muted);padding:10px 14px;border-top:1px solid var(--line);min-height:44px}
+.what b{color:var(--ink)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;min-width:0}
+.box h3{font:700 19px/1.2 var(--display);margin:0 0 10px}
+.box ul{margin:0;padding-left:18px;display:grid;gap:4px}
+.table-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 12px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+td.num{font:600 14px var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill{display:inline-block;font:600 12px var(--mono);padding:2px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.pill.ok{color:var(--ok)} .pill.warn{color:var(--warn)}
+code{font:13px var(--mono);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+footer{color:var(--muted);font-size:14px}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Announcement Bar Pro</h1>
+    <p>Paziņojumu josla OpenCart veikalam. Viena paka der OpenCart 3.0, 4.0 un 4.1, un josla pati pielāgojas tēmai. Labajā logā darbojas <b>moduļa īstais JavaScript un CSS</b> no versijas 2.1.0. Izvēlieties tēmu un skatieties, kā josla pielāgojas: ritiniet veikala logu un aizveriet joslu ar ×.</p>
+    <div class="chips">
+      <span class="chip">Viena paka · <b>v2.1.0</b></span>
+      <span class="chip">OpenCart 3.0 · 4.0 · 4.1</span>
+      <span class="chip">LV · EN · RU</span>
+      <span class="chip">GPL-3.0</span>
+    </div>
+  </header>
+
+  <section class="grid" aria-label="Interaktīvs demo">
+    <form class="panel" id="controls" autocomplete="off">
+      <h2>Veikala tēma</h2>
+      <div class="field">
+        <label for="theme">Tēma</label>
+        <select id="theme">
+          <option value="classic">Klasiska (OpenCart 3 stils)</option>
+          <option value="fixed">Fiksēta galvene (pārklāj lapas augšu)</option>
+          <option value="sticky">Piestiprināta izvēlne ritinot</option>
+          <option value="nobody">Tēma bez &lt;body&gt; galvenē (rezerves ceļš)</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="field"><label for="brand">Tēmas krāsa</label><input type="color" id="brand" value="#7b2cbf"></div>
+        <div class="field" style="flex:1">
+          <label class="check"><input type="checkbox" id="cookie"> Sīkdatņu josla apakšā</label>
+          <label class="check"><input type="checkbox" id="rtl"> Arābu (RTL)</label>
+          <label class="check"><input type="checkbox" id="fa" checked> Tēmai ir Font Awesome</label>
+        </div>
+      </div>
+
+      <h3>Moduļa iestatījumi</h3>
+      <div class="field">
+        <span class="lbl" id="lbl-mode">Attēlošana</span>
+        <div class="seg" role="group" aria-labelledby="lbl-mode">
+          <button type="button" data-mode="rotate" aria-pressed="true">Mainīgi</button>
+          <button type="button" data-mode="marquee" aria-pressed="false">Skrejošā rinda</button>
+          <button type="button" data-mode="stack" aria-pressed="false">Visi</button>
+        </div>
+      </div>
+      <div class="field">
+        <span class="lbl" id="lbl-pos">Novietojums</span>
+        <div class="seg" role="group" aria-labelledby="lbl-pos">
+          <button type="button" data-pos="top" aria-pressed="true">Augšā</button>
+          <button type="button" data-pos="sticky" aria-pressed="false">Augšā, piestiprināta</button>
+          <button type="button" data-pos="bottom" aria-pressed="false">Apakšā</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="colors">Krāsas</label>
+        <select id="colors">
+          <option value="auto">Automātiski — pēc tēmas krāsas</option>
+          <option value="custom">Pielāgotas — katram paziņojumam savas</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="text1">1. paziņojuma teksts</label>
+        <input type="text" id="text1" value="Bezmaksas piegāde virs 50 € — beidzas pēc {countdown}">
+      </div>
+      <label class="check"><input type="checkbox" id="dismissible" checked> Aizvēršanas poga (×)</label>
+      <label class="check"><input type="checkbox" id="mobile"> Telefona platums</label>
+      <div class="row"><button type="button" class="btn" id="reset">Atjaunot aizvērto joslu</button></div>
+    </form>
+
+    <div class="window">
+      <div class="chrome"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">https://jusu-veikals.lv/</span></div>
+      <div class="stage"><iframe id="shop" title="Veikala priekšskatījums ar Announcement Bar Pro"></iframe></div>
+      <div class="what" id="what" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="cols" aria-label="Iespējas un pārbaude">
+    <div class="box">
+      <h3>Ko modulis dara pats</h3>
+      <ul>
+        <li>Viena paka: OpenCart 3 un 4 instalētājs katrs paņem savus failus</li>
+        <li>Fiksēta vai piestiprināta galvene tiek nobīdīta zem joslas; ja tēma jau atstāj vietu, nekas netiek bīdīts</li>
+        <li>Tēma bez <code>&lt;body&gt;</code> galvenē: josla tik un tā nonāk augšā</li>
+        <li>Sīkdatņu josla vai mobilā izvēlne apakšā: apakšējā josla paceļas virs tās</li>
+        <li>Automātiskās krāsas no tēmas; lasāma teksta krāsa</li>
+        <li>Nav Font Awesome → ikonas izlaistas; RTL valodas apgrieztas</li>
+        <li>Aizvēršana tiek atcerēta katram paziņojumam; atpakaļskaitīšana servera laikā</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3>Pārbaude īstā OpenCart</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Versija</th><th>Pārbaudes</th><th>Rezultāts</th></tr></thead>
+          <tbody>
+            <tr><td>OpenCart 3.0.5.1 (jaunināšana no v1)</td><td class="num">%OC3_COUNT%</td><td><span class="pill ok">%OC3_RESULT%</span></td></tr>
+            <tr><td>OpenCart 4.0.0.0*</td><td class="num">69</td><td><span class="pill ok">visas izietas</span></td></tr>
+            <tr><td>OpenCart 4.0.1.1*</td><td class="num">69</td><td><span class="pill ok">visas izietas</span></td></tr>
+            <tr><td>OpenCart 4.0.2.0</td><td class="num">69</td><td><span class="pill ok">visas izietas</span></td></tr>
+            <tr><td>OpenCart 4.0.2.3</td><td class="num">69</td><td><span class="pill ok">visas izietas</span></td></tr>
+            <tr><td>OpenCart 4.1.0.4</td><td class="num">69</td><td><span class="pill ok">visas izietas</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="hint">Katrā versijā instalēta tā pati paka caur OpenCart Extension Installer, ar 9 tēmu scenārijiem. * 4.0.0/4.0.1 nestrādā ar PHP 8.3, tāpēc PHP 8.1 uzvedība simulēta.</p>
+    </div>
+  </section>
+
+  <section class="box" aria-label="Neatkarīgās pārbaudes">
+    <h3>Neatkarīgās AI pārbaudes</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Kārta</th><th>Pārbaudītājs</th><th>Atrasts</th><th>Stāvoklis</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Koda un drošības pārskats</td><td>9 korektuma kļūdas, 0 drošības caurumu</td><td><span class="pill ok">izlabots 2.0.1</span></td></tr>
+          <tr><td>2</td><td>Drošības audits, OpenCart recenzents, „melnās kastes” testētājs</td><td>~25 zemas/vidējas nozīmes</td><td><span class="pill ok">izlabots 2.0.2</span></td></tr>
+          <tr><td>3</td><td>Drošības audits, OC4 recenzents, 2 testētāji</td><td>sanitizatora mūžīgais cikls (augsta), OC 4.1 tēmas problēmas</td><td><span class="pill ok">izlabots 2.0.4–2.0.5</span></td></tr>
+          <tr><td>4</td><td>Koda pārskats 2.1.0</td><td>footer rezerve pārņēma ievietošanu (augsta); slodze ritinot, „slēpjas ritinot” galvenes</td><td><span class="pill ok">izlabots 2.1.0</span></td></tr>
+          <tr><td>—</td><td>Nav pārbaudīts</td><td>īsts PHP 7.x/8.1; OC 3.0.0–3.0.4; komerctēmas (Journal u. c.); Firefox/Safari</td><td><span class="pill warn">atklāts</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>Veikala logs ir paraugveikals, bet josla tajā darbojas ar moduļa īsto JavaScript un CSS (versija 2.1.0). Īstā veikalā modulis joslu ievieto caur OpenCart notikumiem, nevis šīs lapas skriptu.</footer>
+</div>
+
+<script>
+(function () {
+  var MODULE_CSS = %MODULE_CSS%;
+  var MODULE_JS = %MODULE_JS%;
+  var MODULE_PRE = %MODULE_PRE%;
+  var $ = function (id) { return document.getElementById(id); };
+  var state = { mode: 'rotate', pos: 'top', theme: 'classic' };
+  var stamp = Date.now();
+
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function hash12(s) { var h = 0x811c9dc5, h2 = 0; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; h2 = (h2 * 31 + s.charCodeAt(i)) >>> 0; } return ('00000000' + h.toString(16)).slice(-8) + ('0000' + (h2 & 0xffff).toString(16)).slice(-4); }
+
+  function messages() {
+    var rtl = $('rtl').checked;
+    return [
+      { id: 1, text: rtl ? 'شحن مجاني للطلبات فوق 50 € — ينتهي خلال {countdown}' : $('text1').value, icon: 'fa-truck', btn: rtl ? 'تسوق الآن' : 'Uz akcijām', bg: '#1e8449', fg: '#ffffff', end: stamp + (2 * 86400 + 4 * 3600 + 17 * 60) * 1000 },
+      { id: 2, text: rtl ? 'الجمعة السوداء: خصم 20٪ على جميع الأدوات' : 'Black Friday: −20 % visām frēzēm', icon: 'fa-percent', btn: '', bg: '#c0392b', fg: '#ffffff' },
+      { id: 3, text: rtl ? 'اطلب قبل 18.12 للتوصيل قبل العطلة' : 'Pasūtījumi līdz 18.12. pienāks pirms svētkiem', icon: 'fa-gift', btn: '', bg: '#1f2a44', fg: '#f6d365' }
+    ];
+  }
+
+  function barHtml(fallback) {
+    var list = messages(), first = list[0];
+    var cls = 'abp abp-pos-' + (state.pos === 'bottom' ? 'bottom' : 'top') + (state.pos === 'sticky' ? ' abp-sticky' : '') + ' abp-mode-' + state.mode;
+    var h = '<div id="abp-bar" class="' + cls + '" role="region" aria-label="Paziņojums" data-days="1" data-interval="4" data-speed="70" data-mode="' + state.mode + '" data-now="' + Date.now() + '" data-color="' + $('colors').value + '" data-dismissible="' + ($('dismissible').checked ? 1 : 0) + '" data-fallback="' + (fallback ? 1 : 0) + '" data-days-label="d." style="font-size:15px;background-color:' + first.bg + ';color:' + first.fg + ';"><div class="abp-viewport"><div class="abp-track">';
+    list.forEach(function (m, i) {
+      var t = esc(m.text).replace('{countdown}', m.end ? '<span class="abp-countdown" data-end="' + m.end + '"></span>' : '');
+      h += '<div class="abp-item' + (i === 0 ? ' abp-active' : '') + '" data-id="' + m.id + '" data-key="' + hash12(m.id + '|' + m.text + '|' + m.btn) + '" style="background-color:' + m.bg + ';color:' + m.fg + ';padding-top:8px;padding-bottom:8px;">' +
+        '<i class="fa ' + m.icon + '" aria-hidden="true"></i> <span class="abp-text">' + t + '</span>' +
+        (m.btn ? '<a class="abp-btn" href="#" style="color:' + m.fg + ';border-color:' + m.fg + ';">' + esc(m.btn) + '</a>' : '') + '</div>';
+    });
+    h += '</div></div>' + ($('dismissible').checked ? '<button type="button" class="abp-close" aria-label="Aizvērt" title="Aizvērt" style="color:' + first.fg + ';">&times;</button>' : '') + '</div>';
+    return h + '<script>' + MODULE_PRE + '<\/script>';
+  }
+
+  function shopHtml() {
+    var brand = $('brand').value, theme = state.theme, rtl = $('rtl').checked;
+    var css = 'body{margin:0;font:14px/1.45 "Segoe UI",system-ui,sans-serif;color:#444;background:#fff}' +
+      '.top{background:#eee;border-bottom:1px solid #ddd;padding:6px 16px;display:flex;justify-content:space-between;color:#666;font-size:13px}' +
+      '.head{display:flex;gap:12px;align-items:center;padding:16px;flex-wrap:wrap}.logo{font:700 24px system-ui;color:' + brand + ';margin-inline-end:auto}' +
+      '.search{flex:1 1 160px;border:1px solid #ccc;border-radius:4px;padding:7px 9px;color:#999}.cart{background:#363636;color:#fff;border-radius:4px;padding:7px 12px;white-space:nowrap}' +
+      '#menu{margin:0 16px;background:' + brand + ';color:#fff;border-radius:4px;padding:10px 16px;display:flex;gap:18px;flex-wrap:wrap}' +
+      '.btn-primary{background:' + brand + ';color:#fff;border:0;border-radius:4px;padding:6px 10px;font:inherit}' +
+      '.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;padding:16px}.card{border:1px solid #e3e3e3;border-radius:4px}.card .img{height:110px;background:#f2f2f2;display:grid;place-items:center;color:#aaa}.card .cap{padding:8px;color:#333}' +
+      'footer{background:#2b2b2b;color:#ddd;padding:24px 16px;margin-top:20px}' +
+      '.fixedhdr{position:fixed;top:0;left:0;right:0;z-index:2000;background:#111;color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.25)}' +
+      '.stickynav{position:sticky;top:0;z-index:1500}' +
+      '.cookie{position:fixed;left:0;right:0;bottom:0;z-index:5000;background:#222;color:#fff;padding:14px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.cookie button{background:#fff;color:#222;border:0;border-radius:4px;padding:6px 12px;cursor:pointer}';
+    if ($('fa').checked) {
+      css += '.fa{font-family:"FontAwesome",sans-serif;font-style:normal}.fa-truck::before{content:"\\1F69A"}.fa-percent::before{content:"\\1F3F7"}.fa-gift::before{content:"\\1F381"}';
+    }
+    var cards = '';
+    ['3018 PRO|229,00 €', 'Lāzera modulis 10 W|149,00 €', 'Frēžu komplekts|24,90 €', 'ER11 cangas|12,50 €', 'Galda skavas|18,00 €', 'Putekļu sūcējs|89,00 €', 'Gultņi 608ZZ|6,50 €', 'Siksnas GT2|9,90 €', 'Stepper driveris|14,00 €', 'Laukuma lineāls|7,90 €', 'Endmill 3 mm|5,40 €', 'Spindle 500 W|119,00 €'].forEach(function (p) {
+      var a = p.split('|'); cards += '<div class="card"><div class="img">Foto</div><div class="cap"><b>' + a[0] + '</b><br>' + a[1] + '<br><button class="btn-primary" type="button">Grozā</button></div></div>';
+    });
+    var header = '<div class="top"><span>€ Valūta</span><span>Mans konts · Grozs</span></div>';
+    var nav = '<div class="head"><span class="logo">Your Store</span><span class="search">Meklēt</span><span class="cart">0 prece(s) · 0,00 €</span></div><nav id="menu"><span>CNC frēzes</span><span>Lāzeri</span><span>Instrumenti</span><span>Rezerves daļas</span></nav>';
+    if (theme === 'fixed') { header = '<div class="fixedhdr"><b>YOUR STORE</b><span>Izvēlne · Grozs (fiksēta galvene)</span></div>' + header; }
+    if (theme === 'sticky') { nav = '<div class="head"><span class="logo">Your Store</span><span class="search">Meklēt</span><span class="cart">0 prece(s) · 0,00 €</span></div><nav id="menu" class="stickynav"><span>CNC frēzes</span><span>Lāzeri</span><span>Instrumenti</span><span>Rezerves daļas</span></nav>'; }
+    var fallback = theme === 'nobody';
+    var bar = barHtml(fallback);
+    var cookie = $('cookie').checked ? '<div class="cookie"><span>Mēs izmantojam sīkdatnes.</span><button type="button" onclick="this.parentNode.remove()">Piekrītu</button></div>' : '';
+    var body = (fallback ? '' : bar) + header + nav + '<div class="grid">' + cards + '</div><footer>© Your Store · Kontakti · Piegāde · Atgriešana</footer>' + cookie + (fallback ? bar : '') +
+      '<script>' + MODULE_JS + '<\/script>';
+    return '<!doctype html><html lang="' + (rtl ? 'ar' : 'lv') + '" dir="' + (rtl ? 'rtl' : 'ltr') + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>' + css + '</style><style>' + MODULE_CSS + '</style></head><body>' + body + '</body></html>';
+  }
+
+  var explain = {
+    classic: 'Klasiska tēma: josla ir pirmā lapā, tēmas izvēlnes krāsa ir paņemta automātiski.',
+    fixed: 'Fiksēta galvene: modulis to <b>pats nobīda zem joslas</b>, kamēr josla redzama. Ritinot lapu galvene atgriežas augšā.',
+    sticky: 'Piestiprināta izvēlne: izvēlieties „Augšā, piestiprināta” un ritiniet — izvēlne pieķeras <b>tieši zem joslas</b>.',
+    nobody: 'Tēmas galvenē nav &lt;body&gt;: josla tiek izvadīta lapas beigās un <b>pirms attēlošanas pārvietota augšā</b>.'
+  };
+
+  function render() {
+    var f = $('shop');
+    f.classList.toggle('narrow', $('mobile').checked);
+    f.srcdoc = shopHtml();
+    var extra = [];
+    if ($('cookie').checked) { extra.push(state.pos === 'bottom' ? 'Apakšējā josla <b>paceļas virs sīkdatņu joslas</b>.' : 'Izvēlieties „Apakšā”, lai redzētu, kā josla paceļas virs sīkdatņu joslas.'); }
+    if (!$('fa').checked) { extra.push('Tēmai nav Font Awesome — ikonas <b>automātiski izlaistas</b>.'); }
+    if ($('rtl').checked) { extra.push('RTL: aizvēršanas poga un atstarpes ir apgrieztas.'); }
+    $('what').innerHTML = explain[state.theme] + (extra.length ? ' ' + extra.join(' ') : '');
+  }
+
+  document.querySelectorAll('[data-mode]').forEach(function (b) { b.addEventListener('click', function () { state.mode = b.dataset.mode; document.querySelectorAll('[data-mode]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); render(); }); });
+  document.querySelectorAll('[data-pos]').forEach(function (b) { b.addEventListener('click', function () { state.pos = b.dataset.pos; document.querySelectorAll('[data-pos]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); render(); }); });
+  $('theme').addEventListener('change', function () { state.theme = this.value; render(); });
+  ['brand', 'colors', 'text1', 'dismissible', 'mobile', 'cookie', 'rtl', 'fa'].forEach(function (id) { $(id).addEventListener('change', render); });
+  $('text1').addEventListener('input', function () { clearTimeout(this.t); this.t = setTimeout(render, 400); });
+  $('reset').addEventListener('click', function () { try { localStorage.removeItem('abp_dismiss2'); sessionStorage.removeItem('abp_dismiss2'); } catch (e) {} render(); });
+  $('controls').addEventListener('submit', function (e) { e.preventDefault(); });
+  render();
+})();
+</script>
