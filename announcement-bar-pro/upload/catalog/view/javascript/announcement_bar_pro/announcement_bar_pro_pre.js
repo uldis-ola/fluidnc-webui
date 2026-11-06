@@ -1,6 +1,7 @@
-/* Announcement Bar Pro v2.1.2 — runs synchronously right after the bar markup (no inline script, CSP-friendly).
+/* Announcement Bar Pro v2.2.0 — runs synchronously right after the bar markup (no inline script, CSP-friendly).
    Before the first paint it: keeps a single bar, moves a top bar to the top of <body> when the theme made it
-   render in the footer, hides it while automatic colours are worked out, and removes messages the visitor closed. */
+   render in the footer, hides it while automatic colours are worked out, removes messages the visitor closed and
+   starts with a message meant for this screen size (data-device, breakpoint 768 px). */
 (function () {
   try {
     var bars = document.querySelectorAll('#abp-bar');
@@ -19,8 +20,6 @@
     // the bar after 2 s anyway, so a blocked script can never hide it for good).
     if (bar.getAttribute('data-color') === 'auto') { bar.className += ' abp-auto-pending'; }
 
-    if (bar.getAttribute('data-dismissible') !== '1') { return; }
-
     var now = Date.now();
     var read = function (name) {
       try {
@@ -29,15 +28,17 @@
         return v.k.filter(function (k) { return typeof k === 'string' && /^[0-9a-f]{12}$/.test(k); });
       } catch (e) { return []; }
     };
-    var keys = read('localStorage').concat(read('sessionStorage'));
-    if (!keys.length) { return; }
+    var keys = bar.getAttribute('data-dismissible') === '1' ? read('localStorage').concat(read('sessionStorage')) : [];
+    var mobile = window.matchMedia ? window.matchMedia('(max-width: 767px)').matches : window.innerWidth < 768;
+    var fits = function (el) { var d = el.getAttribute('data-device'); return !d || d === 'all' || (d === 'mobile') === mobile; };
 
-    var items = bar.querySelectorAll('.abp-item'), left = null;
+    var items = bar.querySelectorAll('.abp-item'), left = 0, first = null;
     for (var i = 0; i < items.length; i++) {
-      if (keys.indexOf(items[i].getAttribute('data-key')) !== -1) {
+      if (keys.length && keys.indexOf(items[i].getAttribute('data-key')) !== -1) {
         items[i].parentNode.removeChild(items[i]);
-      } else if (!left) {
-        left = items[i];
+      } else {
+        left++;
+        if (!first && fits(items[i])) { first = items[i]; }
       }
     }
     if (!left) {
@@ -45,8 +46,15 @@
       bar.setAttribute('data-dismissed', '1');
       return;
     }
-    if (!bar.querySelector('.abp-item.abp-active')) { left.className += ' abp-active'; }
-    bar.style.backgroundColor = left.style.backgroundColor;
-    bar.style.color = left.style.color;
+    // Nothing for this screen size: stay hidden (the main script shows the bar if the screen size changes).
+    if (!first) { bar.style.display = 'none'; return; }
+    var active = bar.querySelector('.abp-item.abp-active');
+    if (!active || !fits(active)) {
+      if (active) { active.className = active.className.replace(/(^|\s)abp-active(?=\s|$)/g, ' '); }
+      first.className += ' abp-active';
+      active = first;
+    }
+    bar.style.backgroundColor = active.style.backgroundColor;
+    bar.style.color = active.style.color;
   } catch (e) { /* never break the page */ }
 })();

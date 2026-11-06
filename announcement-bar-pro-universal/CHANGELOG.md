@@ -1,5 +1,14 @@
 # Changelog (universal package)
 
+## 2.2.0 — 2026-11-07
+- **Phone text (optional, per language):** a short text that replaces the normal text on screens narrower than 768 px. Both texts are rendered and a CSS media query switches them. Same sanitizing and HTML-mode rules as the text, `{countdown}` works in it, and it is part of the per-message dismiss key (messages without a phone text keep their 2.1.x key, so closed messages stay closed after the upgrade).
+- **Device targeting per message:** all devices / computers only (768 px and wider) / phones only. Messages for the other screen size are hidden by CSS and left out of rotation, marquee and stack; the script rebuilds the bar when the viewport crosses 768 px (rotation, resize). With nothing left, the bar hides and header offsets are restored exactly as when it is closed.
+- **Statistics (counters only):** views and clicks per message, CTR in the admin list, "Reset statistics" per message. The storefront sends one view per message per browser session when the message is really shown, and one click when its button or a link in it is used (`navigator.sendBeacon`, fallback `fetch` keepalive). Nothing is sent when the visitor has Do Not Track or Global Privacy Control on. The endpoint (`…/track`) accepts only POST `id` + `type` (view/click), counts only enabled messages, at most one view and one click per message and 100 events per OpenCart session, always answers with an empty 204 and never outputs errors. No personal data is stored and the module sets no cookies of its own.
+- **Duplicate** a message from the list: all languages and settings are copied, the copy is switched off and starts with zero statistics.
+- DB schema 6: new columns `abp_message.device`, `views`, `clicks` and `abp_message_description.mobile_text`. Upgraded shops get them through an idempotent migration (`SHOW COLUMNS` check before each `ALTER TABLE … ADD COLUMN`), run when a user with *modify* permission opens the module page. Until then the storefront keeps working with the 2.1 columns.
+- `mobile_text` is `TEXT NOT NULL` without a `DEFAULT`: MySQL refuses a literal default on `TEXT` columns. Existing rows get `''` when the column is added and every insert sets the value.
+- New admin strings in English, Latvian and Russian.
+
 ## 2.1.2 — 2026-11-06
 - **Readable automatic colours:** the text colour is now the one with the higher WCAG contrast (white or near-black), not a fixed brightness threshold. On the OpenCart 4 default blue this changes white text (3.2:1) to dark text (5.9:1).
 - When neither text colour reaches 4.5:1 (mid-tone theme colours), the bar background is darkened or lightened just enough to reach it. Checked over 4,913 colours: lowest contrast 4.50:1.

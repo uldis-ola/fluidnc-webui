@@ -2,7 +2,7 @@
 /**
  * Announcement Bar Pro (OpenCart 4) — text / HTML / URL sanitizer.
  * Shared by admin (on save) and catalog (on render, defence in depth).
- * @version 2.1.2
+ * @version 2.2.0
  */
 namespace Opencart\System\Library\Extension\AnnouncementBarPro;
 \defined('VERSION') || exit; // not callable directly

@@ -127,3 +127,21 @@ $_['text_color_auto']            = 'Automātiski — pēc veikala tēmas';
 $_['text_color_custom']          = 'Pielāgotas — katram paziņojumam savas krāsas';
 $_['help_color_mode']            = 'Automātiski: josla ņem tēmas galveno krāsu (pogas/izvēlne) un izvēlas labi lasāmu teksta krāsu. Pielāgotas: katram paziņojumam iestatītās krāsas.';
 $_['text_color_auto_note']       = 'Iestatījumos krāsas ir „Automātiski”: josla izmanto tēmas krāsu. Zemāk norādītās krāsas darbosies, ja izvēlēsieties „Pielāgotas”.';
+
+// 2.2.0
+$_['entry_mobile_text']         = 'Teksts telefonam (neobligāts)';
+$_['help_mobile_text']          = 'Rāda augšējā teksta vietā ekrānos, kas šaurāki par 768 px. Atstājiet tukšu, lai visur rādītu to pašu tekstu. Noteikumi tādi paši kā tekstam; arī šeit darbojas {countdown}.';
+$_['entry_device']              = 'Ierīces';
+$_['text_device_all']           = 'Visas ierīces';
+$_['text_device_desktop']       = 'Tikai datori (768 px un platāki)';
+$_['text_device_mobile']        = 'Tikai telefoni (šaurāki par 768 px)';
+$_['help_device']               = 'Nosaka ekrāna platums — tā pati 768 px robeža kā telefona tekstam. Ja kādam ekrāna izmēram nepaliek neviena paziņojuma, josla tur netiek rādīta.';
+$_['column_views']              = 'Skatījumi';
+$_['column_clicks']             = 'Klikšķi';
+$_['column_ctr']                = 'CTR (%)';
+$_['help_stats']                = 'Statistika ir vienkārši skaitītāji: katram paziņojumam viens skatījums un viens klikšķis apmeklētāja sesijā. Bez personas datiem un bez savām sīkdatnēm; apmeklētāji ar „Do Not Track” vai Global Privacy Control netiek skaitīti.';
+$_['button_duplicate']          = 'Dublēt';
+$_['button_reset_stats']        = 'Atiestatīt statistiku';
+$_['text_duplicated']           = 'Veiksmīgi: paziņojums nokopēts. Kopija ir izslēgta — izlabojiet to un ieslēdziet.';
+$_['text_stats_reset']          = 'Veiksmīgi: paziņojuma statistika atiestatīta.';
+$_['text_confirm_reset']        = 'Atiestatīt šī paziņojuma skatījumus un klikšķus uz nulli?';

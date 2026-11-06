@@ -1,4 +1,4 @@
-/* Announcement Bar Pro v2.1.2 — shared by the OpenCart 3 and OpenCart 4 packages */
+/* Announcement Bar Pro v2.2.0 — shared by the OpenCart 3 and OpenCart 4 packages */
 .abp{position:relative;width:100%;box-sizing:border-box;line-height:1.4;z-index:1030;overflow:hidden;font-family:inherit;}
 .abp *,.abp *:before,.abp *:after{box-sizing:border-box;}
 .abp.abp-sticky{position:-webkit-sticky;position:sticky;top:0;}
@@ -44,3 +44,7 @@
 /* Some themes (OpenCart 4.0 default) keep an empty fixed #alert toast container over the top-right corner,
    which would swallow clicks on the close button. An empty container never needs pointer events. */
 #alert:empty{pointer-events:none;}
+/* 2.2.0 — optional phone text and device targeting (breakpoint 768 px; the script uses the same one). */
+.abp-text-m{display:none;}
+@media (max-width:767px){.abp-text-m{display:inline;}.abp-text-d{display:none;}.abp-item[data-device="desktop"]{display:none!important;}}
+@media (min-width:768px){.abp-item[data-device="mobile"]{display:none!important;}}

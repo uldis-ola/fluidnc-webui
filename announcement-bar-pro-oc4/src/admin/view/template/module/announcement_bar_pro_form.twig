@@ -56,6 +56,14 @@
                       </div>
                     </div>
                     <div class="row mb-3">
+                      <label for="input-mobile-text-{{ lid }}" class="col-sm-2 col-form-label">{{ entry_mobile_text }}</label>
+                      <div class="col-sm-10">
+                        <textarea name="message_description[{{ lid }}][mobile_text]" rows="2" maxlength="{{ max_text }}" id="input-mobile-text-{{ lid }}" class="form-control abp-mobile-text">{{ message_description[lid].mobile_text|e }}</textarea>
+                        <div class="form-text">{{ help_mobile_text }}</div>
+                        <div id="error-mobile-text-{{ lid }}" class="invalid-feedback"></div>
+                      </div>
+                    </div>
+                    <div class="row mb-3">
                       <label for="input-link-text-{{ lid }}" class="col-sm-2 col-form-label">{{ entry_link_text }}</label>
                       <div class="col-sm-10">
                         <input type="text" name="message_description[{{ lid }}][link_text]" value="{{ message_description[lid].link_text|e }}" maxlength="{{ max_link_text }}" id="input-link-text-{{ lid }}" class="form-control abp-link-text"/>
@@ -155,6 +163,18 @@
 
             {# ---------- Visibility ---------- #}
             <div id="tab-visibility" class="tab-pane">
+              <div class="row mb-3">
+                <label for="input-device" class="col-sm-2 col-form-label">{{ entry_device }}</label>
+                <div class="col-sm-10">
+                  <select name="device" id="input-device" class="form-select">
+                    {% for value in ['all', 'desktop', 'mobile'] %}
+                      <option value="{{ value }}"{% if device == value %} selected{% endif %}>{{ attribute(_context, 'text_device_' ~ value) }}</option>
+                    {% endfor %}
+                  </select>
+                  <div class="form-text">{{ help_device }}</div>
+                  <div id="error-device" class="invalid-feedback"></div>
+                </div>
+              </div>
               <div class="row mb-3">
                 <label class="col-sm-2 col-form-label">{{ entry_store }}</label>
                 <div class="col-sm-10">

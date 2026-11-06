@@ -9,7 +9,7 @@ Paziņojumu josla (announcement bar) OpenCart veikalam: josla lapas augšā vai 
 piegādes info, atpakaļskaitīšanu u. tml. Viena instalācijas paka der **OpenCart 3.0.x, 4.0.x un 4.1.x**.
 Josla automātiski pielāgojas veikala tēmai.
 
-- Versija: **2.1.2**, DB shēma **5**
+- Versija: **2.2.0**, DB shēma **6**
 - Licence: GPL-3.0 (LICENSE.txt no OpenCart pirmkoda)
 - Valodas: LV, EN, RU (admin + veikals). Ja veikala valodai tulkojuma nav → angļu.
 - Marketplace-gatavs. Autors `3dp.lv`, saite `https://3dp.lv` (no 2.1.1; Ulda izvēle 06.11.2026).
@@ -32,7 +32,7 @@ index.html                       repo vecais saturs, ar moduli nav saistīts
 
 ```bash
 cd announcement-bar-pro-universal && ./build.sh
-# → dist/v2.1.2/announcement_bar_pro.ocmod.zip  (~124 KB)
+# → dist/v2.2.0/announcement_bar_pro.ocmod.zip
 ```
 Universālā paka satur abus komplektus vienā zip:
 - OC3 instalētājs ņem tikai `upload/` + `install.xml`;
@@ -52,9 +52,15 @@ interval, speed, font_size, padding, dismissible, dismiss_days (0 = līdz cilnes
 color_mode (auto/custom), default_bg_color, default_text_color, delete_data (dzēst ziņas pie atinstalēšanas).
 
 **DB tabulas:** `oc_abp_message` (message_id, status, sort_order, date_start, date_end, bg_color, text_color, link,
-link_new_tab, icon, countdown, stores, customer_groups, page_mode, page_routes, date_added, date_modified),
-`oc_abp_message_description` (message_id, language_id, text, link_text). Shēmas migrācija no v1 automātiska
-(tikai lietotājam ar modify tiesībām).
+link_new_tab, icon, countdown, stores, customer_groups, page_mode, page_routes, device, views, clicks, date_added,
+date_modified), `oc_abp_message_description` (message_id, language_id, text, link_text, mobile_text). Shēmas migrācija
+no v1 automātiska (tikai lietotājam ar modify tiesībām); shēma 6 pievieno kolonnas ar `SHOW COLUMNS` pārbaudi
+(`schemaColumns()` + `addColumnIfMissing()` admin modelī). `mobile_text` ir `TEXT NOT NULL` bez DEFAULT (MySQL to neatļauj).
+
+**2.2.0:** teksts telefonam (< 768 px, CSS `.abp-text-d`/`.abp-text-m`), ierīces (`data-device`, CSS + JS izslēdz no
+rotācijas/marquee/stack, pārbūvē pie 768 px robežas), statistika (catalog `track`: POST id+type, 204, dedup OpenCart
+sesijā + `sessionStorage abp_track`, max 100 notikumi sesijā, DNT/GPC → nesūta), dublēšana un statistikas atiestatīšana
+adminā. Katalogs ar shēmu < 6 (faili jaunināti, admin vēl nav atvērts) strādā bez jaunajām kolonnām.
 
 **Automātiskā pielāgošanās (JS, kopīgs OC3/OC4):**
 - fiksēta/sticky galvene tiek nobīdīta zem joslas (tikai ja tiešām pārklāj; bez `!important`; atjauno, kad nepārklāj);
@@ -111,6 +117,11 @@ footer rezerve pārņēma ievietošanu (augsta, 2.1.0) u. c.
 
 **Netestēts:** īsts PHP 7.x/8.1; OC 3.0.0–3.0.4; OC 2.x (neatbalsta); komerctēmas (Journal u. c.); Firefox, Safari.
 
+**2.2.0 (07.11.2026):** NAV pārbaudīts ar īstu OpenCart/MySQL (lokāli nebija). Pārbaudīts: `php -l` visiem PHP failiem,
+`tests/unit/schema_test.php` (57/57 — migrācijas loģika ar viltus DB abiem komplektiem), `tests/demo/test.js` (28/28 —
+13 vecās + telefona teksts, ierīces, 768 px robežas šķērsošana, statistikas bākas, DNT/GPC), `build.sh` (versiju un
+kopīgo failu pārbaude). Pirms publicēšanas jāpalaiž e2e testi īstā OC 3.0.5.1 un 4.x (jaunināšana 2.1.2 → 2.2.0).
+
 ## 8. Testu palaišana (tests/e2e)
 
 Vajag: PHP 8.x + mysqli, MariaDB/MySQL (lietotājs `oc`/`ocpass`), Node + Playwright Chromium, OpenCart pirmkodi.
@@ -125,6 +136,7 @@ OC 4.0.0.0 un 4.0.1.1 CLI instalētājs ir salūzis → `webinstall.js` (web ins
 Skripti rakstīti konkrētai videi — ceļi/porti var būt jāpielāgo.
 
 Demo: `node tests/demo/build.js` → `tests/demo/announcement-bar-demo.html` (iekļauj moduļa īsto JS/CSS), `node tests/demo/test.js`.
+Migrācijas tests bez DB: `php tests/unit/schema_test.php`.
 Publicētais demo: https://claude.ai/artifact/JV4VbyRutwCA9Axw42DGYs (privāts).
 
 ## 9. Kas vēl jāizdara
@@ -132,7 +144,7 @@ Publicētais demo: https://claude.ai/artifact/JV4VbyRutwCA9Axw42DGYs (privāts).
 1. ~~Autora dati~~ — izdarīts 2.1.1 (`3dp.lv`, `https://3dp.lv`).
 2. Pārbaudīt savā veikalā (vispirms testa kopijā!) ar savu tēmu: telefons + dators, aizvēršana, atpakaļskaitīšana.
 3. Ja publicē OpenCart Marketplace: ekrānuzņēmumi, apraksts, cena (nav noteikta).
-4. Iespējami uzlabojumi (nav pieprasīti): papildu valodas, A/B, statistika par klikšķiem.
+4. Iespējami uzlabojumi (nav pieprasīti): papildu valodas, A/B. (Statistika — izdarīts 2.2.0.)
 
 ## 10. Noteikumi turpmākajam darbam (lietotāja prasības)
 

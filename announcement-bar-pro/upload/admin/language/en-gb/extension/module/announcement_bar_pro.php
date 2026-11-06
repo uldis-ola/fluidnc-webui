@@ -127,3 +127,21 @@ $_['text_color_auto']            = 'Automatic — match the shop theme';
 $_['text_color_custom']          = 'Custom — each message uses its own colours';
 $_['help_color_mode']            = 'Automatic: the bar takes the main colour of your theme (buttons/menu) and picks readable text. Custom: the colours set on each message.';
 $_['text_color_auto_note']       = 'Colours are set to Automatic in Settings: the bar uses the theme colour. The colours below apply when you switch to Custom.';
+
+// 2.2.0
+$_['entry_mobile_text']         = 'Text for phones (optional)';
+$_['help_mobile_text']          = 'Shown instead of the text above on screens narrower than 768 px. Leave empty to use the same text everywhere. Same rules as the text; {countdown} works here too.';
+$_['entry_device']              = 'Devices';
+$_['text_device_all']           = 'All devices';
+$_['text_device_desktop']       = 'Computers only (768 px and wider)';
+$_['text_device_mobile']        = 'Phones only (narrower than 768 px)';
+$_['help_device']               = 'Screen width decides, the same 768 px limit as the phone text. When nothing is left for a screen size, the bar is not shown there.';
+$_['column_views']              = 'Views';
+$_['column_clicks']             = 'Clicks';
+$_['column_ctr']                = 'CTR (%)';
+$_['help_stats']                = 'Statistics are simple counters: one view and one click per message per visitor session. No personal data and no cookies of its own; visitors with Do Not Track or Global Privacy Control are not counted.';
+$_['button_duplicate']          = 'Duplicate';
+$_['button_reset_stats']        = 'Reset statistics';
+$_['text_duplicated']           = 'Success: message copied. The copy is switched off: edit it and switch it on.';
+$_['text_stats_reset']          = 'Success: statistics of the message were reset.';
+$_['text_confirm_reset']        = 'Reset the views and clicks of this message to zero?';

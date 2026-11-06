@@ -1,5 +1,5 @@
 #!/bin/bash
-S=${ABP_WORK:?set ABP_WORK to a work folder (OpenCart sources + test shops)}; Z=$(cd "$(dirname "$0")/../.." && pwd)/dist/v2.1.2/announcement_bar_pro.ocmod.zip; W=$S/oc21; DB=oc_210; P=8096
+S=${ABP_WORK:?set ABP_WORK to a work folder (OpenCart sources + test shops)}; Z=$(cd "$(dirname "$0")/../.." && pwd)/dist/v2.2.0/announcement_bar_pro.ocmod.zip; W=$S/oc21; DB=oc_210; P=8096
 mysql -e "DROP DATABASE IF EXISTS $DB; CREATE DATABASE $DB CHARACTER SET utf8mb4; GRANT ALL ON $DB.* TO 'oc'@'localhost';"
 [ -d $W ] || cp -r $S/oc-src/upload $W
 cd $W && cp config-dist.php config.php && cp admin/config-dist.php admin/config.php && chmod -R a+w . && [ -d install ] && (cd install && php cli_install.php install --db_hostname localhost --db_username oc --db_password ocpass --db_database $DB --db_driver mysqli --db_port 3306 --username admin --password admin123 --email admin@example.com --http_server http://localhost:$P/ | grep -i success) && mv install ../oc21-install-disabled

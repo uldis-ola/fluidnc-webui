@@ -1,4 +1,4 @@
-/* Announcement Bar Pro v2.1.2 — no dependencies. Adapts itself to the shop theme (see "Automatic adaptation"). */
+/* Announcement Bar Pro v2.2.0 — no dependencies. Adapts itself to the shop theme (see "Automatic adaptation"). */
 (function () {
   'use strict';
 
@@ -18,7 +18,47 @@
       bar.className = bar.className.replace('abp-mode-marquee', 'abp-mode-rotate');
     }
 
-    function items() { return bar.querySelectorAll('.abp-item'); }
+    /* ---------------- Device targeting (breakpoint 768 px, same as the CSS) ----------------
+       Items marked data-device="mobile" / "desktop" are hidden by CSS on the other screen size; here they are
+       also left out of rotation, marquee and stack, and the bar hides itself when nothing is left. */
+    var mq = window.matchMedia ? window.matchMedia('(max-width: 767px)') : null;
+    var closed = false, deviceHidden = false;
+    function isMobile() { return mq ? mq.matches : window.innerWidth < 768; }
+    function fits(el) { var d = el.getAttribute('data-device'); return !d || d === 'all' || (d === 'mobile') === isMobile(); }
+    function allItems() { return bar.querySelectorAll('.abp-item'); }
+    function items() { return Array.prototype.filter.call(allItems(), fits); }
+
+    /* ---------------- Statistics (counters only) ----------------
+       One "view" per message per browser session when it is really shown, one "click" when its button or a
+       link in it is used. Nothing is sent when the visitor asks not to be tracked (Do Not Track / GPC);
+       every failure is silent. No cookies or storage besides sessionStorage "abp_track". */
+    var trackUrl = bar.getAttribute('data-track') || '';
+    var noTrack = navigator.doNotTrack === '1' || navigator.globalPrivacyControl === true;
+    var sent = {};
+    function track(el, type) {
+      try {
+        var id = el && parseInt(el.getAttribute('data-id'), 10);
+        if (!trackUrl || noTrack || !id || id < 1) { return; }
+        var key = type.charAt(0) + id, list = [];
+        try { list = JSON.parse(sessionStorage.getItem('abp_track') || '[]'); if (!Array.isArray(list)) { list = []; } } catch (e1) { list = []; }
+        if (sent[key] || list.indexOf(key) !== -1) { return; }
+        sent[key] = 1;
+        list.push(key);
+        try { sessionStorage.setItem('abp_track', JSON.stringify(list.slice(-200))); } catch (e2) { /* storage blocked: memory only */ }
+        var fd = new FormData();
+        fd.append('id', String(id));
+        fd.append('type', type);
+        if (!(navigator.sendBeacon && navigator.sendBeacon(trackUrl, fd)) && window.fetch) {
+          window.fetch(trackUrl, { method: 'POST', body: fd, keepalive: true, credentials: 'same-origin' }).catch(function () {});
+        }
+      } catch (e) { /* statistics must never break the bar */ }
+    }
+    // Views: the active message (rotate) or every message on screen (marquee, stack).
+    function trackShown() {
+      if (bar.style.display === 'none') { return; }
+      var list = items();
+      if (mode === 'rotate') { track(list[index], 'view'); } else { list.forEach(function (el) { track(el, 'view'); }); }
+    }
 
     /* ---------------- Automatic adaptation to the theme ----------------
        Works on any theme without settings:
@@ -163,8 +203,8 @@
         var pick = readable(rgb);
         var bg = 'rgb(' + pick.bg.map(Math.round).join(',') + ')';
         var fg = pick.fg;
-        var list = items();
-        for (var i = 0; i < list.length; i++) { list[i].style.backgroundColor = bg; list[i].style.color = fg; }
+        var all = allItems(), list = items();
+        for (var i = 0; i < all.length; i++) { all[i].style.backgroundColor = bg; all[i].style.color = fg; }
         bar.querySelectorAll('.abp-link, .abp-btn').forEach(function (a) { a.style.color = fg; a.style.borderColor = fg; });
         paintBar(list[index] || list[0]);
       }
@@ -255,11 +295,13 @@
       var list = items();
       if (!list.length) { return; }
       index = (i + list.length) % list.length;
-      for (var n = 0; n < list.length; n++) {
-        if (n === index) { list[n].classList.add('abp-active'); } else { list[n].classList.remove('abp-active'); }
+      var all = allItems();
+      for (var n = 0; n < all.length; n++) {
+        if (all[n] === list[index]) { all[n].classList.add('abp-active'); } else { all[n].classList.remove('abp-active'); }
       }
       paintBar(list[index]);
       fitBody();
+      trackShown();
     }
 
     function stopRotate() { if (timer) { clearInterval(timer); timer = null; } }
@@ -287,6 +329,10 @@
 
     function relayout() { rescan(); stabilise(); show(Math.min(index, Math.max(items().length - 1, 0))); startRotate(); startMarquee(); fitBody(); }
 
+    function startTick() {
+      if (!tickTimer && bar.querySelector('.abp-countdown, .abp-item[data-end]')) { tickTimer = setInterval(tick, 1000); }
+    }
+
     function hideBar() {
       stopRotate();
       if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
@@ -299,7 +345,7 @@
 
     // Countdowns + removal of messages whose end time passed while the page is open.
     function tick() {
-      var now = serverNow(), changed = false, list = items();
+      var now = serverNow(), changed = false, list = allItems();
       for (var i = list.length - 1; i >= 0; i--) {
         var end = parseInt(list[i].getAttribute('data-end'), 10);
         if (end && end <= now) { list[i].parentNode.removeChild(list[i]); changed = true; }
@@ -316,7 +362,7 @@
         nodes[c].textContent = (d > 0 ? d + (bar.getAttribute('data-days-label') || 'd') + ' ' : '') + pad(h) + ':' + pad(m) + ':' + pad(s);
       }
       if (changed) {
-        if (!items().length) { hideBar(); return; }
+        if (!items().length) { deviceHidden = !!allItems().length; hideBar(); return; }
         index = 0; relayout();
       }
       if (!bar.querySelector('.abp-countdown, .abp-item[data-end]') && tickTimer) { clearInterval(tickTimer); tickTimer = null; }
@@ -332,13 +378,14 @@
           // switched off do not bring the bar back; only new or edited messages do.
           var prev = [];
           try { var v = JSON.parse(keep.getItem('abp_dismiss2') || 'null'); if (v && Array.isArray(v.k) && (!v.t || v.t > now)) { prev = v.k.filter(function (k) { return typeof k === 'string' && /^[0-9a-f]{12}$/.test(k); }); } } catch (e1) { prev = []; }
-          var list = items(), keys = prev.slice();
+          var list = items(), keys = prev.slice(); // only what this screen size showed
           for (var j = 0; j < list.length; j++) { var k = list[j].getAttribute('data-key'); if (k && keys.indexOf(k) === -1) { keys.push(k); } }
           keep.setItem('abp_dismiss2', JSON.stringify({ k: keys.slice(-200), t: days > 0 ? now + days * 86400000 : 0 }));
           drop.removeItem('abp_dismiss2');
           keep.removeItem('abp_dismiss'); drop.removeItem('abp_dismiss'); // pre-2.0.3 format
         } catch (e) { /* storage blocked: bar just hides for this page view */ }
         var focusWasInside = bar.contains(document.activeElement);
+        closed = true;
         hideBar();
         // Keyboard users: continue at the first focusable element after the bar, not at <body>.
         if (focusWasInside) {
@@ -394,8 +441,39 @@
       });
     }, { passive: true });
 
+    // Clicks on the button, the whole-message link or a link inside the text.
+    bar.addEventListener('click', function (e) {
+      var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+      if (a && bar.contains(a)) { track(a.closest('.abp-item'), 'click'); }
+    });
+
+    // Crossing the 768 px breakpoint (rotation, resize): rebuild from the messages meant for this screen size.
+    function deviceChange() {
+      if (closed) { return; }
+      if (!items().length) {
+        if (!deviceHidden && bar.style.display !== 'none') { deviceHidden = true; hideBar(); }
+        return;
+      }
+      if (deviceHidden || bar.style.display === 'none') {
+        deviceHidden = false;
+        bar.style.display = '';
+        startTick();
+      }
+      index = 0;
+      relayout();
+    }
+    if (mq) {
+      if (mq.addEventListener) { mq.addEventListener('change', deviceChange); } else if (mq.addListener) { mq.addListener(deviceChange); }
+    }
+
     tick();
-    if (bar.querySelector('.abp-countdown, .abp-item[data-end]')) { tickTimer = setInterval(tick, 1000); }
+    if (!items().length) {
+      deviceHidden = true;
+      hideBar();
+    } else {
+      startTick();
+      bar.style.display = '';
+    }
     relayout();
 
     function afterLoad() { checkIcons(); applyAutoColours(); relayout(); }

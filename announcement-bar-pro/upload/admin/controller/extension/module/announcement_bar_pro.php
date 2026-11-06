@@ -2,10 +2,10 @@
 defined('VERSION') || exit; // not callable directly (in the universal package these files also sit, unused, inside OpenCart 4)
 /**
  * Announcement Bar Pro — admin controller (OpenCart 3.0.x)
- * @version 2.1.2
+ * @version 2.2.0
  */
 class ControllerExtensionModuleAnnouncementBarPro extends Controller {
-	const VERSION    = '2.1.2';
+	const VERSION    = '2.2.0';
 	const CODE       = 'module_announcement_bar_pro';
 	const EVENT_CODE = 'announcement_bar_pro';
 	const ROUTE      = 'extension/module/announcement_bar_pro';
@@ -41,6 +41,8 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		$data['cancel']     = $this->link('marketplace/extension', '&type=module');
 		$data['add']        = $this->link(self::ROUTE . '/form');
 		$data['delete']     = $this->link(self::ROUTE . '/delete');
+		$data['duplicate']  = $this->link(self::ROUTE . '/duplicate');
+		$data['reset']      = $this->link(self::ROUTE . '/resetStats');
 		$data['error_warning']  = isset($this->error['warning']) ? $this->error['warning'] : '';
 		$data['error_settings'] = $this->error;
 
@@ -102,6 +104,10 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 				'state'      => $state,
 				'state_text' => $this->language->get('text_state_' . $state),
 				'missing'    => $missing ? sprintf($this->language->get('text_missing_language'), implode(', ', $missing)) : '',
+				'device'     => in_array($message['device'], array('desktop', 'mobile'), true) ? $message['device'] : 'all',
+				'views'      => (int)$message['views'],
+				'clicks'     => (int)$message['clicks'],
+				'ctr'        => $this->ctr($message['views'], $message['clicks']),
 				'edit'       => $this->link(self::ROUTE . '/form', '&message_id=' . (int)$message['message_id'])
 			);
 		}
@@ -185,7 +191,8 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			'stores'          => array(),
 			'customer_groups' => array(),
 			'page_mode'       => 'all',
-			'page_routes'     => ''
+			'page_routes'     => '',
+			'device'          => 'all'
 		);
 
 		foreach ($defaults as $key => $default) {
@@ -215,7 +222,8 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 
 			$data['message_description'][$id] = array(
 				'text'      => isset($row['text']) && is_string($row['text']) ? $this->abp->decode($row['text']) : '',
-				'link_text' => isset($row['link_text']) && is_string($row['link_text']) ? $this->abp->decode($row['link_text']) : ''
+				'link_text'   => isset($row['link_text']) && is_string($row['link_text']) ? $this->abp->decode($row['link_text']) : '',
+				'mobile_text' => isset($row['mobile_text']) && is_string($row['mobile_text']) ? $this->abp->decode($row['mobile_text']) : ''
 			);
 		}
 
@@ -240,6 +248,50 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			}
 
 			$this->session->data['success'] = $this->language->get('text_success');
+		}
+
+		$this->response->redirect($this->link(self::ROUTE, '&tab=messages'));
+	}
+
+	/* ------------------------------------------------------------------ *
+	 * Duplicate one message (POST message_id): the copy is switched off
+	 * and starts with zero statistics.
+	 * ------------------------------------------------------------------ */
+	public function duplicate() {
+		$this->bootstrap();
+
+		if ($this->request->server['REQUEST_METHOD'] == 'POST') {
+			$message_id = $this->postedMessageId();
+
+			if (!$this->user->hasPermission('modify', self::ROUTE)) {
+				$this->session->data['abp_error'] = $this->language->get('error_permission');
+			} elseif (!$message_id || !$this->model_extension_module_announcement_bar_pro->duplicateMessage($message_id)) {
+				$this->session->data['abp_error'] = $this->language->get('error_not_found');
+			} else {
+				$this->session->data['success'] = $this->language->get('text_duplicated');
+			}
+		}
+
+		$this->response->redirect($this->link(self::ROUTE, '&tab=messages'));
+	}
+
+	/* ------------------------------------------------------------------ *
+	 * Reset views / clicks of one message (POST message_id)
+	 * ------------------------------------------------------------------ */
+	public function resetStats() {
+		$this->bootstrap();
+
+		if ($this->request->server['REQUEST_METHOD'] == 'POST') {
+			$message_id = $this->postedMessageId();
+
+			if (!$this->user->hasPermission('modify', self::ROUTE)) {
+				$this->session->data['abp_error'] = $this->language->get('error_permission');
+			} elseif (!$message_id || !$this->model_extension_module_announcement_bar_pro->getMessage($message_id)) {
+				$this->session->data['abp_error'] = $this->language->get('error_not_found');
+			} else {
+				$this->model_extension_module_announcement_bar_pro->resetStatistics($message_id);
+				$this->session->data['success'] = $this->language->get('text_stats_reset');
+			}
 		}
 
 		$this->response->redirect($this->link(self::ROUTE, '&tab=messages'));
@@ -341,6 +393,13 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 				$this->error['text'][$id] = sprintf($this->language->get('error_text_length'), self::MAX_TEXT);
 			}
 
+			// Optional phone text: same rules as the text (sanitized length, HTML mode).
+			$mobile = isset($row['mobile_text']) && is_string($row['mobile_text']) ? $this->abp->decode($row['mobile_text']) : '';
+
+			if (strlen($mobile) > self::MAX_RAW_TEXT || $this->strlen($allow_html ? $this->abp->html($mobile) : $this->abp->plain($mobile)) > self::MAX_TEXT) {
+				$this->error['mobile_text'][$id] = sprintf($this->language->get('error_text_length'), self::MAX_TEXT);
+			}
+
 			if ($this->strlen($link) > self::MAX_LINK_TEXT) {
 				$this->error['link_text'][$id] = sprintf($this->language->get('error_text_length'), self::MAX_LINK_TEXT);
 			}
@@ -407,6 +466,10 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			}
 		}
 
+		if (!in_array(isset($p['device']) ? $p['device'] : 'all', array('all', 'desktop', 'mobile'), true)) {
+			$this->error['device'] = $this->language->get('error_value');
+		}
+
 		$mode = isset($p['page_mode']) ? $p['page_mode'] : '';
 		if (!in_array($mode, array('all', 'home', 'include', 'exclude'), true)) {
 			$this->error['page_mode'] = $this->language->get('error_value');
@@ -466,11 +529,14 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			$row  = isset($descs[$id]) && is_array($descs[$id]) ? $descs[$id] : array();
 			$text = isset($row['text']) && is_string($row['text']) ? $this->abp->decode($row['text']) : '';
 			$link = isset($row['link_text']) && is_string($row['link_text']) ? $this->abp->decode($row['link_text']) : '';
+			$mob  = isset($row['mobile_text']) && is_string($row['mobile_text']) ? $this->abp->decode($row['mobile_text']) : '';
+			$mob  = $allow_html ? $this->abp->html($mob) : $this->abp->plain($mob);
 
 			// encode4byte: OpenCart's DB link is 3-byte utf8, emoji would be stored as "?".
 			$description[$id] = array(
-				'text'      => $this->abp->encode4byte($allow_html ? $this->abp->html($text) : $this->abp->plain($text)),
-				'link_text' => $this->abp->encode4byte($this->substr($this->abp->plain($link), self::MAX_LINK_TEXT))
+				'text'        => $this->abp->encode4byte($allow_html ? $this->abp->html($text) : $this->abp->plain($text)),
+				'link_text'   => $this->abp->encode4byte($this->substr($this->abp->plain($link), self::MAX_LINK_TEXT)),
+				'mobile_text' => trim(strip_tags($mob)) === '' ? '' : $this->abp->encode4byte($mob)
 			);
 		}
 
@@ -494,6 +560,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			'customer_groups'     => $this->existingIds(isset($p['customer_groups']) ? $p['customer_groups'] : array(), $this->customerGroupIds()),
 			'page_mode'           => $mode,
 			'page_routes'         => $routes,
+			'device'              => isset($p['device']) && in_array($p['device'], array('desktop', 'mobile'), true) ? $p['device'] : 'all',
 			'message_description' => $description
 		);
 	}
@@ -527,7 +594,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 	private function normalizeMessagePost(array $post) {
 		$out = array();
 
-		foreach (array('status', 'sort_order', 'date_start', 'date_end', 'bg_color', 'text_color', 'link', 'link_new_tab', 'icon', 'countdown', 'page_mode', 'page_routes', 'end_all_day') as $key) {
+		foreach (array('status', 'sort_order', 'date_start', 'date_end', 'bg_color', 'text_color', 'link', 'link_new_tab', 'icon', 'countdown', 'page_mode', 'page_routes', 'end_all_day', 'device') as $key) {
 			if (isset($post[$key])) {
 				$out[$key] = is_string($post[$key]) ? $post[$key] : '';
 			}
@@ -544,8 +611,9 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			foreach ($post['message_description'] as $language_id => $row) {
 				if (is_array($row)) {
 					$out['message_description'][(int)$language_id] = array(
-						'text'      => isset($row['text']) && is_string($row['text']) ? $row['text'] : '',
-						'link_text' => isset($row['link_text']) && is_string($row['link_text']) ? $row['link_text'] : ''
+						'text'        => isset($row['text']) && is_string($row['text']) ? $row['text'] : '',
+						'link_text'   => isset($row['link_text']) && is_string($row['link_text']) ? $row['link_text'] : '',
+						'mobile_text' => isset($row['mobile_text']) && is_string($row['mobile_text']) ? $row['mobile_text'] : ''
 					);
 				}
 			}
@@ -695,6 +763,20 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		}
 
 		return $ids;
+	}
+
+	/** message_id from POST: digits only, else 0. */
+	private function postedMessageId() {
+		$raw = isset($this->request->post['message_id']) && is_string($this->request->post['message_id']) ? $this->request->post['message_id'] : '';
+
+		return preg_match('/^\d{1,10}$/', $raw) ? (int)$raw : 0;
+	}
+
+	/** Click-through rate in % with one decimal; '' while there are no views. */
+	private function ctr($views, $clicks) {
+		$views = (int)$views;
+
+		return $views > 0 ? number_format(min(100, (int)$clicks * 100 / $views), 1, '.', '') : '';
 	}
 
 	private function strlen($value) {

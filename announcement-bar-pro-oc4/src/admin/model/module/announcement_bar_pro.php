@@ -5,11 +5,11 @@ namespace Opencart\Admin\Model\Extension\AnnouncementBarPro\Module;
  * Announcement Bar Pro — admin model (OpenCart 4.0.2+ / 4.1)
  * Tables: {prefix}abp_message, {prefix}abp_message_description
  *
- * @version 2.1.2
+ * @version 2.2.0
  */
 class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 	public const CODE           = 'module_announcement_bar_pro';
-	public const SCHEMA_VERSION = 5;
+	public const SCHEMA_VERSION = 6;
 
 	/**
 	 * Creates tables (if missing) and fills missing default settings. Idempotent.
@@ -39,6 +39,9 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 			`customer_groups` TEXT NOT NULL,
 			`page_mode` VARCHAR(16) NOT NULL DEFAULT 'all',
 			`page_routes` TEXT NOT NULL,
+			`device` VARCHAR(8) NOT NULL DEFAULT 'all',
+			`views` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+			`clicks` INT(10) UNSIGNED NOT NULL DEFAULT '0',
 			`date_added` DATETIME NOT NULL,
 			`date_modified` DATETIME NOT NULL,
 			PRIMARY KEY (`message_id`),
@@ -50,8 +53,14 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 			`language_id` INT(11) NOT NULL,
 			`text` TEXT NOT NULL,
 			`link_text` TEXT NOT NULL,
+			`mobile_text` TEXT NOT NULL,
 			PRIMARY KEY (`message_id`, `language_id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+
+		// Schema 6 (2.2.0): phone text, device targeting, statistics. Added only when missing (upgraded shops).
+		foreach ($this->schemaColumns() as [$table, $column, $definition]) {
+			$this->addColumnIfMissing($table, $column, $definition);
+		}
 
 		// Schema 4: shops upgraded from any older version (incl. 1.0.0, which had no schema key) keep
 		// their own message colours; only a fresh install starts with automatic colours.
@@ -109,6 +118,41 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 				$this->model_setting_event->addEvent($event);
 			}
 		}
+	}
+
+	/**
+	 * Columns added by schema 6: [table, column, definition]. Fresh installs get them in CREATE TABLE.
+	 * mobile_text is "TEXT NOT NULL" without a DEFAULT: MySQL (unlike MariaDB) refuses a literal default on
+	 * TEXT; existing rows get '' when the column is added, and every INSERT sets the value.
+	 */
+	public function schemaColumns(): array {
+		return [
+			['abp_message', 'device', "VARCHAR(8) NOT NULL DEFAULT 'all'"],
+			['abp_message', 'views', "INT(10) UNSIGNED NOT NULL DEFAULT '0'"],
+			['abp_message', 'clicks', "INT(10) UNSIGNED NOT NULL DEFAULT '0'"],
+			['abp_message_description', 'mobile_text', 'TEXT NOT NULL']
+		];
+	}
+
+	/**
+	 * ALTER TABLE … ADD COLUMN only when SHOW COLUMNS does not find the column (idempotent, safe to repeat).
+	 * Table and column names come from schemaColumns() only, never from a request.
+	 */
+	public function addColumnIfMissing(string $table, string $column, string $definition): bool {
+		if (!preg_match('/^[a-z_]+$/', $table) || !preg_match('/^[a-z_]+$/', $column)) {
+			return false;
+		}
+
+		// Escape LIKE wildcards: "_" in the column name must match literally.
+		$query = $this->db->query("SHOW COLUMNS FROM `" . DB_PREFIX . $table . "` LIKE '" . $this->db->escape(addcslashes($column, '_%')) . "'");
+
+		if ($query->num_rows) {
+			return false;
+		}
+
+		$this->db->query("ALTER TABLE `" . DB_PREFIX . $table . "` ADD COLUMN `" . $column . "` " . $definition);
+
+		return true;
 	}
 
 	public function getTotalMessages(): int {
@@ -185,6 +229,26 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 		return $message_id;
 	}
 
+	/**
+	 * Copy of a message with all languages and settings; the copy starts switched off with zero statistics.
+	 * Returns the new message_id, or 0 when the source does not exist.
+	 */
+	public function duplicateMessage(int $message_id): int {
+		$message = $this->getMessage($message_id);
+
+		if (!$message) {
+			return 0;
+		}
+
+		$message['status'] = 0;
+
+		return $this->addMessage($message); // views / clicks are not copied: the new row starts at 0
+	}
+
+	public function resetStatistics(int $message_id): void {
+		$this->db->query("UPDATE `" . DB_PREFIX . "abp_message` SET `views` = '0', `clicks` = '0' WHERE `message_id` = '" . (int)$message_id . "'");
+	}
+
 	public function editMessage(int $message_id, array $data): void {
 		$this->db->query("UPDATE `" . DB_PREFIX . "abp_message` SET " . $this->messageFields($data) . ", `date_modified` = NOW() WHERE `message_id` = '" . (int)$message_id . "'");
 
@@ -212,8 +276,9 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 
 		foreach ($query->rows as $row) {
 			$message['message_description'][(int)$row['language_id']] = [
-				'text'      => $row['text'],
-				'link_text' => $row['link_text']
+				'text'        => $row['text'],
+				'link_text'   => $row['link_text'],
+				'mobile_text' => $row['mobile_text'] ?? ''
 			];
 		}
 
@@ -245,6 +310,7 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 	 */
 	private function messageFields(array $data): string {
 		$page_modes = ['all', 'home', 'include', 'exclude'];
+		$device     = in_array($data['device'] ?? 'all', ['all', 'desktop', 'mobile'], true) ? $data['device'] : 'all';
 
 		return implode(', ', [
 			"`status` = '" . (int)!empty($data['status']) . "'",
@@ -260,13 +326,14 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 			"`stores` = '" . $this->db->escape(json_encode(array_values(array_map('intval', (array)$data['stores'])))) . "'",
 			"`customer_groups` = '" . $this->db->escape(json_encode(array_values(array_map('intval', (array)$data['customer_groups'])))) . "'",
 			"`page_mode` = '" . $this->db->escape(in_array($data['page_mode'], $page_modes, true) ? $data['page_mode'] : 'all') . "'",
-			"`page_routes` = '" . $this->db->escape((string)$data['page_routes']) . "'"
+			"`page_routes` = '" . $this->db->escape((string)$data['page_routes']) . "'",
+			"`device` = '" . $this->db->escape($device) . "'"
 		]);
 	}
 
 	private function saveDescriptions(int $message_id, array $descriptions): void {
 		foreach ($descriptions as $language_id => $value) {
-			$this->db->query("INSERT INTO `" . DB_PREFIX . "abp_message_description` SET `message_id` = '" . (int)$message_id . "', `language_id` = '" . (int)$language_id . "', `text` = '" . $this->db->escape((string)$value['text']) . "', `link_text` = '" . $this->db->escape((string)$value['link_text']) . "'");
+			$this->db->query("INSERT INTO `" . DB_PREFIX . "abp_message_description` SET `message_id` = '" . (int)$message_id . "', `language_id` = '" . (int)$language_id . "', `text` = '" . $this->db->escape((string)$value['text']) . "', `link_text` = '" . $this->db->escape((string)$value['link_text']) . "', `mobile_text` = '" . $this->db->escape((string)($value['mobile_text'] ?? '')) . "'");
 		}
 	}
 

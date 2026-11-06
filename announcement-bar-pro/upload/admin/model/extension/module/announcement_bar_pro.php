@@ -3,11 +3,11 @@ defined('VERSION') || exit; // not callable directly (in the universal package t
 /**
  * Announcement Bar Pro — admin model (OpenCart 3.0.x)
  * Tables: {prefix}abp_message, {prefix}abp_message_description
- * @version 2.1.2
+ * @version 2.2.0
  */
 class ModelExtensionModuleAnnouncementBarPro extends Model {
 	const CODE           = 'module_announcement_bar_pro';
-	const SCHEMA_VERSION = 5;
+	const SCHEMA_VERSION = 6;
 
 	/**
 	 * Creates tables (if missing), migrates v1 settings, fills missing default settings.
@@ -38,6 +38,9 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 			`customer_groups` TEXT NOT NULL,
 			`page_mode` VARCHAR(16) NOT NULL DEFAULT 'all',
 			`page_routes` TEXT NOT NULL,
+			`device` VARCHAR(8) NOT NULL DEFAULT 'all',
+			`views` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+			`clicks` INT(10) UNSIGNED NOT NULL DEFAULT '0',
 			`date_added` DATETIME NOT NULL,
 			`date_modified` DATETIME NOT NULL,
 			PRIMARY KEY (`message_id`),
@@ -49,11 +52,17 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 			`language_id` INT(11) NOT NULL,
 			`text` TEXT NOT NULL,
 			`link_text` TEXT NOT NULL,
+			`mobile_text` TEXT NOT NULL,
 			PRIMARY KEY (`message_id`, `language_id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
 
 		// Schema 3: link_text VARCHAR(64) → TEXT (emoji are stored as entities and can exceed 64 bytes).
 		$this->db->query("ALTER TABLE `" . DB_PREFIX . "abp_message_description` MODIFY `link_text` TEXT NOT NULL");
+
+		// Schema 6 (2.2.0): phone text, device targeting, statistics. Added only when missing (upgraded shops).
+		foreach ($this->schemaColumns() as $column) {
+			$this->addColumnIfMissing($column[0], $column[1], $column[2]);
+		}
 
 		$defaults = $this->getDefaultSettings();
 
@@ -132,6 +141,41 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 		$this->model_setting_event->addEvent('announcement_bar_pro', 'catalog/view/*/after', 'extension/module/announcement_bar_pro/resolveFallback');
 	}
 
+	/**
+	 * Columns added by schema 6: array(table, column, definition). Fresh installs get them in CREATE TABLE.
+	 * mobile_text is "TEXT NOT NULL" without a DEFAULT: MySQL (unlike MariaDB) refuses a literal default on
+	 * TEXT; existing rows get '' when the column is added, and every INSERT sets the value.
+	 */
+	public function schemaColumns() {
+		return array(
+			array('abp_message', 'device', "VARCHAR(8) NOT NULL DEFAULT 'all'"),
+			array('abp_message', 'views', "INT(10) UNSIGNED NOT NULL DEFAULT '0'"),
+			array('abp_message', 'clicks', "INT(10) UNSIGNED NOT NULL DEFAULT '0'"),
+			array('abp_message_description', 'mobile_text', 'TEXT NOT NULL')
+		);
+	}
+
+	/**
+	 * ALTER TABLE … ADD COLUMN only when SHOW COLUMNS does not find the column (idempotent, safe to repeat).
+	 * Table and column names come from schemaColumns() only, never from a request.
+	 */
+	public function addColumnIfMissing($table, $column, $definition) {
+		if (!preg_match('/^[a-z_]+$/', $table) || !preg_match('/^[a-z_]+$/', $column)) {
+			return false;
+		}
+
+		// Escape LIKE wildcards: "_" in the column name must match literally.
+		$query = $this->db->query("SHOW COLUMNS FROM `" . DB_PREFIX . $table . "` LIKE '" . $this->db->escape(addcslashes($column, '_%')) . "'");
+
+		if ($query->num_rows) {
+			return false;
+		}
+
+		$this->db->query("ALTER TABLE `" . DB_PREFIX . $table . "` ADD COLUMN `" . $column . "` " . $definition);
+
+		return true;
+	}
+
 	public function getDefaultSettings() {
 		return array(
 			self::CODE . '_status'             => 0,
@@ -204,6 +248,26 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 		return $message_id;
 	}
 
+	/**
+	 * Copy of a message with all languages and settings; the copy starts switched off with zero statistics.
+	 * Returns the new message_id, or 0 when the source does not exist.
+	 */
+	public function duplicateMessage($message_id) {
+		$message = $this->getMessage((int)$message_id);
+
+		if (!$message) {
+			return 0;
+		}
+
+		$message['status'] = 0;
+
+		return $this->addMessage($message); // views / clicks are not copied: the new row starts at 0
+	}
+
+	public function resetStatistics($message_id) {
+		$this->db->query("UPDATE `" . DB_PREFIX . "abp_message` SET `views` = '0', `clicks` = '0' WHERE `message_id` = '" . (int)$message_id . "'");
+	}
+
 	public function editMessage($message_id, array $data) {
 		$message_id = (int)$message_id;
 
@@ -235,8 +299,9 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 
 		foreach ($query->rows as $row) {
 			$message['message_description'][(int)$row['language_id']] = array(
-				'text'      => $row['text'],
-				'link_text' => $row['link_text']
+				'text'        => $row['text'],
+				'link_text'   => $row['link_text'],
+				'mobile_text' => isset($row['mobile_text']) ? $row['mobile_text'] : ''
 			);
 		}
 
@@ -275,6 +340,8 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 	 */
 	private function messageFields(array $data) {
 		$page_modes = array('all', 'home', 'include', 'exclude');
+		$devices    = array('all', 'desktop', 'mobile');
+		$device     = isset($data['device']) && in_array($data['device'], $devices, true) ? $data['device'] : 'all';
 
 		$fields = array(
 			"`status` = '" . (int)!empty($data['status']) . "'",
@@ -290,7 +357,8 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 			"`stores` = '" . $this->db->escape(json_encode(array_values(array_map('intval', (array)$data['stores'])))) . "'",
 			"`customer_groups` = '" . $this->db->escape(json_encode(array_values(array_map('intval', (array)$data['customer_groups'])))) . "'",
 			"`page_mode` = '" . $this->db->escape(in_array($data['page_mode'], $page_modes, true) ? $data['page_mode'] : 'all') . "'",
-			"`page_routes` = '" . $this->db->escape((string)$data['page_routes']) . "'"
+			"`page_routes` = '" . $this->db->escape((string)$data['page_routes']) . "'",
+			"`device` = '" . $this->db->escape($device) . "'"
 		);
 
 		return implode(', ', $fields);
@@ -298,7 +366,7 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 
 	private function saveDescriptions($message_id, array $descriptions) {
 		foreach ($descriptions as $language_id => $value) {
-			$this->db->query("INSERT INTO `" . DB_PREFIX . "abp_message_description` SET `message_id` = '" . (int)$message_id . "', `language_id` = '" . (int)$language_id . "', `text` = '" . $this->db->escape((string)$value['text']) . "', `link_text` = '" . $this->db->escape((string)$value['link_text']) . "'");
+			$this->db->query("INSERT INTO `" . DB_PREFIX . "abp_message_description` SET `message_id` = '" . (int)$message_id . "', `language_id` = '" . (int)$language_id . "', `text` = '" . $this->db->escape((string)$value['text']) . "', `link_text` = '" . $this->db->escape((string)$value['link_text']) . "', `mobile_text` = '" . $this->db->escape(isset($value['mobile_text']) ? (string)$value['mobile_text'] : '') . "'");
 		}
 	}
 

@@ -51,7 +51,10 @@
                       <td class="text-center">{{ column_status }}</td>
                       <td class="d-none d-md-table-cell">{{ column_period }}</td>
                       <td class="text-end d-none d-md-table-cell">{{ column_sort_order }}</td>
-                      <td class="text-end">{{ column_action }}</td>
+                      <td class="text-end"><span data-bs-toggle="tooltip" title="{{ help_stats|e }}">{{ column_views }}</span></td>
+                      <td class="text-end">{{ column_clicks }}</td>
+                      <td class="text-end d-none d-md-table-cell">{{ column_ctr }}</td>
+                      <td class="text-end text-nowrap">{{ column_action }}</td>
                     </tr>
                   </thead>
                   <tbody>
@@ -59,6 +62,7 @@
                       <tr>
                         <td class="text-center"><input type="checkbox" name="selected[]" value="{{ message.message_id }}" class="form-check-input"/></td>
                         <td><span class="abp-swatch" style="background:{{ message.bg_color|e }};color:{{ message.text_color|e }};">{{ message.text|e }}</span>
+                          {% if message.device != 'all' %}<br/><small class="text-muted"><i class="fa-solid {{ message.device == 'mobile' ? 'fa-mobile-screen' : 'fa-desktop' }}"></i> {{ attribute(_context, 'text_device_' ~ message.device)|e }}</small>{% endif %}
                           {% if message.missing %}<br/><small class="text-warning"><i class="fa-solid fa-language"></i> {{ message.missing|e }}</small>{% endif %}</td>
                         <td class="text-center">
                           {% if message.state == 'active' %}<span class="badge bg-success">{{ message.state_text }}</span>
@@ -68,15 +72,23 @@
                         </td>
                         <td class="d-none d-md-table-cell">{{ message.date_start ? message.date_start|e : '—' }} → {{ message.date_end ? message.date_end|e : '∞' }}</td>
                         <td class="text-end d-none d-md-table-cell">{{ message.sort_order }}</td>
-                        <td class="text-end"><a href="{{ message.edit }}" data-bs-toggle="tooltip" title="{{ button_edit|e }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-pencil"></i></a></td>
+                        <td class="text-end">{{ message.views }}</td>
+                        <td class="text-end">{{ message.clicks }}</td>
+                        <td class="text-end d-none d-md-table-cell">{{ message.ctr != '' ? message.ctr|e ~ ' %' : '—' }}</td>
+                        <td class="text-end text-nowrap">
+                          <a href="{{ message.edit }}" data-bs-toggle="tooltip" title="{{ button_edit|e }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-pencil"></i></a>
+                          <button type="button" data-abp-action="duplicate" data-id="{{ message.message_id }}" data-bs-toggle="tooltip" title="{{ button_duplicate|e }}" class="btn btn-light btn-sm"><i class="fa-regular fa-copy"></i></button>
+                          <button type="button" data-abp-action="reset" data-id="{{ message.message_id }}" data-bs-toggle="tooltip" title="{{ button_reset_stats|e }}" class="btn btn-warning btn-sm"{% if not message.views and not message.clicks %} disabled{% endif %}><i class="fa-solid fa-eraser"></i></button>
+                        </td>
                       </tr>
                     {% else %}
-                      <tr><td class="text-center" colspan="6">{{ text_no_messages }}</td></tr>
+                      <tr><td class="text-center" colspan="9">{{ text_no_messages }}</td></tr>
                     {% endfor %}
                   </tbody>
                 </table>
               </div>
             </form>
+            <div class="form-text"><i class="fa-solid fa-chart-simple"></i> {{ help_stats }}</div>
           </div>
         </div>
       </div>
@@ -259,6 +271,26 @@ $(function () {
   }
   $('#input-mode, #input-position').on('change', toggle);
   toggle();
+
+  function alertError(text) {
+    $('#alert').prepend('<div class="alert alert-danger alert-dismissible"><i class="fa-solid fa-circle-exclamation"></i> ' + $('<div/>').text(text).html() + ' <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>');
+  }
+
+  // Duplicate / reset statistics of one message (POST, then reload the list with the session message).
+  $('[data-abp-action]').on('click', function () {
+    var action = $(this).data('abp-action');
+    if (action === 'reset' && !confirm('{{ text_confirm_reset|e('js') }}')) { return; }
+    $.ajax({
+      url: (action === 'reset' ? '{{ reset|e('js') }}' : '{{ duplicate|e('js') }}').replace(/&amp;/g, '&'),
+      type: 'post',
+      dataType: 'json',
+      data: { message_id: String($(this).data('id')) },
+      success: function (json) {
+        if (json['error']) { alertError(json['error']); }
+        if (json['success']) { location = '{{ reload|e('js') }}'.replace(/&amp;/g, '&'); }
+      }
+    });
+  });
 
   $('#abp-delete').on('click', function () {
     var data = $('#form-delete').serialize();

@@ -61,14 +61,17 @@
                       <td class="text-center">{{ column_status }}</td>
                       <td class="hidden-xs">{{ column_period }}</td>
                       <td class="text-right hidden-xs">{{ column_sort_order }}</td>
-                      <td class="text-right">{{ column_action }}</td>
+                      <td class="text-right"><span data-toggle="tooltip" title="{{ help_stats|e }}">{{ column_views }}</span></td>
+                      <td class="text-right">{{ column_clicks }}</td>
+                      <td class="text-right hidden-xs">{{ column_ctr }}</td>
+                      <td class="text-right" style="white-space:nowrap;">{{ column_action }}</td>
                     </tr>
                   </thead>
                   <tbody>
                     {% for message in messages %}
                     <tr>
                       <td class="text-center"><input type="checkbox" name="selected[]" value="{{ message.message_id }}" /></td>
-                      <td><span class="abp-swatch" style="background:{{ message.bg_color|e }};color:{{ message.text_color|e }};">{{ message.text|e }}</span>{% if message.missing %}<br /><small class="text-warning"><i class="fa fa-language"></i> {{ message.missing|e }}</small>{% endif %}</td>
+                      <td><span class="abp-swatch" style="background:{{ message.bg_color|e }};color:{{ message.text_color|e }};">{{ message.text|e }}</span>{% if message.device != 'all' %}<br /><small class="text-muted"><i class="fa {{ message.device == 'mobile' ? 'fa-mobile' : 'fa-desktop' }}"></i> {{ attribute(_context, 'text_device_' ~ message.device)|e }}</small>{% endif %}{% if message.missing %}<br /><small class="text-warning"><i class="fa fa-language"></i> {{ message.missing|e }}</small>{% endif %}</td>
                       <td class="text-center">
                         {% if message.state == 'active' %}<span class="label label-success">{{ message.state_text }}</span>
                         {% elseif message.state == 'scheduled' %}<span class="label label-info">{{ message.state_text }}</span>
@@ -77,17 +80,25 @@
                       </td>
                       <td class="hidden-xs">{{ message.date_start ? message.date_start|e : '—' }} → {{ message.date_end ? message.date_end|e : '∞' }}</td>
                       <td class="text-right hidden-xs">{{ message.sort_order }}</td>
-                      <td class="text-right"><a href="{{ message.edit }}" data-toggle="tooltip" title="{{ button_edit|e }}" class="btn btn-primary btn-sm"><i class="fa fa-pencil"></i></a></td>
+                      <td class="text-right">{{ message.views }}</td>
+                      <td class="text-right">{{ message.clicks }}</td>
+                      <td class="text-right hidden-xs">{{ message.ctr != '' ? message.ctr|e ~ ' %' : '—' }}</td>
+                      <td class="text-right" style="white-space:nowrap;">
+                        <a href="{{ message.edit }}" data-toggle="tooltip" title="{{ button_edit|e }}" class="btn btn-primary btn-sm"><i class="fa fa-pencil"></i></a>
+                        <button type="submit" form="form-delete" formaction="{{ duplicate }}" name="message_id" value="{{ message.message_id }}" data-toggle="tooltip" title="{{ button_duplicate|e }}" class="btn btn-default btn-sm abp-duplicate"><i class="fa fa-copy"></i></button>
+                        <button type="submit" form="form-delete" formaction="{{ reset }}" name="message_id" value="{{ message.message_id }}" data-toggle="tooltip" title="{{ button_reset_stats|e }}" class="btn btn-warning btn-sm abp-reset"{% if not message.views and not message.clicks %} disabled="disabled"{% endif %}><i class="fa fa-eraser"></i></button>
+                      </td>
                     </tr>
                     {% else %}
                     <tr>
-                      <td class="text-center" colspan="6">{{ text_no_messages }}</td>
+                      <td class="text-center" colspan="9">{{ text_no_messages }}</td>
                     </tr>
                     {% endfor %}
                   </tbody>
                 </table>
               </div>
             </form>
+            <p class="help-block"><i class="fa fa-bar-chart"></i> {{ help_stats }}</p>
           </div>
         </div>
       </div>
@@ -254,6 +265,10 @@
   }
   $('#input-mode, #input-position').on('change', toggle);
   toggle();
+
+  $('.abp-reset').on('click', function (e) {
+    if (!confirm('{{ text_confirm_reset|e('js') }}')) { e.preventDefault(); }
+  });
 
   $('#abp-delete').on('click', function () {
     if (!$('#form-delete input[name="selected[]"]:checked').length) { return; }

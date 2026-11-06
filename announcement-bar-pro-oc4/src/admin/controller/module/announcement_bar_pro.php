@@ -4,10 +4,10 @@ namespace Opencart\Admin\Controller\Extension\AnnouncementBarPro\Module;
 /**
  * Announcement Bar Pro — admin controller (OpenCart 4.0.x / 4.1.x)
  *
- * @version 2.1.2
+ * @version 2.2.0
  */
 class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
-	public const VERSION       = '2.1.2';
+	public const VERSION       = '2.2.0';
 	public const CODE          = 'module_announcement_bar_pro';
 	public const EVENT_CODE    = 'announcement_bar_pro';
 	public const ROUTE         = 'extension/announcement_bar_pro/module/announcement_bar_pro';
@@ -32,6 +32,8 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 		$data['save']     = $this->link(self::ROUTE . $this->sep() . 'save');
 		$data['add']      = $this->link(self::ROUTE . $this->sep() . 'form');
 		$data['delete']   = $this->link(self::ROUTE . $this->sep() . 'delete');
+		$data['duplicate'] = $this->link(self::ROUTE . $this->sep() . 'duplicate');
+		$data['reset']    = $this->link(self::ROUTE . $this->sep() . 'resetStats');
 		$data['back']     = $this->link('marketplace/extension', '&type=module');
 		$data['reload']   = $this->link(self::ROUTE, '&tab=messages');
 
@@ -83,6 +85,10 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 				'state'      => $state,
 				'state_text' => $this->language->get('text_state_' . $state),
 				'missing'    => $missing ? sprintf($this->language->get('text_missing_language'), implode(', ', $missing)) : '',
+				'device'     => in_array($message['device'], ['desktop', 'mobile'], true) ? $message['device'] : 'all',
+				'views'      => (int)$message['views'],
+				'clicks'     => (int)$message['clicks'],
+				'ctr'        => $this->ctr((int)$message['views'], (int)$message['clicks']),
 				'edit'       => $this->link(self::ROUTE . $this->sep() . 'form', '&message_id=' . (int)$message['message_id'])
 			];
 		}
@@ -218,7 +224,8 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 			'stores'          => [],
 			'customer_groups' => [],
 			'page_mode'       => 'all',
-			'page_routes'     => ''
+			'page_routes'     => '',
+			'device'          => 'all'
 		];
 
 		foreach ($defaults as $key => $default) {
@@ -238,7 +245,8 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 
 			$data['message_description'][$id] = [
 				'text'      => isset($row['text']) ? $this->abp->decode($row['text']) : '',
-				'link_text' => isset($row['link_text']) ? $this->abp->decode($row['link_text']) : ''
+				'link_text'   => isset($row['link_text']) ? $this->abp->decode($row['link_text']) : '',
+				'mobile_text' => isset($row['mobile_text']) ? $this->abp->decode($row['mobile_text']) : ''
 			];
 		}
 
@@ -326,6 +334,55 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 	}
 
 	/* ------------------------------------------------------------------ *
+	 * AJAX: duplicate one message (POST message_id). The copy is switched
+	 * off and starts with zero statistics.
+	 * ------------------------------------------------------------------ */
+	public function duplicate(): void {
+		$this->bootstrap();
+
+		$json       = [];
+		$message_id = $this->postedMessageId();
+
+		if ($this->request->server['REQUEST_METHOD'] != 'POST') {
+			$json['error'] = $this->language->get('error_value');
+		} elseif (!$this->user->hasPermission('modify', self::ROUTE)) {
+			$json['error'] = $this->language->get('error_permission');
+		} elseif (!$message_id || !$this->model_extension_announcement_bar_pro_module_announcement_bar_pro->duplicateMessage($message_id)) {
+			$json['error'] = $this->language->get('error_not_found');
+		} else {
+			$this->session->data['abp_success'] = $this->language->get('text_duplicated');
+			$json['success'] = $this->language->get('text_duplicated');
+		}
+
+		$this->json($json);
+	}
+
+	/* ------------------------------------------------------------------ *
+	 * AJAX: reset views / clicks of one message (POST message_id)
+	 * ------------------------------------------------------------------ */
+	public function resetStats(): void {
+		$this->bootstrap();
+
+		$json       = [];
+		$message_id = $this->postedMessageId();
+		$model      = $this->model_extension_announcement_bar_pro_module_announcement_bar_pro;
+
+		if ($this->request->server['REQUEST_METHOD'] != 'POST') {
+			$json['error'] = $this->language->get('error_value');
+		} elseif (!$this->user->hasPermission('modify', self::ROUTE)) {
+			$json['error'] = $this->language->get('error_permission');
+		} elseif (!$message_id || !$model->getMessage($message_id)) {
+			$json['error'] = $this->language->get('error_not_found');
+		} else {
+			$model->resetStatistics($message_id);
+			$this->session->data['abp_success'] = $this->language->get('text_stats_reset');
+			$json['success'] = $this->language->get('text_stats_reset');
+		}
+
+		$this->json($json);
+	}
+
+	/* ------------------------------------------------------------------ *
 	 * Install / uninstall (called by extension/module, which checks
 	 * "modify" on extension/module and adds/removes our permissions)
 	 * ------------------------------------------------------------------ */
@@ -386,6 +443,13 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 
 			if (mb_strlen($clean, 'UTF-8') > self::MAX_TEXT) {
 				$error['text_' . $id] = sprintf($this->language->get('error_text_length'), self::MAX_TEXT);
+			}
+
+			// Optional phone text: same rules as the text (sanitized length, HTML mode).
+			$mobile = $this->abp->decode($row['mobile_text'] ?? '');
+
+			if (strlen($mobile) > self::MAX_RAW_TEXT || mb_strlen($allow_html ? $this->abp->html($mobile) : $this->abp->plain($mobile), 'UTF-8') > self::MAX_TEXT) {
+				$error['mobile_text_' . $id] = sprintf($this->language->get('error_text_length'), self::MAX_TEXT);
 			}
 
 			if (mb_strlen($link, 'UTF-8') > self::MAX_LINK_TEXT) {
@@ -457,6 +521,10 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 			}
 		}
 
+		if (!in_array($p['device'] ?? 'all', ['all', 'desktop', 'mobile'], true)) {
+			$error['device'] = $this->language->get('error_value');
+		}
+
 		$mode = $p['page_mode'] ?? '';
 		if (!in_array($mode, ['all', 'home', 'include', 'exclude'], true)) {
 			$error['page_mode'] = $this->language->get('error_value');
@@ -482,12 +550,15 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 			$row = $p['message_description'][$id] ?? ['text' => '', 'link_text' => ''];
 
 			$text = $this->abp->decode($row['text']);
+			$mob  = $this->abp->decode($row['mobile_text'] ?? '');
+			$mob  = $allow_html ? $this->abp->html($mob) : $this->abp->plain($mob);
 
 			$description[$id] = [
 				// OpenCart 4.0.1+ talks utf8mb4 to MySQL, so emoji are stored as they are. 4.0.0.x still uses
 				// 3-byte "utf8" (emoji would become "????"), so there they are stored as numeric entities.
 				'text'      => $this->store4byte($allow_html ? $this->abp->html($text) : $this->abp->plain($text)),
-				'link_text' => $this->store4byte(mb_substr($this->abp->plain($this->abp->decode($row['link_text'])), 0, self::MAX_LINK_TEXT, 'UTF-8'))
+				'link_text' => $this->store4byte(mb_substr($this->abp->plain($this->abp->decode($row['link_text'])), 0, self::MAX_LINK_TEXT, 'UTF-8')),
+				'mobile_text' => trim(strip_tags($mob)) === '' ? '' : $this->store4byte($mob)
 			];
 		}
 
@@ -510,6 +581,7 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 			'customer_groups'     => array_values(array_unique(array_intersect(array_map('intval', $p['customer_groups'] ?? []), $this->customerGroupIds()))),
 			'page_mode'           => $mode,
 			'page_routes'         => in_array($mode, ['include', 'exclude'], true) ? implode("\n", (array)$this->parseRoutes($p['page_routes'] ?? '')) : '',
+			'device'              => in_array($p['device'] ?? '', ['desktop', 'mobile'], true) ? $p['device'] : 'all',
 			'message_description' => $description
 		];
 	}
@@ -520,7 +592,7 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 	private function normalizeMessagePost(array $post): array {
 		$out = [];
 
-		foreach (['status', 'sort_order', 'date_start', 'date_end', 'bg_color', 'text_color', 'link', 'link_new_tab', 'icon', 'countdown', 'page_mode', 'page_routes', 'end_all_day'] as $key) {
+		foreach (['status', 'sort_order', 'date_start', 'date_end', 'bg_color', 'text_color', 'link', 'link_new_tab', 'icon', 'countdown', 'page_mode', 'page_routes', 'end_all_day', 'device'] as $key) {
 			if (isset($post[$key])) {
 				$out[$key] = is_string($post[$key]) ? $post[$key] : '';
 			}
@@ -535,8 +607,9 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 			foreach ($post['message_description'] as $language_id => $row) {
 				if (is_array($row)) {
 					$out['message_description'][(int)$language_id] = [
-						'text'      => isset($row['text']) && is_string($row['text']) ? $row['text'] : '',
-						'link_text' => isset($row['link_text']) && is_string($row['link_text']) ? $row['link_text'] : ''
+						'text'        => isset($row['text']) && is_string($row['text']) ? $row['text'] : '',
+						'link_text'   => isset($row['link_text']) && is_string($row['link_text']) ? $row['link_text'] : '',
+						'mobile_text' => isset($row['mobile_text']) && is_string($row['mobile_text']) ? $row['mobile_text'] : ''
 					];
 				}
 			}
@@ -602,6 +675,18 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 		$data['footer']      = $this->load->controller('common/footer');
 
 		return $data;
+	}
+
+	/** message_id from POST: digits only, else 0. */
+	private function postedMessageId(): int {
+		$raw = isset($this->request->post['message_id']) && is_string($this->request->post['message_id']) ? $this->request->post['message_id'] : '';
+
+		return preg_match('/^\d{1,10}$/', $raw) ? (int)$raw : 0;
+	}
+
+	/** Click-through rate in % with one decimal; '' while there are no views. */
+	private function ctr(int $views, int $clicks): string {
+		return $views > 0 ? number_format(min(100, $clicks * 100 / $views), 1, '.', '') : '';
 	}
 
 	private function store4byte(string $value): string {

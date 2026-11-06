@@ -71,9 +71,9 @@ footer{color:var(--muted);font-size:14px}
 <div class="wrap">
   <header>
     <h1>Announcement Bar Pro</h1>
-    <p>Paziņojumu josla OpenCart veikalam. Viena paka der OpenCart 3.0, 4.0 un 4.1, un josla pati pielāgojas tēmai. Labajā logā darbojas <b>moduļa īstais JavaScript un CSS</b> no versijas 2.1.2. Izvēlieties tēmu un skatieties, kā josla pielāgojas: ritiniet veikala logu un aizveriet joslu ar ×.</p>
+    <p>Paziņojumu josla OpenCart veikalam. Viena paka der OpenCart 3.0, 4.0 un 4.1, un josla pati pielāgojas tēmai. Labajā logā darbojas <b>moduļa īstais JavaScript un CSS</b> no versijas 2.2.0. Izvēlieties tēmu un skatieties, kā josla pielāgojas: ritiniet veikala logu un aizveriet joslu ar ×.</p>
     <div class="chips">
-      <span class="chip">Viena paka · <b>v2.1.2</b></span>
+      <span class="chip">Viena paka · <b>v2.2.0</b></span>
       <span class="chip">OpenCart 3.0 · 4.0 · 4.1</span>
       <span class="chip">LV · EN · RU</span>
       <span class="chip">GPL-3.0</span>
@@ -129,8 +129,14 @@ footer{color:var(--muted);font-size:14px}
         <label for="text1">1. paziņojuma teksts</label>
         <input type="text" id="text1" value="Bezmaksas piegāde virs 50 € — beidzas pēc {countdown}">
       </div>
+      <div class="field">
+        <label for="text1m">… telefonam (šaurāk par 768 px, neobligāts)</label>
+        <input type="text" id="text1m" value="Piegāde 0 € no 50 € · {countdown}">
+      </div>
+      <p class="hint">4. paziņojums ir iestatīts „Tikai telefoni” — ieslēdziet „Telefona platums”, lai to redzētu.</p>
       <label class="check"><input type="checkbox" id="dismissible" checked> Aizvēršanas poga (×)</label>
       <label class="check"><input type="checkbox" id="mobile"> Telefona platums</label>
+      <label class="check"><input type="checkbox" id="stats"> Statistikas skaitītāji (demo: pieprasījumi uz neesošu adresi)</label>
       <div class="row"><button type="button" class="btn" id="reset">Atjaunot aizvērto joslu</button></div>
     </form>
 
@@ -152,6 +158,7 @@ footer{color:var(--muted);font-size:14px}
         <li>Automātiskās krāsas no tēmas; lasāma teksta krāsa</li>
         <li>Nav Font Awesome → ikonas izlaistas; RTL valodas apgrieztas</li>
         <li>Aizvēršana tiek atcerēta katram paziņojumam; atpakaļskaitīšana servera laikā</li>
+        <li>2.2.0: īsāks teksts telefonam; paziņojums tikai datoriem vai tikai telefoniem; skatījumu un klikšķu skaitītāji (bez personas datiem, ievēro Do Not Track / GPC); paziņojuma dublēšana</li>
       </ul>
     </div>
     <div class="box">
@@ -189,7 +196,7 @@ footer{color:var(--muted);font-size:14px}
     </div>
   </section>
 
-  <footer>Veikala logs ir paraugveikals, bet josla tajā darbojas ar moduļa īsto JavaScript un CSS (versija 2.1.2). Īstā veikalā modulis joslu ievieto caur OpenCart notikumiem, nevis šīs lapas skriptu.</footer>
+  <footer>Veikala logs ir paraugveikals, bet josla tajā darbojas ar moduļa īsto JavaScript un CSS (versija 2.2.0). Īstā veikalā modulis joslu ievieto caur OpenCart notikumiem, nevis šīs lapas skriptu.</footer>
 </div>
 
 <script>
@@ -207,20 +214,22 @@ footer{color:var(--muted);font-size:14px}
   function messages() {
     var rtl = $('rtl').checked;
     return [
-      { id: 1, text: rtl ? 'شحن مجاني للطلبات فوق 50 € — ينتهي خلال {countdown}' : $('text1').value, icon: 'fa-truck', btn: rtl ? 'تسوق الآن' : 'Uz akcijām', bg: '#1e8449', fg: '#ffffff', end: stamp + (2 * 86400 + 4 * 3600 + 17 * 60) * 1000 },
+      { id: 1, text: rtl ? 'شحن مجاني للطلبات فوق 50 € — ينتهي خلال {countdown}' : $('text1').value, mob: rtl ? 'شحن مجاني فوق 50 € · {countdown}' : $('text1m').value, icon: 'fa-truck', btn: rtl ? 'تسوق الآن' : 'Uz akcijām', bg: '#1e8449', fg: '#ffffff', end: stamp + (2 * 86400 + 4 * 3600 + 17 * 60) * 1000 },
       { id: 2, text: rtl ? 'الجمعة السوداء: خصم 20٪ على جميع الأدوات' : 'Black Friday: −20 % visām frēzēm', icon: 'fa-percent', btn: '', bg: '#c0392b', fg: '#ffffff' },
-      { id: 3, text: rtl ? 'اطلب قبل 18.12 للتوصيل قبل العطلة' : 'Pasūtījumi līdz 18.12. pienāks pirms svētkiem', icon: 'fa-gift', btn: '', bg: '#1f2a44', fg: '#f6d365' }
+      { id: 3, text: rtl ? 'اطلب قبل 18.12 للتوصيل قبل العطلة' : 'Pasūtījumi līdz 18.12. pienāks pirms svētkiem', icon: 'fa-gift', btn: '', bg: '#1f2a44', fg: '#f6d365' },
+      { id: 4, text: rtl ? 'في الهاتف: رمز APP5 يمنح خصم 5٪' : 'Telefonā: kods APP5 dod −5 %', icon: 'fa-percent', btn: '', bg: '#6c3483', fg: '#ffffff', device: 'mobile' }
     ];
   }
 
   function barHtml(fallback) {
     var list = messages(), first = list[0];
     var cls = 'abp abp-pos-' + (state.pos === 'bottom' ? 'bottom' : 'top') + (state.pos === 'sticky' ? ' abp-sticky' : '') + ' abp-mode-' + state.mode;
-    var h = '<div id="abp-bar" class="' + cls + '" role="region" aria-label="Paziņojums" data-days="1" data-interval="4" data-speed="70" data-mode="' + state.mode + '" data-now="' + Date.now() + '" data-color="' + $('colors').value + '" data-dismissible="' + ($('dismissible').checked ? 1 : 0) + '" data-fallback="' + (fallback ? 1 : 0) + '" data-days-label="d." style="font-size:15px;background-color:' + first.bg + ';color:' + first.fg + ';"><div class="abp-viewport"><div class="abp-track">';
+    var h = '<div id="abp-bar" class="' + cls + '" role="region" aria-label="Paziņojums" data-days="1" data-interval="4" data-speed="70" data-mode="' + state.mode + '" data-now="' + Date.now() + '" data-color="' + $('colors').value + '" data-dismissible="' + ($('dismissible').checked ? 1 : 0) + '" data-fallback="' + (fallback ? 1 : 0) + '" data-days-label="d."' + ($('stats').checked ? ' data-track="https://demo.invalid/index.php?route=extension/module/announcement_bar_pro/track"' : '') + ' style="font-size:15px;background-color:' + first.bg + ';color:' + first.fg + ';"><div class="abp-viewport"><div class="abp-track">';
     list.forEach(function (m, i) {
-      var t = esc(m.text).replace('{countdown}', m.end ? '<span class="abp-countdown" data-end="' + m.end + '"></span>' : '');
-      h += '<div class="abp-item' + (i === 0 ? ' abp-active' : '') + '" data-id="' + m.id + '" data-key="' + hash12(m.id + '|' + m.text + '|' + m.btn) + '" style="background-color:' + m.bg + ';color:' + m.fg + ';padding-top:8px;padding-bottom:8px;">' +
-        '<i class="fa ' + m.icon + '" aria-hidden="true"></i> <span class="abp-text">' + t + '</span>' +
+      var cd = function (x) { return esc(x).replace('{countdown}', m.end ? '<span class="abp-countdown" data-end="' + m.end + '"></span>' : ''); };
+      var t = m.mob ? '<span class="abp-text abp-text-d">' + cd(m.text) + '</span><span class="abp-text abp-text-m">' + cd(m.mob) + '</span>' : '<span class="abp-text">' + cd(m.text) + '</span>';
+      h += '<div class="abp-item' + (i === 0 ? ' abp-active' : '') + '" data-id="' + m.id + '" data-key="' + hash12(m.id + '|' + m.text + '|' + (m.mob || '') + '|' + m.btn) + '"' + (m.device ? ' data-device="' + m.device + '"' : '') + ' style="background-color:' + m.bg + ';color:' + m.fg + ';padding-top:8px;padding-bottom:8px;">' +
+        '<i class="fa ' + m.icon + '" aria-hidden="true"></i> ' + t +
         (m.btn ? '<a class="abp-btn" href="#" style="color:' + m.fg + ';border-color:' + m.fg + ';">' + esc(m.btn) + '</a>' : '') + '</div>';
     });
     h += '</div></div>' + ($('dismissible').checked ? '<button type="button" class="abp-close" aria-label="Aizvērt" title="Aizvērt" style="color:' + first.fg + ';">&times;</button>' : '') + '</div>';
@@ -280,8 +289,8 @@ footer{color:var(--muted);font-size:14px}
   document.querySelectorAll('[data-mode]').forEach(function (b) { b.addEventListener('click', function () { state.mode = b.dataset.mode; document.querySelectorAll('[data-mode]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); render(); }); });
   document.querySelectorAll('[data-pos]').forEach(function (b) { b.addEventListener('click', function () { state.pos = b.dataset.pos; document.querySelectorAll('[data-pos]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); render(); }); });
   $('theme').addEventListener('change', function () { state.theme = this.value; render(); });
-  ['brand', 'colors', 'text1', 'dismissible', 'mobile', 'cookie', 'rtl', 'fa'].forEach(function (id) { $(id).addEventListener('change', render); });
-  $('text1').addEventListener('input', function () { clearTimeout(this.t); this.t = setTimeout(render, 400); });
+  ['brand', 'colors', 'text1', 'text1m', 'dismissible', 'mobile', 'cookie', 'rtl', 'fa', 'stats'].forEach(function (id) { $(id).addEventListener('change', render); });
+  ['text1', 'text1m'].forEach(function (id) { $(id).addEventListener('input', function () { clearTimeout(this.t); this.t = setTimeout(render, 400); }); });
   $('reset').addEventListener('click', function () { try { localStorage.removeItem('abp_dismiss2'); sessionStorage.removeItem('abp_dismiss2'); } catch (e) {} render(); });
   $('controls').addEventListener('submit', function (e) { e.preventDefault(); });
   render();

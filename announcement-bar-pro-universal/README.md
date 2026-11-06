@@ -3,7 +3,7 @@
 Paziņojumu josla veikala augšā vai apakšā: akcijas, piegādes nosacījumi, svarīgas ziņas.
 *An announcement bar for the top or bottom of every store page.*
 
-- **Versija / Version:** 2.1.2
+- **Versija / Version:** 2.2.0
 - **Viena paka visām versijām / One package for all versions:** `announcement_bar_pro.ocmod.zip`
   - OpenCart **3.0.x** (tested 3.0.5.1; code uses only APIs present since 3.0.0.0), PHP 7.3+
   - OpenCart **4.0.x / 4.1.x** (tested 4.0.2.3 and 4.1.0.4; 4.0.0–4.0.1 handled in code, not runtime-tested), PHP 8.0+
@@ -46,8 +46,17 @@ Nekas nav jāiestata:
 - Valodai bez teksta tiek rādīts veikala noklusētās valodas teksts.
 - Core faili netiek mainīti, nav inline skriptu, nav ārēju CDN.
 
+### Jaunums 2.2.0
+- **Teksts telefonam (neobligāts):** katrā valodā var ierakstīt īsāku tekstu, ko rāda ekrānos, kas šaurāki par 768 px. Tukšs = visur parastais teksts. Darbojas tie paši HTML noteikumi un `{countdown}`.
+- **Ierīces:** katram paziņojumam — visas ierīces, tikai datori (768 px un platāki) vai tikai telefoni. Pagriežot telefonu vai mainot loga platumu, josla pārkārtojas pati; ja nevienam paziņojumam šis ekrāna izmērs neder, josla netiek rādīta.
+- **Statistika:** paziņojumu sarakstā ir skatījumi, klikšķi un CTR (%), katram paziņojumam poga „Atiestatīt statistiku”.
+- **Dublēt:** paziņojuma kopija ar visām valodām un iestatījumiem; kopija ir izslēgta un ar nulles statistiku.
+
+### Privātums (statistika)
+Statistika ir tikai skaitītāji datubāzē (skatījumi un klikšķi katram paziņojumam). Netiek saglabāti personas dati — ne IP adreses, ne lietotāja aģents, ne klienta ID — un modulis neliek savas sīkdatnes. Lai vienu apmeklētāju neskaitītu vairākkārt, tiek izmantota pārlūka `sessionStorage` un veikala esošā OpenCart sesija (katram paziņojumam ne vairāk kā viens skatījums un viens klikšķis sesijā, kopā ne vairāk kā 100 notikumi). Ja apmeklētāja pārlūkā ieslēgts **Do Not Track** vai **Global Privacy Control**, nekas netiek sūtīts.
+
 ### Jaunināšana
-- **OpenCart 3:** augšupielādējiet jauno paku virs vecās (jebkuras iepriekšējās versijas), *Modifications → Refresh* un vienreiz atveriet moduļa lapu. Iestatījumi un paziņojumi paliek.
+- **OpenCart 3:** augšupielādējiet jauno paku virs vecās (jebkuras iepriekšējās versijas), *Modifications → Refresh* un vienreiz atveriet moduļa lapu. Iestatījumi un paziņojumi paliek. Atverot moduļa lapu, datubāzei tiek pievienotas 2.2.0 kolonnas (vajag tiesības *modify*); līdz tam josla strādā kā 2.1 versijā, bez statistikas.
 - **OpenCart 4:** instalētājs nepieņem paku, kamēr vecā ir instalēta. Secība: *Modules → Announcement Bar Pro → Uninstall* → *Installer → Announcement Bar Pro → Uninstall* (sarkanā) un **Delete** → augšupielādēt jauno → **Install** → *Modules → Install*. Paziņojumi paliek (ja nav ieslēgts „Dzēst paziņojumus atinstalējot”), bet iestatījumi atgriežas noklusētie: modulis ir **izslēgts** un krāsas „Pielāgotas” — ieslēdziet tos atkārtoti *Iestatījumos*.
 - Ja iepriekšējā versija bija instalēta, krāsas paliek „Pielāgotas”, un rezerves notikums tiek pievienots automātiski.
 
@@ -71,8 +80,17 @@ Nekas nav jāiestata:
 3. *Extensions → Extensions → Modules* → **Announcement Bar Pro** → **Install** → **Edit**.
 4. Add your first message. A fresh install is already enabled, with colours set to Automatic.
 
+### What is new in 2.2.0
+- **Phone text (optional):** per language, a shorter text shown on screens narrower than 768 px. Empty = the normal text everywhere. Same HTML rules, `{countdown}` works.
+- **Devices:** per message — all devices, computers only (768 px and wider) or phones only. The bar rearranges itself when a phone is rotated or the window is resized; when no message fits the screen size, the bar is not shown.
+- **Statistics:** views, clicks and CTR (%) in the message list, with "Reset statistics" per message.
+- **Duplicate:** copies a message with all languages and settings; the copy is switched off and starts with zero statistics.
+
+### Privacy (statistics)
+Statistics are plain counters in the database (views and clicks per message). No personal data is stored — no IP address, user agent or customer ID — and the module sets no cookies of its own. To avoid counting one visitor several times it uses the browser's `sessionStorage` and the shop's existing OpenCart session (at most one view and one click per message per session, 100 events in total). Nothing is sent when the visitor's browser has **Do Not Track** or **Global Privacy Control** switched on.
+
 ### Upgrade
-- **OpenCart 3:** upload the new package over the old one, *Modifications → Refresh*, open the module page once. Settings and messages stay.
+- **OpenCart 3:** upload the new package over the old one, *Modifications → Refresh*, open the module page once. Settings and messages stay. Opening the module page adds the 2.2.0 columns to the database (needs *modify* permission); until then the bar works as in 2.1, without statistics.
 - **OpenCart 4:** the installer refuses a package that is still installed. Order: *Modules → Announcement Bar Pro → Uninstall* → *Installer → Announcement Bar Pro → Uninstall* (red) and **Delete** → upload the new one → **Install** → *Modules → Install*. Messages stay (unless "Delete messages on uninstall" is on), but settings return to defaults: the module is **off** and colours are Custom — switch them back in *Settings*.
 
 ### Automatic theme adaptation
@@ -84,7 +102,8 @@ Nekas nav jāiestata:
 - Missing **Font Awesome** drops the icons. **RTL** languages are mirrored. The font is inherited from the theme.
 
 ### Security
-- `modify` permission is checked on every save and delete; every admin URL carries `user_token`.
+- `modify` permission is checked on every save, delete, duplicate and statistics reset; every admin URL carries `user_token`.
+- The public statistics endpoint accepts only POST `id` (integer) and `type` (`view`/`click`), counts only enabled messages and always returns an empty 204.
 - All input is whitelist-validated, and every SQL value is cast or escaped.
 - HTML mode uses a whitelist sanitizer on save and again on render.
 - Twig runs with autoescape off in OpenCart, so output is escaped explicitly.

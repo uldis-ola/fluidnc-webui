@@ -14,6 +14,15 @@ V3=$(grep -oP '<version>\K[^<]+' "$OC3/install.xml")
 PY=$(python3 -c 'import sys' >/dev/null 2>&1 && echo python3 || echo python)
 V4=$($PY -c "import json,sys;print(json.load(open(sys.argv[1]))['version'])" "$OC4/install.json")
 [ "$V3" = "$V4" ] || { echo "Version mismatch: OC3 $V3 / OC4 $V4" >&2; exit 1; }
+# Every @version header, VERSION constant and JS/CSS header in both kits must carry the same version.
+BAD=$(grep -rHoE "@version [0-9.]+|const +VERSION += '[0-9.]+'|Announcement Bar Pro v[0-9.]+[0-9]" "$OC3/upload" "$OC4" \
+	| grep -vE "(@version |VERSION += '|Announcement Bar Pro v)${V3//./\\.}'?$" || true)
+[ -z "$BAD" ] || { echo "Version mismatch (expected $V3):" >&2; echo "$BAD" >&2; exit 1; }
+# The storefront files are shared: they must be byte-identical in both kits.
+for f in announcement_bar_pro.js announcement_bar_pro_pre.js announcement_bar_pro.css; do
+	cmp -s "$OC3/upload/catalog/view/javascript/announcement_bar_pro/$f" "$OC4/catalog/view/javascript/$f" \
+		|| { echo "Shared file differs between kits: $f" >&2; exit 1; }
+done
 STAGE=$(mktemp -d); trap 'rm -rf "$STAGE"' EXIT
 cp -r "$OC3/upload" "$OC3/install.xml" "$STAGE/"
 cp -r "$OC4/install.json" "$OC4/admin" "$OC4/catalog" "$OC4/system" "$STAGE/"

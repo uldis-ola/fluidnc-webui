@@ -63,6 +63,14 @@
                     </div>
                   </div>
                   <div class="form-group">
+                    <label class="col-sm-2 control-label" for="input-mobile-text{{ lid }}"><span data-toggle="tooltip" title="{{ help_mobile_text|e }}">{{ entry_mobile_text }}</span></label>
+                    <div class="col-sm-10">
+                      <textarea name="message_description[{{ lid }}][mobile_text]" rows="2" maxlength="{{ max_text }}" id="input-mobile-text{{ lid }}" class="form-control abp-mobile-text">{{ message_description[lid].mobile_text|e }}</textarea>
+                      <p class="help-block">{{ help_mobile_text }}</p>
+                      {% if error.mobile_text[lid] is defined %}<div class="text-danger">{{ error.mobile_text[lid]|e }}</div>{% endif %}
+                    </div>
+                  </div>
+                  <div class="form-group">
                     <label class="col-sm-2 control-label" for="input-link-text{{ lid }}"><span data-toggle="tooltip" title="{{ help_link_text|e }}">{{ entry_link_text }}</span></label>
                     <div class="col-sm-10">
                       <input type="text" name="message_description[{{ lid }}][link_text]" value="{{ message_description[lid].link_text|e }}" maxlength="{{ max_link_text }}" id="input-link-text{{ lid }}" class="form-control abp-link-text" />
@@ -150,6 +158,18 @@
 
             {# ---------- Visibility ---------- #}
             <div class="tab-pane" id="tab-visibility">
+              <div class="form-group">
+                <label class="col-sm-2 control-label" for="input-device"><span data-toggle="tooltip" title="{{ help_device|e }}">{{ entry_device }}</span></label>
+                <div class="col-sm-10">
+                  <select name="device" id="input-device" class="form-control">
+                    {% for value in ['all', 'desktop', 'mobile'] %}
+                    <option value="{{ value }}"{% if device == value %} selected="selected"{% endif %}>{{ attribute(_context, 'text_device_' ~ value) }}</option>
+                    {% endfor %}
+                  </select>
+                  <p class="help-block">{{ help_device }}</p>
+                  {% if error.device is defined %}<div class="text-danger">{{ error.device|e }}</div>{% endif %}
+                </div>
+              </div>
               <div class="form-group">
                 <label class="col-sm-2 control-label"><span data-toggle="tooltip" title="{{ help_empty_all|e }}">{{ entry_store }}</span></label>
                 <div class="col-sm-10">

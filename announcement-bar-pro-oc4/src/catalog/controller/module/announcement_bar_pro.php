@@ -5,10 +5,10 @@ namespace Opencart\Catalog\Controller\Extension\AnnouncementBarPro\Module;
  * Announcement Bar Pro — catalog controller (OpenCart 4.0.x / 4.1.x)
  * Injected via events: catalog/view/common/header/after (footer/after as automatic fallback)
  *
- * @version 2.1.2
+ * @version 2.2.0
  */
 class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
-	public const VERSION = '2.1.2';
+	public const VERSION = '2.2.0';
 	public const CODE    = 'module_announcement_bar_pro';
 	public const ROUTE   = 'extension/announcement_bar_pro/module/announcement_bar_pro';
 
@@ -126,13 +126,15 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 		$language_id = (int)$this->config->get('config_language_id');
 		$allow_html  = (bool)$this->config->get(self::CODE . '_allow_html');
 
-		if ((int)$this->config->get(self::CODE . '_schema') < 3) {
+		$schema = (int)$this->config->get(self::CODE . '_schema');
+
+		if ($schema < 3) {
 			return '';
 		}
 
 		$this->load->model(self::ROUTE);
 		$model = $this->model_extension_announcement_bar_pro_module_announcement_bar_pro;
-		$rows  = $model->getActiveMessages($language_id, $model->getDefaultLanguageId((int)$this->config->get('config_store_id')));
+		$rows  = $model->getActiveMessages($language_id, $model->getDefaultLanguageId((int)$this->config->get('config_store_id')), $schema);
 
 		if (!$rows) {
 			return '';
@@ -150,8 +152,14 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 				continue;
 			}
 
-			$html = $this->abp->toSafeHtml($row['text'], $allow_html);
-			$seen = $html; // what the visitor sees (before the timer is inserted) — basis of the dismiss key
+			$html   = $this->abp->toSafeHtml($row['text'], $allow_html);
+			$html_m = isset($row['mobile_text']) && trim((string)$row['mobile_text']) !== '' ? $this->abp->toSafeHtml($row['mobile_text'], $allow_html) : '';
+			if (trim(strip_tags($html_m)) === '') {
+				$html_m = '';
+			}
+			// What the visitor sees (before the timer is inserted) — basis of the dismiss key. Without a phone text the
+			// key stays exactly as in 2.1.x, so messages closed before the upgrade stay closed.
+			$seen = $html_m === '' ? $html : $html . '|m|' . $html_m;
 
 			$countdown = '';
 			if (!empty($row['countdown']) && !empty($row['date_end'])) {
@@ -164,11 +172,24 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 			// Replace {countdown} only in text, never inside a tag/attribute.
 			list($html, $replaced) = $this->abp->replaceToken($html, '{countdown}', $countdown);
 
-			if ($replaced) {
+			if ($html_m !== '') {
+				// Phone text: its own {countdown}, or the timer after it — like the normal text.
+				list($html_m, $replaced_m) = $this->abp->replaceToken($html_m, '{countdown}', $countdown);
+
+				if (!$replaced && $countdown !== '') {
+					$html .= ' ' . $countdown;
+				}
+
+				if (!$replaced_m && $countdown !== '') {
+					$html_m .= ' ' . $countdown;
+				}
+
+				$countdown = '';
+			} elseif ($replaced) {
 				$countdown = '';
 			}
 
-			if (trim(strip_tags($html)) === '' && $countdown === '') {
+			if (trim(strip_tags($html)) === '' && trim(strip_tags($html_m)) === '' && $countdown === '') {
 				continue;
 			}
 
@@ -181,6 +202,8 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 				// an HTML-mode switch or a visibility/date edit keeps it closed; a visible change shows it again.
 				'key'        => substr(md5($row['message_id'] . '|' . $seen . '|' . $link_text . '|' . $link . '|' . $row['icon'] . '|' . $language_id), 0, 12),
 				'html'       => $html,           // already safe HTML
+				'html_m'     => $html_m,         // optional phone text (below 768 px), already safe HTML
+				'device'     => isset($row['device']) && in_array($row['device'], array('desktop', 'mobile'), true) ? $row['device'] : 'all',
 				'countdown'  => $countdown,      // built above, safe
 				'bg_color'   => $this->abp->color($row['bg_color'], '#222222'),
 				'text_color' => $this->abp->color($row['text_color'], '#ffffff'),
@@ -188,7 +211,7 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 				'link'       => $link,
 				'link_text'  => $link_text,
 				'new_tab'    => !empty($row['link_new_tab']),
-				'wrap_link'  => $link !== '' && $link_text === '' && stripos($html, '<a ') === false,
+				'wrap_link'  => $link !== '' && $link_text === '' && stripos($html . $html_m, '<a ') === false,
 				// Lets the script hide a message when its end time passes while the page is open.
 				'end'        => !empty($row['date_end']) && strtotime($row['date_end']) ? strtotime($row['date_end']) * 1000 : 0
 			);
@@ -219,6 +242,8 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 			'fallback'     => $this->fallback,
 			'dismiss_days' => $this->clamp($this->config->get(self::CODE . '_dismiss_days'), 0, 365, 1),
 			'version'      => self::VERSION,
+			// Statistics endpoint (counters only); empty until the 2.2.0 columns exist.
+			'track'        => $schema >= 6 ? str_replace('&amp;', '&', $this->url->link(self::ROUTE . $this->sep() . 'track')) : '',
 			'now'          => time() * 1000, // server clock: countdown/expiry must not trust the visitor's clock
 			'label'        => $this->language->get('abp_text_label'),
 			'close'        => $this->language->get('abp_text_close'),
@@ -226,6 +251,47 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 		);
 
 		return $this->load->view(self::ROUTE, $data);
+	}
+
+	/**
+	 * Statistics endpoint (POST id + type). Counters only: no personal data is read or stored. Each message
+	 * counts at most one view and one click per OpenCart session, and a session counts at most 100 events.
+	 * Always answers with an empty 204 response and never outputs errors.
+	 */
+	public function track(): void {
+		try {
+			if (($this->request->server['REQUEST_METHOD'] ?? '') === 'POST' && $this->config->get(self::CODE . '_status') && (int)$this->config->get(self::CODE . '_schema') >= 6) {
+				$id   = isset($this->request->post['id']) && is_string($this->request->post['id']) && preg_match('/^\d{1,10}$/', $this->request->post['id']) ? (int)$this->request->post['id'] : 0;
+				$type = isset($this->request->post['type']) && is_string($this->request->post['type']) ? $this->request->post['type'] : '';
+
+				if ($id > 0 && in_array($type, ['view', 'click'], true)) {
+					$done = isset($this->session->data['abp_track']) && is_array($this->session->data['abp_track']) ? $this->session->data['abp_track'] : [];
+					$key  = $type[0] . $id;
+
+					if (!isset($done[$key]) && count($done) < 100) {
+						$done[$key] = 1;
+						$this->session->data['abp_track'] = $done;
+
+						$this->load->model(self::ROUTE);
+						$this->model_extension_announcement_bar_pro_module_announcement_bar_pro->track($id, $type);
+					}
+				}
+			}
+		} catch (\Throwable $e) {
+			// Statistics must never produce an error page.
+		}
+
+		if (!headers_sent()) {
+			http_response_code(204);
+			header('Cache-Control: no-store');
+		}
+
+		$this->response->setOutput('');
+	}
+
+	/** Method separator: "." from OpenCart 4.0.2.0, "|" in 4.0.0.x–4.0.1.x. */
+	private function sep(): string {
+		return version_compare(VERSION, '4.0.2.0', '>=') ? '.' : '|';
 	}
 
 	/**
