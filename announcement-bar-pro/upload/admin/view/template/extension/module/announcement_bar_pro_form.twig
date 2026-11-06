@@ -93,6 +93,7 @@
                 </div>
               </div>
 
+              {% if color_auto %}<p class="help-block text-info">{{ text_color_auto_note }}</p>{% endif %}
               {% for key in ['bg_color', 'text_color'] %}
               <div class="form-group required">
                 <label class="col-sm-2 control-label" for="input-{{ key }}">{{ attribute(_context, 'entry_' ~ key) }}</label>

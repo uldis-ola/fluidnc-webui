@@ -1,4 +1,4 @@
-<div id="abp-bar" class="abp abp-pos-{{ position }}{% if sticky %} abp-sticky{% endif %} abp-mode-{{ mode }}" role="region" aria-label="{{ label|e }}" data-days="{{ dismiss_days }}" data-interval="{{ interval }}" data-speed="{{ speed }}" data-mode="{{ mode }}" data-now="{{ now }}" data-days-label="{{ days|e }}" style="font-size:{{ font_size }}px;background-color:{{ items[0].bg_color }};color:{{ items[0].text_color }};">
+<div id="abp-bar" class="abp abp-pos-{{ position }}{% if sticky %} abp-sticky{% endif %} abp-mode-{{ mode }}" role="region" aria-label="{{ label|e }}" data-days="{{ dismiss_days }}" data-interval="{{ interval }}" data-speed="{{ speed }}" data-mode="{{ mode }}" data-now="{{ now }}" data-color="{{ color_mode }}" data-dismissible="{{ dismissible ? 1 : 0 }}" data-fallback="{{ fallback ? 1 : 0 }}" data-days-label="{{ days|e }}" style="font-size:{{ font_size }}px;background-color:{{ items[0].bg_color }};color:{{ items[0].text_color }};">
   <div class="abp-viewport">
     <div class="abp-track">
       {% for item in items %}
@@ -13,6 +13,6 @@
   </div>
   {% if dismissible %}<button type="button" class="abp-close" aria-label="{{ close|e }}" title="{{ close|e }}" style="color:{{ items[0].text_color }};">&times;</button>{% endif %}
 </div>
-{% if dismissible %}<script src="catalog/view/javascript/announcement_bar_pro/announcement_bar_pro_pre.js?v={{ version|e('url') }}"></script>{% endif %}
+<script src="catalog/view/javascript/announcement_bar_pro/announcement_bar_pro_pre.js?v={{ version|e('url') }}"></script>
 <link rel="stylesheet" href="catalog/view/javascript/announcement_bar_pro/announcement_bar_pro.css?v={{ version|e('url') }}" />
 <script src="catalog/view/javascript/announcement_bar_pro/announcement_bar_pro.js?v={{ version|e('url') }}" defer></script>

@@ -1,12 +1,13 @@
 <?php
+defined('VERSION') || exit; // not callable directly (in the universal package these files also sit, unused, inside OpenCart 4)
 /**
  * Announcement Bar Pro — admin model (OpenCart 3.0.x)
  * Tables: {prefix}abp_message, {prefix}abp_message_description
- * @version 2.0.5
+ * @version 2.1.0
  */
 class ModelExtensionModuleAnnouncementBarPro extends Model {
 	const CODE           = 'module_announcement_bar_pro';
-	const SCHEMA_VERSION = 3;
+	const SCHEMA_VERSION = 4;
 
 	/**
 	 * Creates tables (if missing), migrates v1 settings, fills missing default settings.
@@ -97,10 +98,36 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 
 		unset($settings[self::CODE . '_text'], $settings[self::CODE . '_bg_color'], $settings[self::CODE . '_text_color']);
 
+		// Schema 4: shops upgraded from any older version (incl. 1.0.0, which had no schema key) keep
+		// their own message colours; only a fresh install starts with automatic colours.
+		if ($settings && !isset($settings[self::CODE . '_color_mode'])) {
+			$settings[self::CODE . '_color_mode'] = 'custom';
+		}
+
 		$settings = array_merge($defaults, $settings);
 		$settings[self::CODE . '_schema'] = self::SCHEMA_VERSION;
 
 		$this->model_setting_setting->editSetting(self::CODE, $settings);
+
+		// Schema 4 adds the footer fallback event: re-register events, but only while the module is installed.
+		$this->registerEvents();
+	}
+
+	/**
+	 * Header event + footer fallback (themes without <body> in the header). Only while installed,
+	 * so opening the module page after "Uninstall" cannot switch the bar back on.
+	 */
+	public function registerEvents($force = false) {
+		$this->load->model('setting/extension');
+
+		if (!$force && !in_array('announcement_bar_pro', $this->model_setting_extension->getInstalled('module'), true)) {
+			return;
+		}
+
+		$this->load->model('setting/event');
+		$this->model_setting_event->deleteEventByCode('announcement_bar_pro');
+		$this->model_setting_event->addEvent('announcement_bar_pro', 'catalog/view/common/header/after', 'extension/module/announcement_bar_pro/injectBar');
+		$this->model_setting_event->addEvent('announcement_bar_pro', 'catalog/view/common/footer/after', 'extension/module/announcement_bar_pro/injectBarFooter');
 	}
 
 	public function getDefaultSettings() {
@@ -119,6 +146,7 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 			self::CODE . '_default_bg_color'   => '#222222',
 			self::CODE . '_default_text_color' => '#ffffff',
 			self::CODE . '_delete_data'        => 0,
+			self::CODE . '_color_mode'         => 'auto',
 			self::CODE . '_schema'             => self::SCHEMA_VERSION
 		);
 	}

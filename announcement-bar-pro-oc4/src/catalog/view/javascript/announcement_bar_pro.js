@@ -1,4 +1,4 @@
-/* Announcement Bar Pro v2.0.5 — no dependencies */
+/* Announcement Bar Pro v2.1.0 — no dependencies. Adapts itself to the shop theme (see "Automatic adaptation"). */
 (function () {
   'use strict';
 
@@ -19,6 +19,146 @@
     }
 
     function items() { return bar.querySelectorAll('.abp-item'); }
+
+    /* ---------------- Automatic adaptation to the theme ----------------
+       Works on any theme without settings:
+       - fixed / sticky headers stuck to the top are moved down below the bar while the bar is on screen;
+       - fixed elements stuck to the bottom (cookie banners, mobile tab bars) lift a bottom bar above them;
+       - the bar stacks above those elements (z-index);
+       - "Automatic" colours take the theme's main colour and a readable text colour;
+       - icons are dropped when the theme has no Font Awesome (no empty squares). */
+    var isTop = !bar.classList.contains('abp-pos-bottom');
+    var touched = [];   // elements whose inline "top" we changed: {el, value, priority}
+
+    function px(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }
+
+    function candidates() {
+      return document.querySelectorAll('body > *, body > * > *, body > * > * > *, header, nav, [class*="sticky"], [class*="fixed"], [id*="header"], [class*="header"], [class*="navbar"], [class*="cookie"], [id*="cookie"], [class*="consent"]');
+    }
+
+    // Visible, wide fixed/sticky elements resting on the top (or bottom) edge of the window.
+    function edgeElements(edge) {
+      var out = [], list = candidates(), vw = window.innerWidth, vh = window.innerHeight;
+      for (var i = 0; i < list.length; i++) {
+        var el = list[i];
+        if (el === bar || bar.contains(el) || el.contains(bar) || (el.className && String(el.className).indexOf('abp-spacer') !== -1) || out.indexOf(el) !== -1) { continue; }
+        var cs = window.getComputedStyle(el);
+        if ((cs.position !== 'fixed' && cs.position !== 'sticky') || cs.display === 'none' || cs.visibility === 'hidden') { continue; }
+        var r = el.getBoundingClientRect();
+        if (r.width < vw * 0.5 || r.height <= 0 || r.height > vh * 0.6) { continue; }
+        if (edge === 'top') {
+          var orig = el.getAttribute('data-abp-top');
+          var top = orig !== null ? px(orig) : (cs.top === 'auto' ? NaN : px(cs.top));
+          if (isNaN(top) || top > 2) { continue; }
+        } else {
+          if (cs.position !== 'fixed' || cs.bottom === 'auto' || px(cs.bottom) > 2) { continue; }
+        }
+        // Skip elements nested in one we already have (the outer one moves them all).
+        var nested = false;
+        for (var j = 0; j < out.length; j++) { if (out[j].contains(el)) { nested = true; break; } }
+        if (!nested) { out.push(el); }
+      }
+      return out;
+    }
+
+    function setTop(el, value) {
+      if (el.getAttribute('data-abp-top') === null) {
+        el.setAttribute('data-abp-top', '0');
+        touched.push({ el: el, value: el.style.getPropertyValue('top'), priority: el.style.getPropertyPriority('top') });
+      }
+      el.style.setProperty('top', value + 'px', 'important');
+    }
+
+    function restoreEdges() {
+      touched.forEach(function (t) {
+        t.el.style.removeProperty('top');
+        if (t.value) { t.el.style.setProperty('top', t.value, t.priority); }
+        t.el.removeAttribute('data-abp-top');
+      });
+      touched = [];
+      bar.style.bottom = '';
+    }
+
+    function adaptEdges() {
+      if (bar.style.display === 'none') { restoreEdges(); return; }
+      var maxZ = 0;
+      if (isTop) {
+        var br = bar.getBoundingClientRect(), below = Math.max(0, Math.round(br.bottom));
+        edgeElements('top').forEach(function (el) {
+          // Only a header that actually covers the bar is moved; one the theme already pushes content
+          // below (body padding) leaves the bar visible underneath it and stays where it is.
+          var h = el.getBoundingClientRect().height, wasTouched = el.getAttribute('data-abp-top') !== null;
+          var covers = br.top < h - 1 && br.bottom > 0;
+          if (covers || wasTouched) { setTop(el, covers ? below : 0); }
+          var z = parseInt(window.getComputedStyle(el).zIndex, 10);
+          if (!isNaN(z)) { maxZ = Math.max(maxZ, z); }
+        });
+      } else {
+        var lift = 0;
+        edgeElements('bottom').forEach(function (el) {
+          lift = Math.max(lift, Math.round(el.getBoundingClientRect().height));
+          var z = parseInt(window.getComputedStyle(el).zIndex, 10);
+          if (!isNaN(z)) { maxZ = Math.max(maxZ, z); }
+        });
+        bar.style.bottom = lift ? lift + 'px' : '';
+      }
+      // Stay above the theme's own fixed bars (default z-index is 1030).
+      bar.style.zIndex = maxZ >= 1030 ? String(maxZ + 1) : '';
+    }
+
+    function parseRgb(c) {
+      var m = /rgba?\(([^)]+)\)/.exec(c || '');
+      if (!m) { return null; }
+      var p = m[1].split(/[\s,\/]+/).filter(function (x) { return x !== ''; }).map(parseFloat);
+      if (p.length < 3 || (p.length > 3 && p[3] === 0)) { return null; }
+      return p.slice(0, 3);
+    }
+
+    function luminance(rgb) {
+      var c = rgb.map(function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+      return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    }
+
+    // The theme's main colour: primary buttons, then the menu / navbar, then the link colour.
+    function themeColour() {
+      var probes = ['.btn-primary', '#menu', '.navbar-inverse', '#top-menu', '.main-menu', '.navbar', 'header nav', 'button[type="submit"]', '.btn', 'header'];
+      for (var i = 0; i < probes.length; i++) {
+        var els = document.querySelectorAll(probes[i]);
+        for (var j = 0; j < els.length && j < 6; j++) {
+          if (bar.contains(els[j]) || !els[j].getBoundingClientRect().width) { continue; }
+          var rgb = parseRgb(window.getComputedStyle(els[j]).backgroundColor);
+          if (rgb) { var l = luminance(rgb); if (l < 0.8 && l > 0.005) { return rgb; } }
+        }
+      }
+      var links = document.querySelectorAll('a[href]');
+      for (var k = 0; k < links.length && k < 40; k++) {
+        if (bar.contains(links[k])) { continue; }
+        var c = parseRgb(window.getComputedStyle(links[k]).color);
+        if (c && luminance(c) < 0.5) { return c; }
+      }
+      return null;
+    }
+
+    function applyAutoColours() {
+      if (bar.getAttribute('data-color') !== 'auto') { return; }
+      var rgb = themeColour();
+      if (rgb) {
+        var bg = 'rgb(' + rgb.map(Math.round).join(',') + ')';
+        var fg = luminance(rgb) > 0.4 ? '#111111' : '#ffffff';
+        var list = items();
+        for (var i = 0; i < list.length; i++) { list[i].style.backgroundColor = bg; list[i].style.color = fg; }
+        bar.querySelectorAll('.abp-link, .abp-btn').forEach(function (a) { a.style.color = fg; a.style.borderColor = fg; });
+        paintBar(list[index] || list[0]);
+      }
+      bar.classList.remove('abp-auto-pending');
+    }
+
+    // Font Awesome missing in the theme → remove icons instead of showing empty boxes.
+    function checkIcons() {
+      bar.querySelectorAll('i[class*="fa-"]').forEach(function (icon) {
+        if (!/awesome/i.test(window.getComputedStyle(icon).fontFamily || '')) { icon.parentNode.removeChild(icon); }
+      });
+    }
 
     function paintBar(item) {
       if (!item) { return; }
@@ -55,6 +195,7 @@
           sp.parentNode.removeChild(sp);
         }
       }
+      adaptEdges();
       if (bar.classList.contains('abp-sticky')) {
         // CSS sticky works only when <body> is as tall as the page; otherwise pin the bar and keep its space.
         var broken = document.body.offsetHeight < document.documentElement.scrollHeight - 2 || wrappers().length > 0;
@@ -130,6 +271,7 @@
       if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
       bar.style.display = 'none';
       fitBody();
+      restoreEdges();
     }
 
     function pad(n) { return (n < 10 ? '0' : '') + n; }
@@ -215,11 +357,25 @@
       resizeTimer = setTimeout(relayout, 200);
     });
 
+    // Headers that become fixed only after scrolling: re-check the edges while scrolling (throttled).
+    var edgeQueued = false, lastScan = 0;
+    window.addEventListener('scroll', function () {
+      if (edgeQueued) { return; }
+      edgeQueued = true;
+      window.requestAnimationFrame(function () {
+        edgeQueued = false;
+        var t = Date.now();
+        if (touched.length || t - lastScan > 250) { lastScan = t; adaptEdges(); }
+      });
+    }, { passive: true });
+
     tick();
     if (bar.querySelector('.abp-countdown, .abp-item[data-end]')) { tickTimer = setInterval(tick, 1000); }
     relayout();
-    // Web fonts / icons can change heights after load.
-    window.addEventListener('load', relayout);
+
+    function afterLoad() { checkIcons(); applyAutoColours(); relayout(); }
+    // Web fonts, icons and theme colours are final only after load.
+    if (document.readyState === 'complete') { afterLoad(); } else { window.addEventListener('load', afterLoad); }
   }
 
   if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }

@@ -1,4 +1,5 @@
 <?php
+defined('VERSION') || exit; // not callable directly (in the universal package these files also sit, unused, inside OpenCart 4)
 // Heading
 $_['heading_title']              = 'Announcement Bar Pro';
 
@@ -121,3 +122,8 @@ $_['text_orphan_customer_groups'] = 'This message was limited to customer groups
 $_['error_orphan_stores']        = 'Choose at least one store — the stores this message was limited to were deleted.';
 $_['error_orphan_customer_groups'] = 'Choose at least one customer group — the groups this message was limited to were deleted.';
 $_['error_nothing_selected']     = 'Select at least one message to delete.';
+$_['entry_color_mode']           = 'Colours';
+$_['text_color_auto']            = 'Automatic — match the shop theme';
+$_['text_color_custom']          = 'Custom — each message uses its own colours';
+$_['help_color_mode']            = 'Automatic: the bar takes the main colour of your theme (buttons/menu) and picks readable text. Custom: the colours set on each message.';
+$_['text_color_auto_note']       = 'Colours are set to Automatic in Settings: the bar uses the theme colour. The colours below apply when you switch to Custom.';

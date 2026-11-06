@@ -1,4 +1,5 @@
 <?php
+defined('VERSION') || exit; // not callable directly (in the universal package these files also sit, unused, inside OpenCart 4)
 // Heading
 $_['heading_title']              = 'Announcement Bar Pro';
 
@@ -121,3 +122,8 @@ $_['text_orphan_customer_groups'] = 'Šis paziņojums bija ierobežots uz klient
 $_['error_orphan_stores']        = 'Izvēlieties vismaz vienu veikalu — veikali, uz kuriem paziņojums bija ierobežots, ir dzēsti.';
 $_['error_orphan_customer_groups'] = 'Izvēlieties vismaz vienu klientu grupu — grupas, uz kurām paziņojums bija ierobežots, ir dzēstas.';
 $_['error_nothing_selected']     = 'Atzīmējiet vismaz vienu paziņojumu, ko dzēst.';
+$_['entry_color_mode']           = 'Krāsas';
+$_['text_color_auto']            = 'Automātiski — pēc veikala tēmas';
+$_['text_color_custom']          = 'Pielāgotas — katram paziņojumam savas krāsas';
+$_['help_color_mode']            = 'Automātiski: josla ņem tēmas galveno krāsu (pogas/izvēlne) un izvēlas labi lasāmu teksta krāsu. Pielāgotas: katram paziņojumam iestatītās krāsas.';
+$_['text_color_auto_note']       = 'Iestatījumos krāsas ir „Automātiski”: josla izmanto tēmas krāsu. Zemāk norādītās krāsas darbosies, ja izvēlēsieties „Pielāgotas”.';

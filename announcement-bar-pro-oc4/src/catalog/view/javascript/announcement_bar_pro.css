@@ -1,4 +1,4 @@
-/* Announcement Bar Pro v2.0.5 */
+/* Announcement Bar Pro v2.1.0 — shared by the OpenCart 3 and OpenCart 4 packages */
 .abp{position:relative;width:100%;box-sizing:border-box;line-height:1.4;z-index:1030;overflow:hidden;font-family:inherit;}
 .abp *,.abp *:before,.abp *:after{box-sizing:border-box;}
 .abp.abp-sticky{position:-webkit-sticky;position:sticky;top:0;}
@@ -34,6 +34,13 @@
 @media (max-width:767px){.abp-item{padding-left:12px;padding-right:44px;}.abp-btn{margin-left:6px;white-space:normal;}}
 @media (prefers-reduced-motion:reduce){.abp-mode-rotate .abp-item.abp-active{animation:none;}}
 @media print{.abp{display:none!important;}}
-/* OpenCart 4 default theme: the empty, fixed #alert toast container sits over the top-right corner
-   and swallows clicks on the close button. An empty container never needs pointer events. */
+/* Automatic colours: hidden only until the theme colour is read (max 2 s, even if the script is blocked). */
+.abp.abp-auto-pending{visibility:hidden;animation:abp-reveal 0s linear 2s forwards;}
+@keyframes abp-reveal{to{visibility:visible}}
+/* Right-to-left languages (Arabic, Hebrew, Persian …): mirror the close button and spacing. */
+[dir="rtl"] .abp-close{right:auto;left:8px;}
+[dir="rtl"] .abp-btn{margin-left:0;margin-right:10px;}
+@media (max-width:767px){[dir="rtl"] .abp-item{padding-left:44px;padding-right:12px;}[dir="rtl"] .abp-btn{margin-right:6px;}}
+/* Some themes (OpenCart 4.0 default) keep an empty fixed #alert toast container over the top-right corner,
+   which would swallow clicks on the close button. An empty container never needs pointer events. */
 #alert:empty{pointer-events:none;}

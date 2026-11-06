@@ -3,10 +3,10 @@ namespace Opencart\Admin\Controller\Extension\AnnouncementBarPro\Module;
 /**
  * Announcement Bar Pro — admin controller (OpenCart 4.0.x / 4.1.x)
  *
- * @version 2.0.5
+ * @version 2.1.0
  */
 class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
-	public const VERSION       = '2.0.5';
+	public const VERSION       = '2.1.0';
 	public const CODE          = 'module_announcement_bar_pro';
 	public const EVENT_CODE    = 'announcement_bar_pro';
 	public const ROUTE         = 'extension/announcement_bar_pro/module/announcement_bar_pro';
@@ -118,6 +118,10 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 				$json['error']['position'] = $this->language->get('error_value');
 			}
 
+			if (!in_array($this->postValue('color_mode'), ['auto', 'custom'], true)) {
+				$json['error']['color_mode'] = $this->language->get('error_value');
+			}
+
 			if (!in_array($this->postValue('mode'), ['rotate', 'marquee', 'stack'], true)) {
 				$json['error']['mode'] = $this->language->get('error_value');
 			}
@@ -145,6 +149,7 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 			}
 
 			$out['position']           = $this->postValue('position');
+			$out['color_mode']         = $this->postValue('color_mode');
 			$out['mode']               = $this->postValue('mode');
 			$out['default_bg_color']   = $this->abp->color($this->postValue('default_bg_color'));
 			$out['default_text_color'] = $this->abp->color($this->postValue('default_text_color'));
@@ -186,6 +191,7 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 		$data['max_text']      = self::MAX_TEXT;
 		$data['max_link_text'] = self::MAX_LINK_TEXT;
 		$data['allow_html']    = (bool)$this->config->get(self::CODE . '_allow_html');
+		$data['color_auto']    = $this->config->get(self::CODE . '_color_mode') === 'auto';
 		$data['orphaned']      = $this->orphanedTargets($message);
 
 		$data['store_list'] = [['store_id' => 0, 'name' => $this->config->get('config_name') . $this->language->get('text_default')]];
@@ -327,20 +333,15 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 			return;
 		}
 
-		$this->load->model('setting/event');
-
-		$this->model_setting_event->deleteEventByCode(self::EVENT_CODE);
-		$this->model_setting_event->addEvent([
-			'code'        => self::EVENT_CODE,
-			'description' => 'Announcement Bar Pro: inject the bar after <body>',
-			'trigger'     => 'catalog/view/common/header/after',
-			'action'      => self::ROUTE . $this->sep() . 'injectBar',
-			'status'      => 1,
-			'sort_order'  => 0
-		]);
-
 		$this->load->model(self::ROUTE);
 		$this->model_extension_announcement_bar_pro_module_announcement_bar_pro->ensureSchema();
+		$this->model_extension_announcement_bar_pro_module_announcement_bar_pro->registerEvents(true);
+
+		// Works out of the box: a fresh install (no messages yet) is switched on; kept messages stay off.
+		if (!$this->model_extension_announcement_bar_pro_module_announcement_bar_pro->getTotalMessages()) {
+			$this->load->model('setting/setting');
+			$this->model_setting_setting->editValue(self::CODE, self::CODE . '_status', '1');
+		}
 	}
 
 	public function uninstall(): void {
@@ -616,7 +617,7 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 	}
 
 	private function settingKeys(): array {
-		return ['status', 'position', 'sticky', 'mode', 'interval', 'speed', 'font_size', 'padding', 'dismissible', 'dismiss_days', 'allow_html', 'default_bg_color', 'default_text_color', 'delete_data'];
+		return ['status', 'position', 'sticky', 'mode', 'interval', 'speed', 'font_size', 'padding', 'dismissible', 'dismiss_days', 'allow_html', 'default_bg_color', 'default_text_color', 'delete_data', 'color_mode'];
 	}
 
 	private function postValue(string $key): string {

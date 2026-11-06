@@ -169,6 +169,17 @@
                     <div id="error-padding" class="invalid-feedback"></div>
                   </div>
                 </div>
+                <div class="row mb-3">
+                  <label for="input-color-mode" class="col-sm-3 col-form-label">{{ entry_color_mode }}</label>
+                  <div class="col-sm-9">
+                    <select name="module_announcement_bar_pro_color_mode" id="input-color-mode" class="form-select">
+                      <option value="auto"{% if setting.color_mode == 'auto' %} selected{% endif %}>{{ text_color_auto }}</option>
+                      <option value="custom"{% if setting.color_mode != 'auto' %} selected{% endif %}>{{ text_color_custom }}</option>
+                    </select>
+                    <div class="form-text">{{ help_color_mode }}</div>
+                    <div id="error-color-mode" class="invalid-feedback"></div>
+                  </div>
+                </div>
                 {% for key in ['default_bg_color', 'default_text_color'] %}
                   <div class="row mb-3">
                     <label for="input-{{ key|replace({'_': '-'}) }}" class="col-sm-3 col-form-label">{{ attribute(_context, 'entry_' ~ key) }}</label>

@@ -4,11 +4,11 @@ namespace Opencart\Admin\Model\Extension\AnnouncementBarPro\Module;
  * Announcement Bar Pro — admin model (OpenCart 4.0.2+ / 4.1)
  * Tables: {prefix}abp_message, {prefix}abp_message_description
  *
- * @version 2.0.5
+ * @version 2.1.0
  */
 class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 	public const CODE           = 'module_announcement_bar_pro';
-	public const SCHEMA_VERSION = 3;
+	public const SCHEMA_VERSION = 4;
 
 	/**
 	 * Creates tables (if missing) and fills missing default settings. Idempotent.
@@ -52,10 +52,61 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 			PRIMARY KEY (`message_id`, `language_id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
 
+		// Schema 4: shops upgraded from any older version (incl. 1.0.0, which had no schema key) keep
+		// their own message colours; only a fresh install starts with automatic colours.
+		if ($settings && !isset($settings[self::CODE . '_color_mode'])) {
+			$settings[self::CODE . '_color_mode'] = 'custom';
+		}
+
 		$settings = array_merge($this->getDefaultSettings(), $settings);
 		$settings[self::CODE . '_schema'] = self::SCHEMA_VERSION;
 
 		$this->model_setting_setting->editSetting(self::CODE, $settings);
+
+		// Schema 4 adds the footer fallback event: re-register events, but only while the module is installed.
+		$this->registerEvents();
+	}
+
+	/**
+	 * Header event + footer fallback (themes without <body> in the header). Only while installed.
+	 */
+	public function registerEvents(bool $force = false): void {
+		$this->load->model('setting/extension');
+
+		if (!$force && !$this->model_setting_extension->getExtensionByCode('module', 'announcement_bar_pro')) {
+			return;
+		}
+
+		$sep   = version_compare(VERSION, '4.0.2.0', '>=') ? '.' : '|';
+		$route = 'extension/announcement_bar_pro/module/announcement_bar_pro';
+
+		$this->load->model('setting/event');
+		$this->model_setting_event->deleteEventByCode('announcement_bar_pro');
+
+		foreach (['header' => 'injectBar', 'footer' => 'injectBarFooter'] as $view => $method) {
+			$event = [
+				'code'        => 'announcement_bar_pro',
+				'description' => 'Announcement Bar Pro: ' . ($view === 'header' ? 'inject the bar after <body>' : 'fallback when the header has no <body>'),
+				'trigger'     => 'catalog/view/common/' . $view . '/after',
+				'action'      => $route . $sep . $method,
+				'status'      => 1,
+				'sort_order'  => 0
+			];
+
+			if (version_compare(VERSION, '4.0.1.0', '<')) {
+				// OpenCart 4.0.0.x: addEvent($code, $description, $trigger, $action, $status, $sort_order)
+				$this->model_setting_event->addEvent($event['code'], $event['description'], $event['trigger'], $event['action'], true, 0);
+			} else {
+				// OpenCart 4.0.1.0+: addEvent(array $data)
+				$this->model_setting_event->addEvent($event);
+			}
+		}
+	}
+
+	public function getTotalMessages(): int {
+		$query = $this->db->query("SELECT COUNT(*) AS `total` FROM `" . DB_PREFIX . "abp_message`");
+
+		return (int)$query->row['total'];
 	}
 
 	public function getDefaultSettings(): array {
@@ -74,6 +125,7 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 			self::CODE . '_default_bg_color'   => '#222222',
 			self::CODE . '_default_text_color' => '#ffffff',
 			self::CODE . '_delete_data'        => 0,
+			self::CODE . '_color_mode'         => 'auto',
 			self::CODE . '_schema'             => self::SCHEMA_VERSION
 		];
 	}

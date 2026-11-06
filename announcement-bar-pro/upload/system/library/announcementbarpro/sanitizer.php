@@ -2,10 +2,11 @@
 /**
  * Announcement Bar Pro — text / HTML / URL sanitizer.
  * Shared by admin (on save) and catalog (on render, defence in depth).
- * Load: $this->load->library('announcementbarpro/sanitizer'); → $this->sanitizer
- * @version 2.0.2
+ * @version 2.1.0
  */
 namespace Announcementbarpro;
+
+\defined('VERSION') || exit; // not callable directly (in the universal package these files also sit, unused, inside OpenCart 4)
 
 class Sanitizer {
 	/** Allowed inline tags. Everything else is unwrapped (content kept) or dropped. */

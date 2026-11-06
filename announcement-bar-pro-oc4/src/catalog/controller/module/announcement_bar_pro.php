@@ -2,47 +2,92 @@
 namespace Opencart\Catalog\Controller\Extension\AnnouncementBarPro\Module;
 /**
  * Announcement Bar Pro — catalog controller (OpenCart 4.0.x / 4.1.x)
- * Injected via event: catalog/view/common/header/after
+ * Injected via events: catalog/view/common/header/after (footer/after as automatic fallback)
  *
- * @version 2.0.5
+ * @version 2.1.0
  */
 class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
-	public const VERSION = '2.0.5';
+	public const VERSION = '2.1.0';
 	public const CODE    = 'module_announcement_bar_pro';
 	public const ROUTE   = 'extension/announcement_bar_pro/module/announcement_bar_pro';
 
 	/** @var \Opencart\System\Library\Extension\AnnouncementBarPro\Sanitizer */
 	private $abp;
 
+	/** Set once the bar is in this page, so the footer fallback never adds a second one. */
+	/** True while rendering from the footer fallback: the script then moves a top bar to the top of <body>. */
+	private $fallback = false;
+
+	private static bool $injected = false;
+
 	/**
-	 * Event handler. Inserts the bar right after the opening <body> tag of the header output.
+	 * Event handler (header). Inserts the bar right after the opening <body> tag of the header output.
 	 */
 	public function injectBar(string &$route = '', array &$args = [], &$output = ''): void {
-		if (!$this->config->get(self::CODE . '_status') || !is_string($output) || stripos($output, '<body') === false) {
+		if (self::$injected || !$this->config->get(self::CODE . '_status') || !is_string($output) || stripos($output, '<body') === false) {
 			return;
 		}
 
+		// First real <body> tag — skip any "<body" inside HTML comments or <script> blocks.
+		$this->inject($output, '#<!--.*?-->(*SKIP)(*FAIL)|<script\b.*?</script>(*SKIP)(*FAIL)|<body\b[^>]*>#is', true);
+	}
+
+	/**
+	 * Event handler (footer) — automatic fallback for themes whose header template has no <body> tag
+	 * (or that render the header through another route). The bar goes before </body>; the bar's own
+	 * script then moves it to the top of the page before the first paint.
+	 */
+	public function injectBarFooter(string &$route = '', array &$args = [], &$output = ''): void {
+		if (self::$injected || !$this->config->get(self::CODE . '_status') || !is_string($output) || $output === '') {
+			return;
+		}
+
+		$this->fallback = true;
+
+		if (!$this->inject($output, '#<!--.*?-->(*SKIP)(*FAIL)|<script\b.*?</script>(*SKIP)(*FAIL)|</body\s*>#is', false)) {
+			// No </body> in the footer either: append; the browser still puts it inside <body>.
+			$this->inject($output, '', false);
+		}
+	}
+
+	/**
+	 * Renders the bar and places it after (header) or before (footer) the matched tag.
+	 * Returns false only when the pattern was not found; never throws.
+	 */
+	private function inject(&$output, string $pattern, bool $after): bool {
 		try {
 			$html = $this->render();
 		} catch (\Throwable $e) {
 			// Never break the storefront because of this module.
 			$this->log->write('Announcement Bar Pro: ' . $e->getMessage());
-			return;
+			self::$injected = true;
+			return true;
 		}
 
 		if ($html === '') {
-			return;
+			self::$injected = true; // nothing to show for this page; do not render again in the footer
+			return true;
 		}
 
-		// First real <body> tag — skip any "<body" inside HTML comments or <script> blocks.
-		$result = preg_replace_callback('#<!--.*?-->(*SKIP)(*FAIL)|<script\b.*?</script>(*SKIP)(*FAIL)|<body\b[^>]*>#is', function ($m) use ($html) {
-			return $m[0] . "\n" . $html;
+		if ($pattern === '') {
+			$output .= "\n" . $html;
+			self::$injected = true;
+			return true;
+		}
+
+		$found  = false;
+		$result = preg_replace_callback($pattern, function ($m) use ($html, $after, &$found) {
+			$found = true;
+			return $after ? $m[0] . "\n" . $html : $html . "\n" . $m[0];
 		}, $output, 1);
 
-		// preg_* returns null on failure (e.g. backtrack limit): keep the original header.
-		if (is_string($result)) {
+		// preg_* returns null on failure (e.g. backtrack limit): keep the original output.
+		if (is_string($result) && $found) {
 			$output = $result;
+			self::$injected = true;
 		}
+
+		return $found;
 	}
 
 	/**
@@ -147,6 +192,8 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 			'font_size'    => $this->clamp($this->config->get(self::CODE . '_font_size'), 10, 30, 14),
 			'padding'      => $this->clamp($this->config->get(self::CODE . '_padding'), 0, 30, 8),
 			'dismissible'  => (bool)$this->config->get(self::CODE . '_dismissible'),
+			'color_mode'   => $this->config->get(self::CODE . '_color_mode') === 'auto' ? 'auto' : 'custom',
+			'fallback'     => $this->fallback,
 			'dismiss_days' => $this->clamp($this->config->get(self::CODE . '_dismiss_days'), 0, 365, 1),
 			'version'      => self::VERSION,
 			'now'          => time() * 1000, // server clock: countdown/expiry must not trust the visitor's clock

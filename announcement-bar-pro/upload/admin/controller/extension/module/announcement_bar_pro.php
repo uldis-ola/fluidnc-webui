@@ -1,10 +1,11 @@
 <?php
+defined('VERSION') || exit; // not callable directly (in the universal package these files also sit, unused, inside OpenCart 4)
 /**
  * Announcement Bar Pro — admin controller (OpenCart 3.0.x)
- * @version 2.0.5
+ * @version 2.1.0
  */
 class ControllerExtensionModuleAnnouncementBarPro extends Controller {
-	const VERSION    = '2.0.5';
+	const VERSION    = '2.1.0';
 	const CODE       = 'module_announcement_bar_pro';
 	const EVENT_CODE = 'announcement_bar_pro';
 	const ROUTE      = 'extension/module/announcement_bar_pro';
@@ -153,6 +154,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		$data['max_text']      = self::MAX_TEXT;
 		$data['max_link_text'] = self::MAX_LINK_TEXT;
 		$data['allow_html']    = (bool)$this->config->get(self::CODE . '_allow_html');
+		$data['color_auto']    = $this->config->get(self::CODE . '_color_mode') === 'auto';
 		$data['datepicker']    = $this->language->get('datepicker');
 		$data['orphaned']      = $this->orphaned;
 
@@ -252,12 +254,16 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			return;
 		}
 
-		$this->load->model('setting/event');
-		$this->model_setting_event->deleteEventByCode(self::EVENT_CODE);
-		$this->model_setting_event->addEvent(self::EVENT_CODE, 'catalog/view/common/header/after', self::ROUTE . '/injectBar');
-
 		$this->load->model(self::ROUTE);
 		$this->model_extension_module_announcement_bar_pro->ensureSchema();
+		$this->model_extension_module_announcement_bar_pro->registerEvents(true);
+
+		// Works out of the box: a fresh install (no messages yet) is switched on; adding the first
+		// message is all that is left. Kept messages from an earlier install stay switched off.
+		if (!$this->model_extension_module_announcement_bar_pro->getTotalMessages()) {
+			$this->load->model('setting/setting');
+			$this->model_setting_setting->editSettingValue(self::CODE, self::CODE . '_status', 1);
+		}
 	}
 
 	public function uninstall() {
@@ -291,6 +297,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		$p = $this->request->post;
 
 		if (!in_array($this->postValue('position'), array('top', 'bottom'), true))            $this->error['position'] = $this->language->get('error_value');
+		if (!in_array($this->postValue('color_mode'), array('auto', 'custom'), true))         $this->error['color_mode'] = $this->language->get('error_value');
 		if (!in_array($this->postValue('mode'), array('rotate', 'marquee', 'stack'), true))    $this->error['mode'] = $this->language->get('error_value');
 		if (!$this->intInRange($this->postValue('interval'), 2, 60))                           $this->error['interval'] = sprintf($this->language->get('error_range'), 2, 60);
 		if (!$this->intInRange($this->postValue('speed'), 20, 300))                            $this->error['speed'] = sprintf($this->language->get('error_range'), 20, 300);
@@ -437,7 +444,8 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			'allow_html'         => !empty($p[self::CODE . '_allow_html']) ? 1 : 0,
 			'default_bg_color'   => $this->abp->color($this->postValue('default_bg_color')),
 			'default_text_color' => $this->abp->color($this->postValue('default_text_color')),
-			'delete_data'        => !empty($p[self::CODE . '_delete_data']) ? 1 : 0
+			'delete_data'        => !empty($p[self::CODE . '_delete_data']) ? 1 : 0,
+			'color_mode'         => $this->postValue('color_mode')
 		);
 
 		$data = array();
@@ -574,7 +582,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 	}
 
 	private function settingKeys() {
-		return array('status', 'position', 'sticky', 'mode', 'interval', 'speed', 'font_size', 'padding', 'dismissible', 'dismiss_days', 'allow_html', 'default_bg_color', 'default_text_color', 'delete_data');
+		return array('status', 'position', 'sticky', 'mode', 'interval', 'speed', 'font_size', 'padding', 'dismissible', 'dismiss_days', 'allow_html', 'default_bg_color', 'default_text_color', 'delete_data', 'color_mode');
 	}
 
 	private function postValue($key) {
