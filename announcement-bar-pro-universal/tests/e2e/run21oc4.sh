@@ -1,5 +1,5 @@
 #!/bin/bash
-S=${ABP_WORK:?set ABP_WORK to a work folder (OpenCart sources + test shops)}; Z=$(cd "$(dirname "$0")/../.." && pwd)/dist/v2.1.1/announcement_bar_pro.ocmod.zip; cd "$(dirname "$0")"
+S=${ABP_WORK:?set ABP_WORK to a work folder (OpenCart sources + test shops)}; Z=$(cd "$(dirname "$0")/../.." && pwd)/dist/v2.1.2/announcement_bar_pro.ocmod.zip; cd "$(dirname "$0")"
 for v in "8113 u_old3 uold3" "8114 u_old4 uold4" "8115 u_old5 uold5" "8102 u_4023 u4023" "8103 u_4104 u4104"; do set -- $v
  ./oc4_reset.sh $2 $S/$3 >/dev/null; mysql $2 -e "DELETE FROM oc_language WHERE code='de-de'"; : > $S/$3/system/storage/logs/error.log
  E="OCBASE=http://localhost:$1/ OCDB=$2 OCDIR=$S/$3"

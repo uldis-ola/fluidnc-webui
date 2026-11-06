@@ -2,7 +2,7 @@
 defined('VERSION') || exit; // not callable directly (in the universal package these files also sit, unused, inside OpenCart 4)
 /**
  * Announcement Bar Pro — catalog model (OpenCart 3.0.x)
- * @version 2.1.1
+ * @version 2.1.2
  */
 class ModelExtensionModuleAnnouncementBarPro extends Model {
 	/**

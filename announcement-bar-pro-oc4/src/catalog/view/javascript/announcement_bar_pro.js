@@ -1,4 +1,4 @@
-/* Announcement Bar Pro v2.1.1 — no dependencies. Adapts itself to the shop theme (see "Automatic adaptation"). */
+/* Announcement Bar Pro v2.1.2 — no dependencies. Adapts itself to the shop theme (see "Automatic adaptation"). */
 (function () {
   'use strict';
 
@@ -120,6 +120,22 @@
       return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
     }
 
+    function contrast(l1, l2) {
+      return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+    }
+
+    // Text colour with the higher WCAG contrast (white or #111111). If even that stays below 4.5:1
+    // (mid-tone theme colours), the background is darkened or lightened just enough to reach it.
+    function readable(rgb) {
+      var dark = luminance([17, 17, 17]), bg = rgb.slice(), fg, toward;
+      fg = contrast(luminance(bg), 1) >= contrast(luminance(bg), dark) ? '#ffffff' : '#111111';
+      toward = fg === '#ffffff' ? 0 : 255;
+      for (var i = 0; i < 20 && contrast(luminance(bg), fg === '#ffffff' ? 1 : dark) < 4.5; i++) {
+        bg = bg.map(function (v) { return v + (toward - v) * 0.08; });
+      }
+      return { bg: bg, fg: fg };
+    }
+
     // The theme's main colour: primary buttons, then the menu / navbar, then the link colour.
     function themeColour() {
       var probes = ['.btn-primary', '#menu', '.navbar-inverse', '#top-menu', '.main-menu', '.navbar', 'header nav', 'button[type="submit"]', '.btn', 'header'];
@@ -144,8 +160,9 @@
       if (bar.getAttribute('data-color') !== 'auto') { return; }
       var rgb = themeColour();
       if (rgb) {
-        var bg = 'rgb(' + rgb.map(Math.round).join(',') + ')';
-        var fg = luminance(rgb) > 0.4 ? '#111111' : '#ffffff';
+        var pick = readable(rgb);
+        var bg = 'rgb(' + pick.bg.map(Math.round).join(',') + ')';
+        var fg = pick.fg;
         var list = items();
         for (var i = 0; i < list.length; i++) { list[i].style.backgroundColor = bg; list[i].style.color = fg; }
         bar.querySelectorAll('.abp-link, .abp-btn').forEach(function (a) { a.style.color = fg; a.style.borderColor = fg; });

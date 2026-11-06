@@ -1,4 +1,4 @@
-/* Announcement Bar Pro v2.1.1 — shared by the OpenCart 3 and OpenCart 4 packages */
+/* Announcement Bar Pro v2.1.2 — shared by the OpenCart 3 and OpenCart 4 packages */
 .abp{position:relative;width:100%;box-sizing:border-box;line-height:1.4;z-index:1030;overflow:hidden;font-family:inherit;}
 .abp *,.abp *:before,.abp *:after{box-sizing:border-box;}
 .abp.abp-sticky{position:-webkit-sticky;position:sticky;top:0;}

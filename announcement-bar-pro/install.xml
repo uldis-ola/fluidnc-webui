@@ -2,7 +2,7 @@
 <modification>
   <name>Announcement Bar Pro</name>
   <code>announcement_bar_pro</code>
-  <version>2.1.1</version>
+  <version>2.1.2</version>
   <author>3dp.lv</author>
   <link>https://3dp.lv</link>
   <!-- No core file modifications. The bar is injected via the OpenCart event

@@ -3,7 +3,7 @@
 Paziņojumu josla veikala augšā vai apakšā: akcijas, piegādes nosacījumi, svarīgas ziņas.
 *An announcement bar for the top or bottom of every store page.*
 
-- **Versija / Version:** 2.1.1
+- **Versija / Version:** 2.1.2
 - **Viena paka visām versijām / One package for all versions:** `announcement_bar_pro.ocmod.zip`
   - OpenCart **3.0.x** (tested 3.0.5.1; code uses only APIs present since 3.0.0.0), PHP 7.3+
   - OpenCart **4.0.x / 4.1.x** (tested 4.0.2.3 and 4.1.0.4; 4.0.0–4.0.1 handled in code, not runtime-tested), PHP 8.0+
@@ -47,7 +47,9 @@ Nekas nav jāiestata:
 - Core faili netiek mainīti, nav inline skriptu, nav ārēju CDN.
 
 ### Jaunināšana
-Augšupielādējiet jauno paku virs vecās (jebkuras iepriekšējās versijas) un vienreiz atveriet moduļa lapu. Ja iepriekšējā versija bija instalēta, krāsas paliek „Pielāgotas”, un rezerves notikums tiek pievienots automātiski.
+- **OpenCart 3:** augšupielādējiet jauno paku virs vecās (jebkuras iepriekšējās versijas), *Modifications → Refresh* un vienreiz atveriet moduļa lapu. Iestatījumi un paziņojumi paliek.
+- **OpenCart 4:** instalētājs nepieņem paku, kamēr vecā ir instalēta. Secība: *Modules → Announcement Bar Pro → Uninstall* → *Installer → Announcement Bar Pro → Uninstall* (sarkanā) un **Delete** → augšupielādēt jauno → **Install** → *Modules → Install*. Paziņojumi paliek (ja nav ieslēgts „Dzēst paziņojumus atinstalējot”), bet iestatījumi atgriežas noklusētie: modulis ir **izslēgts** un krāsas „Pielāgotas” — ieslēdziet tos atkārtoti *Iestatījumos*.
+- Ja iepriekšējā versija bija instalēta, krāsas paliek „Pielāgotas”, un rezerves notikums tiek pievienots automātiski.
 
 ### Atinstalēšana
 *Modules → Announcement Bar Pro → Uninstall* noņem notikumus un iestatījumus. Paziņojumi paliek, ja vien nav atzīmēts *Iestatījumi → Papildus → Dzēst paziņojumus atinstalējot*. Paku no *Extensions → Installer* noņemiet tikai pēc tam.
@@ -68,6 +70,10 @@ Augšupielādējiet jauno paku virs vecās (jebkuras iepriekšējās versijas) u
    - OpenCart 3: *Extensions → Modifications* → **Refresh** (optional).
 3. *Extensions → Extensions → Modules* → **Announcement Bar Pro** → **Install** → **Edit**.
 4. Add your first message. A fresh install is already enabled, with colours set to Automatic.
+
+### Upgrade
+- **OpenCart 3:** upload the new package over the old one, *Modifications → Refresh*, open the module page once. Settings and messages stay.
+- **OpenCart 4:** the installer refuses a package that is still installed. Order: *Modules → Announcement Bar Pro → Uninstall* → *Installer → Announcement Bar Pro → Uninstall* (red) and **Delete** → upload the new one → **Install** → *Modules → Install*. Messages stay (unless "Delete messages on uninstall" is on), but settings return to defaults: the module is **off** and colours are Custom — switch them back in *Settings*.
 
 ### Automatic theme adaptation
 - **Fixed or sticky headers** are moved below the bar while the bar is on screen. A header the theme already pads content for stays where it is.
