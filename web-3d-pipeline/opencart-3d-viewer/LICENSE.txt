@@ -1,9 +1,10 @@
 3D Product Viewer for OpenCart — Commercial Licence
 ==================================================
 
-DRAFT — fill in the bracketed fields and have this text reviewed before you sell.
+Version 1.0, 6 November 2026. Draft: to be reviewed by a lawyer before the first sale.
 
-Licensor: [Seller name / company name, registration number, address, e-mail]
+Licensor: 3DP SIA, registration No. 40203796474, Pļavu iela 10, Ādaži, Ādažu nov., LV-2164, Latvia,
+          e-mail info@3dp.lv
 Product:  3D Product Viewer for OpenCart 3.0.x ("the Software"), all versions 1.x
 
 1. Licence grant
@@ -30,8 +31,8 @@ Product:  3D Product Viewer for OpenCart 3.0.x ("the Software"), all versions 1.
    your rights under those licences for those components.
 
 5. Updates and support
-   Updates for the 1.x version line are provided free of charge for [12 months / the lifetime of version 1.x]
-   from the date of purchase. Support is provided by e-mail at [support e-mail] for [6 / 12] months.
+   Updates for the 1.x version line are provided free of charge for 12 months from the date of purchase.
+   Support is provided by e-mail at info@3dp.lv for 12 months from the date of purchase.
    Support covers installation and use of the Software; it does not cover custom development,
    theme customisation or third-party extensions.
 
@@ -47,14 +48,17 @@ Product:  3D Product Viewer for OpenCart 3.0.x ("the Software"), all versions 1.
    revenue or profit.
 
 8. Refunds
-   [State your refund policy, in line with the marketplace's rules and, for consumers, EU Directive 2011/83/EU
-   (digital content: the right of withdrawal ends once download starts with the buyer's prior consent).]
+   Because the Software is digital content, the right of withdrawal ends when the download starts with your
+   prior express consent (EU Directive 2011/83/EU, Art. 16(m)). In addition, if within 14 days of purchase the
+   Software cannot be made to work on your store and our support cannot solve the problem, write to
+   info@3dp.lv and we will refund the licence fee; you must then delete the Software.
+   Refunds are also subject to the rules of the marketplace where you bought the Software.
 
 9. Termination
    This licence ends automatically if you breach it. On termination you must stop using and delete the Software.
 
 10. Governing law
-    This licence is governed by the laws of [Latvia], without prejudice to mandatory consumer protection
+    This licence is governed by the laws of the Republic of Latvia, without prejudice to mandatory consumer protection
     rules of the buyer's country of residence.
 
-Copyright (c) 2026 [Seller name]. All rights reserved (except the third-party components listed in section 4).
+Copyright (c) 2026 3DP SIA. All rights reserved (except the third-party components listed in section 4).

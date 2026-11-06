@@ -100,6 +100,8 @@ Pilns kopsavilkums nākamajam Claude Code čatam. Datums: 2026-11-06.
 
 ### 3.2 3D modeļi īstiem produktiem
 
+- **06.11 izdarīts:** 3dp.lv produktiem 79 (dēlis), 78 (ozola paliktnis), 335 (finiera paliktnis), 333 (alumīnija žetons), 332 (ādas piekariņš ar gredzenu) — modeļi no veikala foto (virspuse perspektīvi iztaisnota, izmēri no produkta datiem), dzīvajā, Uldis apstiprināja. Ģeneratori: `opencart-3d-viewer/tools3d/make_flat.py` (spec.json) un `make_board.py`. Atlikuši: 77 (tikai zīmējums), 334 (foto rokā), 336 (pagriezts foto) — vajag foto no augšas.
+
 - Vajag īstus produktu modeļus (.fbx/.glb). Testa krēslu uz dzīvā veikala nelikt.
 - Sagatavošana:
   ```
@@ -107,6 +109,8 @@ Pilns kopsavilkums nākamajam Claude Code čatam. Datums: 2026-11-06.
   ```
 
 ### 3.3 Pirms pārdošanas Marketplace
+
+- **06.11 izdarīts:** cena **$39** (Ulda izvēle; konkurenti $25 bez AR, $99 ar AR); LICENSE aizpildīts (3DP SIA, 12 mēn. atjauninājumi + atbalsts info@3dp.lv, 14 d. atmaksa, Latvijas likums) — vēl jurista pārbaude; LISTING: demo https://3dp.lv/oak-cutting-board-with-engraving, atbalsts 2 darba d.; ekrāni 01 un 04 no dzīvā 3dp.lv. **Atliek tikai Uldim:** jurista pārbaude, OpenCart pārdevēja konts, augšupielāde marketplace.
 
 1. `LICENSE.txt`: uzņēmums, kontakti, atbalsta/atjauninājumu termiņi, atmaksa; jurista pārbaude.
 2. Cena: nav noteikta, vajag konkurentu salīdzinājumu.

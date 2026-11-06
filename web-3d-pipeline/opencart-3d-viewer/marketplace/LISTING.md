@@ -19,7 +19,7 @@ OpenCart 3.0.3.8, 3.0.4.0, 3.0.4.1, 3.0.5.0, 3.0.5.1
 > To be strict, list only 3.0.3.8, 3.0.4.1 and 3.0.5.x.
 
 ## Price
-[your price] — one store / domain, [12] months updates, [6] months support.
+$39 — one store / domain, 12 months updates, 12 months support.
 
 ## Short description (up to ~160 characters)
 Show rotatable 3D product models with augmented reality on your product pages. Upload a .glb in the
@@ -83,23 +83,23 @@ A full user guide (USER_GUIDE.md) is included in the download.
 ### Not included
 - 3D models themselves. You create or buy them (e.g. export from Blender as glTF Binary).
 - Quick-view pop-ups: the viewer is shown on the full product page.
-- OpenCart 4.x (separate version planned: [yes/no]).
+- OpenCart 4.x (not supported in this version).
 
 ## Tags
 3d, 3d model, glb, gltf, ar, augmented reality, model-viewer, product viewer, 360, product gallery,
 webxr, usdz, opencart 3
 
 ## Demo
-- Storefront demo: [link — e.g. the published demo page or your own demo store]
-- Admin demo: [demo store admin with a read-only demo user, if you provide one]
+- Storefront demo (live shop, 3dp.lv theme): https://3dp.lv/oak-cutting-board-with-engraving
+- Admin demo: not provided (screenshots 02 and 03 show the admin).
 
 ## Screenshots (in marketplace/screenshots/)
-1. `01-storefront-desktop.png` — 3D viewer in place of the gallery (default theme)
+1. `01-storefront-desktop.png` — 3D viewer above the gallery on a live shop (3dp.lv, custom theme)
 2. `02-settings.png` — settings with system check
 3. `03-product-tab.png` — "3D model" tab with upload and preview
-4. `04-storefront-mobile.png` — phone view with AR button
+4. `04-storefront-mobile.png` — phone view on the live shop (AR button appears on AR-capable phones)
 5. `05-any-theme.png` — the same module in different themes (desktop and phone)
 
 ## Support
-[support e-mail / contact form URL] — answers within [2] working days. Include your OpenCart version, theme
+info@3dp.lv — answers within 2 working days (Latvia, EET). Include your OpenCart version, theme
 name and a screenshot of the System check panel.

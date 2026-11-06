@@ -1,0 +1,122 @@
+[
+ {
+  "name": "Oak coaster",
+  "src": "<produkta foto>/78_1.jpg",
+  "scale": 0.375,
+  "quad": [
+   [
+    45,
+    65
+   ],
+   [
+    500,
+    35
+   ],
+   [
+    555,
+    485
+   ],
+   [
+    100,
+    530
+   ]
+  ],
+  "L": 0.1,
+  "W": 0.1,
+  "H": 0.008,
+  "r": 0.02,
+  "rough": 0.75,
+  "out": "models/ozola-paliktnis-10x10.glb",
+  "edge": 0.75
+ },
+ {
+  "name": "Plywood coaster",
+  "src": "<produkta foto>/335_0.jpg",
+  "scale": 0.5455,
+  "quad": [
+   [
+    48,
+    126
+   ],
+   [
+    496,
+    124
+   ],
+   [
+    505,
+    568
+   ],
+   [
+    12,
+    582
+   ]
+  ],
+  "L": 0.093,
+  "W": 0.093,
+  "H": 0.004,
+  "r": 0.11,
+  "rough": 0.85,
+  "out": "models/finiera-paliktnis-9x9.glb"
+ },
+ {
+  "name": "Anodised aluminium tag",
+  "src": "<produkta foto>/333_0.jpg",
+  "scale": 0.5455,
+  "quad": [
+   [
+    100,
+    63
+   ],
+   [
+    507,
+    58
+   ],
+   [
+    502,
+    332
+   ],
+   [
+    93,
+    330
+   ]
+  ],
+  "L": 0.05,
+  "W": 0.029,
+  "H": 0.001,
+  "r": 0.22,
+  "metal": 0,
+  "rough": 0.45,
+  "out": "models/alumin-zetons-5x29.glb",
+  "edge": 1.0
+ },
+ {
+  "name": "Leather key ring",
+  "src": "<produkta foto>/332_4.jpg",
+  "scale": 0.5455,
+  "quad": [
+   [
+    62,
+    180
+   ],
+   [
+    333,
+    178
+   ],
+   [
+    342,
+    556
+   ],
+   [
+    52,
+    560
+   ]
+  ],
+  "L": 0.029,
+  "W": 0.05,
+  "H": 0.003,
+  "r": 0.12,
+  "ring": 0.028,
+  "rough": 0.7,
+  "out": "models/adas-piekarins-29x50.glb"
+ }
+]
