@@ -11,7 +11,7 @@
  * atrašana pēc šī produkta attēlu failu nosaukumiem (neatkarīgi no tēmas marķējuma).
  */
 class ControllerExtensionModuleProduct3d extends Controller {
-	const VERSION = '1.1.0';
+	const VERSION = '1.2.0';
 
 	/** Viena pieprasījuma kešs (before + after notikumi) */
 	private static $cache = array();

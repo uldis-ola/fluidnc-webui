@@ -89,7 +89,7 @@ with sync_playwright() as pw:
         page.wait_for_timeout(1500)
     assert sql("SELECT COUNT(*) FROM oc_event WHERE code='product_3d'") == "8"
     assert sql("SELECT COUNT(*) FROM oc_product_3d WHERE product_id=42") == "1", "dati pazuduši pēc reinstall"
-    step("atjaunināšana uz 1.1.0: 8 notikumi, dati saglabāti")
+    step("atjaunināšana: 8 notikumi, dati saglabāti")
 
     # --- S1: lietotājs tikai ar access tiesībām nevar uninstall
     perms = json.dumps({"access": ["extension/module/product_3d", "catalog/product"], "modify": []})

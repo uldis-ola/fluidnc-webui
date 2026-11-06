@@ -13,7 +13,7 @@
  * - AJAX: upload (augšupielāde ar validāciju), files (esošo failu saraksts)
  */
 class ControllerExtensionModuleProduct3d extends Controller {
-	const VERSION = '1.1.0';
+	const VERSION = '1.2.0';
 	const EVENT_CODE = 'product_3d';
 
 	private $error = array();
@@ -88,6 +88,7 @@ class ControllerExtensionModuleProduct3d extends Controller {
 		$data['version'] = self::VERSION;
 		$data['upload_limit'] = $this->getServerUploadLimitMb();
 		$data['local_assets'] = is_file(DIR_CATALOG . 'view/javascript/product_3d/model-viewer.min.js');
+		$data['diagnostics'] = $this->getDiagnostics();
 
 		$data['header'] = $this->load->controller('common/header');
 		$data['column_left'] = $this->load->controller('common/column_left');
@@ -156,6 +157,30 @@ class ControllerExtensionModuleProduct3d extends Controller {
 			'module_product_3d_max_size'        => max(1, min(500, (int)$get('max_size'))),
 			'module_product_3d_delete_data'     => (int)!empty($post['module_product_3d_delete_data'])
 		);
+	}
+
+	/** Pārbaudes iestatījumu lapā: palīdz klientam un atbalstam ātri atrast problēmu */
+	private function getDiagnostics() {
+		$this->load->model('setting/event');
+
+		$checks = array();
+		$expected = 8;
+
+		$events = $this->db->query("SELECT COUNT(*) AS total FROM `" . DB_PREFIX . "event` WHERE `code` = '" . $this->db->escape(self::EVENT_CODE) . "' AND `status` = '1'");
+		$table = $this->db->query("SHOW TABLES LIKE '" . $this->db->escape(DB_PREFIX . 'product_3d') . "'");
+		$folder = $this->config->get('module_product_3d_folder') ? $this->config->get('module_product_3d_folder') : 'catalog/3d/';
+		$limit = $this->getServerUploadLimitMb();
+
+		$checks[] = array('label' => 'OpenCart', 'value' => VERSION, 'ok' => version_compare(VERSION, '3.0.0.0', '>=') && version_compare(VERSION, '4.0.0.0', '<'));
+		$checks[] = array('label' => 'PHP', 'value' => PHP_VERSION, 'ok' => version_compare(PHP_VERSION, '7.3.0', '>='));
+		$checks[] = array('label' => $this->language->get('diag_events'), 'value' => (int)$events->row['total'] . ' / ' . $expected, 'ok' => (int)$events->row['total'] >= $expected);
+		$checks[] = array('label' => $this->language->get('diag_table'), 'value' => DB_PREFIX . 'product_3d', 'ok' => (bool)$table->num_rows);
+		$checks[] = array('label' => $this->language->get('diag_folder'), 'value' => 'image/' . $folder, 'ok' => is_dir(DIR_IMAGE . $folder) && is_writable(DIR_IMAGE . $folder));
+		$checks[] = array('label' => $this->language->get('diag_assets'), 'value' => 'catalog/view/javascript/product_3d/', 'ok' => is_file(DIR_CATALOG . 'view/javascript/product_3d/model-viewer.min.js') && is_file(DIR_CATALOG . 'view/javascript/product_3d/draco/draco_decoder.wasm'));
+		$checks[] = array('label' => $this->language->get('diag_upload'), 'value' => $limit . ' MB', 'ok' => $limit >= 8);
+		$checks[] = array('label' => 'ZipArchive / JSON', 'value' => (class_exists('ZipArchive') ? 'zip ' : '') . (function_exists('json_decode') ? 'json' : ''), 'ok' => function_exists('json_decode'));
+
+		return $checks;
 	}
 
 	/* ================================================================ install / uninstall */

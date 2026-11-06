@@ -116,6 +116,22 @@
           </fieldset>
 
           <fieldset>
+            <legend>{{ text_diagnostics }}</legend>
+            <table class="table table-condensed">
+              <tbody>
+                {% for check in diagnostics %}
+                <tr>
+                  <td style="width:35%">{{ check.label|e }}</td>
+                  <td><code>{{ check.value|e }}</code></td>
+                  <td style="width:1%; white-space:nowrap">{% if check.ok %}<span class="label label-success"><i class="fa fa-check"></i> OK</span>{% else %}<span class="label label-danger"><i class="fa fa-exclamation-triangle"></i> {{ text_check }}</span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            <p class="help-block">{{ help_diagnostics }}</p>
+          </fieldset>
+
+          <fieldset>
             <legend>{{ text_files }}</legend>
             <div class="form-group">
               <label class="col-sm-3 control-label" for="p3d-folder">{{ entry_folder }}</label>
