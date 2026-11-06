@@ -4,7 +4,7 @@ namespace Opencart\Catalog\Model\Extension\AnnouncementBarPro\Module;
 /**
  * Announcement Bar Pro — catalog model (OpenCart 4.0.x / 4.1.x)
  *
- * @version 2.1.0
+ * @version 2.1.1
  */
 class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 	/**

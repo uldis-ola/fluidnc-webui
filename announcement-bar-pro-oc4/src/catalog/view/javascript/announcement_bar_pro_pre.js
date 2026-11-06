@@ -1,4 +1,4 @@
-/* Announcement Bar Pro v2.1.0 — runs synchronously right after the bar markup (no inline script, CSP-friendly).
+/* Announcement Bar Pro v2.1.1 — runs synchronously right after the bar markup (no inline script, CSP-friendly).
    Before the first paint it: keeps a single bar, moves a top bar to the top of <body> when the theme made it
    render in the footer, hides it while automatic colours are worked out, and removes messages the visitor closed. */
 (function () {

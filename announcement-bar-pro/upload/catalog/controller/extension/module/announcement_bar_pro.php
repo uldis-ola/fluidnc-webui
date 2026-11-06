@@ -3,10 +3,10 @@ defined('VERSION') || exit; // not callable directly (in the universal package t
 /**
  * Announcement Bar Pro — catalog controller (OpenCart 3.0.x)
  * Injected via events: catalog/view/common/header/after (footer/after as automatic fallback)
- * @version 2.1.0
+ * @version 2.1.1
  */
 class ControllerExtensionModuleAnnouncementBarPro extends Controller {
-	const VERSION = '2.1.0';
+	const VERSION = '2.1.1';
 	const CODE    = 'module_announcement_bar_pro';
 
 	/** @var \Announcementbarpro\Sanitizer  Declared property: not put into the shared registry. */

@@ -5,10 +5,10 @@ namespace Opencart\Catalog\Controller\Extension\AnnouncementBarPro\Module;
  * Announcement Bar Pro — catalog controller (OpenCart 4.0.x / 4.1.x)
  * Injected via events: catalog/view/common/header/after (footer/after as automatic fallback)
  *
- * @version 2.1.0
+ * @version 2.1.1
  */
 class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
-	public const VERSION = '2.1.0';
+	public const VERSION = '2.1.1';
 	public const CODE    = 'module_announcement_bar_pro';
 	public const ROUTE   = 'extension/announcement_bar_pro/module/announcement_bar_pro';
 

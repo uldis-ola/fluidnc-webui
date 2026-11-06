@@ -3,7 +3,7 @@
 Paziņojumu josla veikala augšā vai apakšā: akcijas, piegādes nosacījumi, svarīgas ziņas.
 *An announcement bar for the top or bottom of every store page.*
 
-- **Versija / Version:** 2.1.0
+- **Versija / Version:** 2.1.1
 - **Viena paka visām versijām / One package for all versions:** `announcement_bar_pro.ocmod.zip`
   - OpenCart **3.0.x** (tested 3.0.5.1; code uses only APIs present since 3.0.0.0), PHP 7.3+
   - OpenCart **4.0.x / 4.1.x** (tested 4.0.2.3 and 4.1.0.4; 4.0.0–4.0.1 handled in code, not runtime-tested), PHP 8.0+

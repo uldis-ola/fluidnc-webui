@@ -1,4 +1,4 @@
-/* Announcement Bar Pro v2.1.0 — no dependencies. Adapts itself to the shop theme (see "Automatic adaptation"). */
+/* Announcement Bar Pro v2.1.1 — no dependencies. Adapts itself to the shop theme (see "Automatic adaptation"). */
 (function () {
   'use strict';
 

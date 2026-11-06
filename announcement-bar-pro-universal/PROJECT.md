@@ -9,10 +9,10 @@ Paziņojumu josla (announcement bar) OpenCart veikalam: josla lapas augšā vai 
 piegādes info, atpakaļskaitīšanu u. tml. Viena instalācijas paka der **OpenCart 3.0.x, 4.0.x un 4.1.x**.
 Josla automātiski pielāgojas veikala tēmai.
 
-- Versija: **2.1.0**, DB shēma **5**
+- Versija: **2.1.1**, DB shēma **5**
 - Licence: GPL-3.0 (LICENSE.txt no OpenCart pirmkoda)
 - Valodas: LV, EN, RU (admin + veikals). Ja veikala valodai tulkojuma nav → angļu.
-- Marketplace-gatavs, bez 3dp.lv zīmola. **Autora vārds un saite vēl ir aizvietotāji** (sk. 9. punktu).
+- Marketplace-gatavs. Autors `3dp.lv`, saite `https://3dp.lv` (no 2.1.1; Ulda izvēle 06.11.2026).
 
 ## 2. Repozitorijs un zars
 
@@ -32,7 +32,7 @@ index.html                       repo vecais saturs, ar moduli nav saistīts
 
 ```bash
 cd announcement-bar-pro-universal && ./build.sh
-# → dist/v2.1.0/announcement_bar_pro.ocmod.zip  (~124 KB)
+# → dist/v2.1.1/announcement_bar_pro.ocmod.zip  (~124 KB)
 ```
 Universālā paka satur abus komplektus vienā zip:
 - OC3 instalētājs ņem tikai `upload/` + `install.xml`;
@@ -129,8 +129,7 @@ Publicētais demo: https://claude.ai/artifact/JV4VbyRutwCA9Axw42DGYs (privāts).
 
 ## 9. Kas vēl jāizdara
 
-1. **Autora dati:** `announcement-bar-pro-oc4/src/install.json` (`author`, `link` = https://example.com/...)
-   un `announcement-bar-pro/install.xml` (`author`, `link` — tukšs). Ievadīt īstos datus, tad `./build.sh`.
+1. ~~Autora dati~~ — izdarīts 2.1.1 (`3dp.lv`, `https://3dp.lv`).
 2. Pārbaudīt savā veikalā (vispirms testa kopijā!) ar savu tēmu: telefons + dators, aizvēršana, atpakaļskaitīšana.
 3. Ja publicē OpenCart Marketplace: ekrānuzņēmumi, apraksts, cena (nav noteikta).
 4. Iespējami uzlabojumi (nav pieprasīti): papildu valodas, A/B, statistika par klikšķiem.

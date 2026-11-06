@@ -1,5 +1,9 @@
 # Changelog (universal package)
 
+## 2.1.1 — 2026-11-06
+- Author and link set in `install.xml` (OpenCart 3) and `install.json` (OpenCart 4): author `3dp.lv`, link `https://3dp.lv`. They replace the placeholders.
+- No code changes. Only the version number changed (file headers, `VERSION` constants, asset `?v=` key).
+
 ## 2.1.0 — 2026-11-06
 Supersedes all earlier packages (2.0.x for OpenCart 3 and for OpenCart 4).
 
