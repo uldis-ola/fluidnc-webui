@@ -728,11 +728,115 @@ class Features {
 		return '"' . str_replace('"', '""', $value) . '"';
 	}
 
-	/** Valid e-mail address for the newsletter (OpenCart's own limit is 96 characters). */
+	/**
+	 * Valid e-mail address for the newsletter (OpenCart's own limit is 96 characters). FILTER_VALIDATE_EMAIL accepts
+	 * quoted local parts such as "a\<LF>X-Injected:1"@a.co, which would reach the mail headers / SMTP RCPT: any control
+	 * character, quote or backslash is refused first.
+	 */
 	public function email($value) {
 		$value = trim((string)$value);
 
+		if ($value === '' || preg_match('/[\x00-\x1F\x7F"\\\\]/', $value)) {
+			return '';
+		}
+
 		return strlen($value) <= 96 && filter_var($value, FILTER_VALIDATE_EMAIL) ? $value : '';
+	}
+
+	/** Text for a mail header (sender name, subject, address): control characters (CR / LF …) become spaces. */
+	public function headerText($value) {
+		return trim((string)preg_replace('/[\x00-\x1F\x7F]+/', ' ', (string)$value));
+	}
+
+	/* ------------------------------------------------------------------ *
+	 * CloudFlare: its headers are trusted only on requests that really come from CloudFlare
+	 * ------------------------------------------------------------------ */
+
+	/** CloudFlare's published ranges (https://www.cloudflare.com/ips-v4 and /ips-v6), as of 2026-11-07. */
+	const CF_IPV4 = array(
+		'173.245.48.0/20', '103.21.244.0/22', '103.22.200.0/22', '103.31.4.0/22', '141.101.64.0/18', '108.162.192.0/18',
+		'190.93.240.0/20', '188.114.96.0/20', '197.234.240.0/22', '198.41.128.0/17', '162.158.0.0/15', '104.16.0.0/13',
+		'104.24.0.0/14', '172.64.0.0/13', '131.0.72.0/22'
+	);
+	const CF_IPV6 = array('2400:cb00::/32', '2606:4700::/32', '2803:f800::/32', '2405:b500::/32', '2405:8100::/32', '2a06:98c0::/29', '2c0f:f248::/32');
+
+	/** True when $ip (IPv4 or IPv6) is inside $cidr of the same family. */
+	public function ipInCidr($ip, $cidr) {
+		$parts = explode('/', (string)$cidr, 2);
+		$addr  = @inet_pton($this->plainIp($ip));
+		$net   = @inet_pton($parts[0]);
+
+		if ($addr === false || $net === false || strlen($addr) !== strlen($net) || !isset($parts[1]) || !preg_match('/^\d{1,3}$/', $parts[1])) {
+			return false;
+		}
+
+		$bits = (int)$parts[1];
+		if ($bits > strlen($addr) * 8) {
+			return false;
+		}
+
+		$bytes = intdiv($bits, 8);
+		if ($bytes && substr($addr, 0, $bytes) !== substr($net, 0, $bytes)) {
+			return false;
+		}
+
+		$rest = $bits % 8;
+		if ($rest) {
+			$mask = (0xFF << (8 - $rest)) & 0xFF;
+
+			return (ord($addr[$bytes]) & $mask) === (ord($net[$bytes]) & $mask);
+		}
+
+		return true;
+	}
+
+	/** True when $ip belongs to CloudFlare (its proxies are the only ones allowed to set CF-* headers). */
+	public function isCloudflare($ip) {
+		$ip = $this->plainIp($ip);
+
+		if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+			return false;
+		}
+
+		foreach (strpos($ip, ':') === false ? self::CF_IPV4 : self::CF_IPV6 as $cidr) {
+			if ($this->ipInCidr($ip, $cidr)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Visitor IP: REMOTE_ADDR, or CF-Connecting-IP when $use_cf is on AND the request comes from a CloudFlare address
+	 * (anyone else can send the header).
+	 */
+	public function clientIp(array $server, $use_cf) {
+		$remote = isset($server['REMOTE_ADDR']) && is_string($server['REMOTE_ADDR']) ? $server['REMOTE_ADDR'] : '';
+
+		if ($use_cf && isset($server['HTTP_CF_CONNECTING_IP']) && is_string($server['HTTP_CF_CONNECTING_IP']) && filter_var($server['HTTP_CF_CONNECTING_IP'], FILTER_VALIDATE_IP) && $this->isCloudflare($remote)) {
+			return $server['HTTP_CF_CONNECTING_IP'];
+		}
+
+		return $remote;
+	}
+
+	/** Visitor country from CF-IPCountry (ISO 2 letters, upper case), only on requests from CloudFlare; else ''. */
+	public function cfCountry(array $server, $use_cf) {
+		if (!$use_cf || !isset($server['HTTP_CF_IPCOUNTRY'], $server['REMOTE_ADDR']) || !is_string($server['HTTP_CF_IPCOUNTRY']) || !is_string($server['REMOTE_ADDR']) || !$this->isCloudflare($server['REMOTE_ADDR'])) {
+			return '';
+		}
+
+		$iso = strtoupper($server['HTTP_CF_IPCOUNTRY']);
+
+		return preg_match('/^[A-Z]{2}$/', $iso) && $iso !== 'XX' && $iso !== 'T1' ? $iso : '';
+	}
+
+	/** "::ffff:1.2.3.4" (IPv4 on an IPv6 socket) → "1.2.3.4". */
+	private function plainIp($ip) {
+		$ip = trim((string)$ip);
+
+		return stripos($ip, '::ffff:') === 0 && strpos($ip, '.') !== false ? substr($ip, 7) : $ip;
 	}
 
 	/* ------------------------------------------------------------------ *

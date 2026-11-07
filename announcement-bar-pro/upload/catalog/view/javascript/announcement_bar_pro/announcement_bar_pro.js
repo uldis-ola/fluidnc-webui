@@ -9,9 +9,12 @@
   /* ---------------- Shared: privacy, statistics, GA4 ---------------- */
   // Nothing is sent or stored for statistics when the visitor asks not to be tracked (Do Not Track / Global Privacy
   // Control) or the shop's consent tool sets window.abpConsent = false.
+  // "Wait for cookie consent" (setting; data-consent="1" on the bars): until the shop's consent tool sets
+  // window.abpConsent = true, nothing is stored, read or sent (A/B choice, visitor memory, campaign, statistics, GA4).
+  function waitConsent() { return window.abpConsent !== true && !!document.querySelector('.abp[data-consent="1"]'); }
   function privacyOff() {
     var d = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
-    return d === '1' || d === 'yes' || navigator.globalPrivacyControl === true || window.abpConsent === false;
+    return d === '1' || d === 'yes' || navigator.globalPrivacyControl === true || window.abpConsent === false || waitConsent();
   }
   var reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   function variant(el) { return el && el.getAttribute('data-variant') === 'b' ? 'b' : 'a'; }
@@ -814,6 +817,7 @@
     var api = {
       bar: bar,
       refresh: refreshVisible,
+      trackShown: trackShown,
       relayout: function () { checkIcons(); stabilise(); fitBody(); startTick(); if (mode === 'marquee') { startMarquee(); } },
       afterLoad: function () { checkIcons(); applyAutoColours(); relayout(); }
     };
@@ -947,14 +951,29 @@
     });
   }
 
-  window.AnnouncementBarPro = { scan: scan, refreshCart: queueCart };
+  /* "Wait for cookie consent": the shop's consent tool sets window.abpConsent = true and fires "abp:consent" (on
+     document or window). Then A/B variants and visitor rules are decided, and the messages on screen are counted.
+     Without the event the value is checked again at load and on every statistics call. */
+  var consentSeen = false;
+  function consentGiven() {
+    if (consentSeen || window.abpConsent !== true || !document.querySelector('.abp[data-consent="1"]')) { return; }
+    consentSeen = true;
+    try { if (window.abpPre && window.abpPre.consent) { window.abpPre.consent(); } } catch (e) { /* bars keep working */ }
+    instances.forEach(function (api) {
+      try { if (inDoc(api.bar)) { api.refresh(); api.trackShown(); } } catch (e2) { /* one broken box must not stop the others */ }
+    });
+  }
+  document.addEventListener('abp:consent', consentGiven);
+  window.addEventListener('abp:consent', consentGiven);
+
+  window.AnnouncementBarPro = { scan: scan, refreshCart: queueCart, consent: consentGiven };
 
   function start() {
     scan();
     hookAjax();
   }
   // Web fonts, icons and theme colours are final only after load.
-  function afterLoad() { loaded = true; hookAjax(); instances.forEach(function (api) { if (inDoc(api.bar)) { api.afterLoad(); } }); }
+  function afterLoad() { loaded = true; hookAjax(); instances.forEach(function (api) { if (inDoc(api.bar)) { api.afterLoad(); } }); consentGiven(); }
   if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', start); } else { start(); }
   if (document.readyState === 'complete') { afterLoad(); } else { window.addEventListener('load', afterLoad); }
   // Back/forward cache: the cart may have changed on another page.

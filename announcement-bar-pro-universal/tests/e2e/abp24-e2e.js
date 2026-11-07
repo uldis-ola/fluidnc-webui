@@ -11,7 +11,9 @@ const path = require('path');
 const [ZIP230, ZIP240] = process.argv.slice(2);
 const BASE = process.env.OCBASE, DIR = process.env.OCDIR, DB = process.env.OCDB, SHOTS = process.env.SHOTS, DEV = process.env.DEV === '1';
 const MAILDIR = process.env.MAILDIR || 'C:/Users/Admin/abp-testenv/mail';
-const q = s => { try { return execFileSync(process.env.MYSQL, [...process.env.MYSQLARGS.split(' '), DB, '-N', '-e', s], { stdio: ['pipe', 'pipe', 'ignore'] }).toString().trim(); } catch (e) { return 'SQLERR ' + e.message.slice(0, 160); } };
+// One retry: on Windows a client start can fail now and then under load (seen once on OC4 in 2.4.0 testing).
+const q1 = s => { try { return execFileSync(process.env.MYSQL, [...process.env.MYSQLARGS.split(' '), DB, '-N', '-e', s], { stdio: ['pipe', 'pipe', 'ignore'] }).toString().trim(); } catch (e) { return 'SQLERR ' + e.message.slice(0, 160); } };
+const q = s => { const r = q1(s); return r.startsWith('SQLERR') ? q1(s) : r; };
 const R = []; const ok = (n, c, x = '') => { R.push((c ? 'PASS ' : 'FAIL ') + n + (!c && x !== '' ? ' — ' + String(x).slice(0, 500) : '')); console.log(R[R.length - 1]); };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const setting = k => q("select value from oc_setting where `key`='module_announcement_bar_pro_" + k + "'");
@@ -135,6 +137,8 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
 	async function settings(changes) {
 		await p.goto(A(ROUTE, '&tab=settings'));
 		await p.waitForSelector('#form-settings');
+		// The server validates every value; switch off the browser's own checks so out-of-range values reach it.
+		await p.evaluate(() => { document.getElementById('form-settings').noValidate = true; });
 		for (const [name, v] of Object.entries(changes)) {
 			const full = 'module_announcement_bar_pro_' + name;
 			const el = await p.$(`[name="${full}"]:not([type=hidden])`);
@@ -189,7 +193,7 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
 		const cols = q("select count(*) from information_schema.columns where table_schema=database() and table_name='oc_abp_message' and column_name in ('placement','priority','options','subscribes')") + '/' + q("select count(*) from information_schema.columns where table_schema=database() and table_name='oc_abp_message_description' and column_name='extra'") + '/' + q("select count(*) from information_schema.tables where table_schema=database() and table_name in ('oc_abp_subscriber','oc_abp_rate')");
 		ok('migration 7→8: 4 + 1 columns, 2 tables', cols === '4/1/2', cols);
 		ok('migration: form secret created (64 hex), 6 events', /^[0-9a-f]{64}$/.test(setting('secret')) && q("select count(*) from oc_event where `code`='announcement_bar_pro'") === '6');
-		ok('settings kept (stack, 7 days) + 2.4.0 defaults (double opt-in on, GA4 on, pause button on)', setting('mode') === 'stack' && setting('dismiss_days') === '7' && setting('double_optin') === '1' && setting('ga4') === '1' && setting('pause_button') === '1');
+		ok('settings kept (stack, 7 days) + 2.4.0 defaults (double opt-in on, GA4 on, pause button on, limits 10 / 200, consent wait off)', setting('mode') === 'stack' && setting('dismiss_days') === '7' && setting('double_optin') === '1' && setting('ga4') === '1' && setting('pause_button') === '1' && setting('signup_limit_ip') === '10' && setting('signup_limit_total') === '200' && setting('consent_wait') === '0', [setting('signup_limit_ip'), setting('signup_limit_total'), setting('consent_wait')].join('/'));
 		await p.goto(A(ROUTE));
 		ok('2nd admin visit: idempotent (one "options" column, same secret)', q("select count(*) from information_schema.columns where table_schema=database() and table_name='oc_abp_message' and column_name='options'") === '1');
 		const s1 = await shop(); await s1.pg.goto(BASE); await s1.pg.waitForSelector('#abp-bar'); await sleep(800);
@@ -285,13 +289,28 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
 		({ c, pg } = await shop({ shopHeaders: { 'cf-ipcountry': 'LV' } }));
 		await pg.goto(BASE); await sleep(1200);
 		v = await visibleIds(pg); txt = await visText(pg);
-		ok('country: CloudFlare CF-IPCountry LV (setting on) → shown; Latvian amount $50.00', v.includes(idLv) && /\$50\.00/.test(txt), v.join() + ' ' + txt);
-		await pg.screenshot({ path: `${SHOTS}/${TAG}-store-country-lv.png`, clip: { x: 0, y: 0, width: 1366, height: 160 } });
+		// 2.4.0 review: CF-IPCountry counts only when REMOTE_ADDR is one of CloudFlare's ranges (unit-tested); this
+		// request comes from 127.0.0.1, so a forged header must change nothing even with the setting on.
+		ok('country: forged CF-IPCountry LV from a non-CloudFlare address (setting on) → ignored, default amount', !v.includes(idLv) && /\$200\.00/.test(txt), v.join() + ' ' + txt);
 		await c.close();
 		await settings({ geo_cf: 0 });
 		({ c, pg } = await shop({ shopHeaders: { 'cf-ipcountry': 'LV' } }));
 		await pg.goto(BASE); await sleep(1000);
 		ok('country: CF header ignored while the setting is off', !(await visibleIds(pg)).includes(idLv));
+		await c.close();
+		// Latvian visitor through the address chosen in this visit (session) → Latvian amount.
+		({ c, pg } = await shop());
+		await pg.goto(BASE); await sleep(600);
+		const sid = (await c.cookies()).find(k => /^(OCSESSID|PHPSESSID)$/.test(k.name));
+		// Both versions keep the session as JSON in oc_session: add the address the visitor chose at checkout.
+		if (sid) { q(`update oc_session set data=JSON_SET(data, '$.shipping_address', JSON_OBJECT('country_id', ${LV}, 'zone_id', 0)) where session_id='${sid.value}'`); }
+		await pg.goto(BASE); await sleep(1100);
+		v = await visibleIds(pg); txt = await visText(pg);
+		ok('country: shipping address Latvia (this visit) → shown; Latvian amount $50.00', v.includes(idLv) && /\$50\.00/.test(txt), v.join() + ' ' + txt + ' sid=' + (sid ? sid.name : 'none'));
+		await pg.screenshot({ path: `${SHOTS}/${TAG}-store-country-lv.png`, clip: { x: 0, y: 0, width: 1366, height: 160 } });
+		await c.close();
+		({ c, pg } = await shop());
+		await pg.goto(BASE); await sleep(800);
 		// visitor's currency EUR: fixed amount 100 € (no conversion)
 		if (OC4) { await pg.evaluate(() => document.querySelector('#form-currency [data-code="EUR"]').click()); await sleep(3000); } else {
 			await Promise.all([pg.waitForNavigation({ timeout: 15000 }).catch(() => {}), pg.evaluate(() => { const f = document.getElementById('form-currency'); f.querySelector('[name="code"]').value = 'EUR'; f.submit(); })]);
@@ -328,6 +347,13 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
 		ok('coupon disabled in OpenCart → message hides itself', !r.v.includes(idCp), JSON.stringify(r));
 		q(`update oc_coupon set status=1, date_end='2020-12-31' where coupon_id=${cid}`); r = await shot();
 		ok('coupon expired → hidden', !r.v.includes(idCp));
+		q(`update oc_coupon set date_end=CURDATE() where coupon_id=${cid}`); r = await shot();
+		ok('coupon on its end date → hidden (OpenCart refuses it that day too: date_end > NOW())', !r.v.includes(idCp), JSON.stringify(r) + ' end=' + q(`select date_end from oc_coupon where coupon_id=${cid}`));
+		q(`update oc_coupon set date_start=CURDATE(), date_end='2099-12-31' where coupon_id=${cid}`); r = await shot();
+		ok('coupon from its start date (today) → shown (date_start < NOW())', r.v.includes(idCp), JSON.stringify(r));
+		q(`update oc_coupon set date_start=DATE_ADD(CURDATE(), INTERVAL 1 DAY) where coupon_id=${cid}`); r = await shot();
+		ok('coupon starting tomorrow → hidden', !r.v.includes(idCp), JSON.stringify(r));
+		q(`update oc_coupon set date_start='2020-01-01' where coupon_id=${cid}`);
 		q(`update oc_coupon set date_end='2099-12-31', uses_total=1 where coupon_id=${cid}`); q(`insert into oc_coupon_history (coupon_id,order_id,customer_id,amount,date_added) values (${cid},1,0,-1,NOW())`); r = await shot();
 		ok('coupon used up (uses_total reached) → hidden', !r.v.includes(idCp));
 		q(`delete from oc_coupon_history where coupon_id=${cid}`); q(`update oc_coupon set uses_total=0 where coupon_id=${cid}`);
@@ -618,6 +644,13 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
 		let last = '';
 		for (let i = 0; i < 12; i++) { last = await post(Object.assign({}, base, { email: `rate${i}@example.com` })); }
 		ok('sign-up: rate limit per visitor (10 per hour)', /many/i.test(last), last);
+		q('delete from oc_abp_rate');
+		// Header / SMTP injection through a quoted local part (FILTER_VALIDATE_EMAIL accepts it): refused, nothing stored or sent.
+		const mBefore = fs.readdirSync(MAILDIR).filter(f => f.endsWith('.eml')).length;
+		const inj = await post(Object.assign({}, base, { email: '"a\\\nX-Injected:1"@a.co' }));
+		const inj2 = await post(Object.assign({}, base, { email: 'victim@example.com\r\nBcc: x@evil.example' }));
+		await sleep(800);
+		ok('sign-up: injection addresses ("a\\<LF>X-Injected:1"@a.co, CR/LF + Bcc) refused, nothing stored, no mail', /"field":"email"/.test(inj) && /"field":"email"/.test(inj2) && q("select count(*) from oc_abp_subscriber where email like '%Injected%' or email like '%evil%'") === '0' && fs.readdirSync(MAILDIR).filter(f => f.endsWith('.eml')).length === mBefore, inj + ' ' + inj2);
 		await c.close();
 		q('delete from oc_abp_rate');
 	}
@@ -637,6 +670,55 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
 		const leave = (mail.match(/https?:\/\/[^\s"<>]+unsubscribe[^\s"<>]*t=[0-9a-f]{64}/) || [])[0] || '';
 		ok('confirmation e-mail has an unsubscribe link', !!leave, leave);
 	}
+	// configurable limits (settings) and at most 3 confirmation e-mails per address in 24 h
+	ok('settings: sign-up limit 0 per visitor refused (range 1–1000)', /1.*1000/.test(await settings({ signup_limit_ip: 0 })));
+	ok('settings: sign-up limits saved (3 per visitor, 500 per shop)', (await settings({ signup_limit_ip: 3, signup_limit_total: 500 })) === '' && setting('signup_limit_ip') === '3' && setting('signup_limit_total') === '500');
+	{
+		const { c, pg } = await shop(); await pg.goto(BASE); await sleep(2500);
+		const sub = S(ROUTE + SEP + 'subscribe');
+		const tokv = await pg.$eval('.abp-form', f => f.dataset.tok);
+		const post = (fields) => pg.evaluate(async ([u, f]) => { const fd = new FormData(); Object.entries(f).forEach(([k, v]) => fd.append(k, v)); const r = await fetch(u, { method: 'POST', body: fd, credentials: 'same-origin' }); return r.text(); }, [sub, fields]);
+		const base = { consent: '1', tok: tokv, id: idMail, website: '' };
+		const res = [];
+		for (let i = 0; i < 4; i++) { res.push(await post(Object.assign({}, base, { email: `lim${i}@example.com` }))); }
+		ok('sign-up: per-visitor limit from the settings (3 per hour) → 4th refused', /"ok"/.test(res[2]) && /many/i.test(res[3]), res.join(' '));
+		q('delete from oc_abp_rate');
+		const count = addr => fs.readdirSync(MAILDIR).filter(f => f.endsWith('.eml')).filter(f => fs.readFileSync(path.join(MAILDIR, f), 'utf8').includes(addr)).length;
+		const addr = 'peraddress@example.com', r4 = [];
+		const c0 = count(addr); // the mail folder keeps earlier runs
+		for (let i = 0; i < 4; i++) {
+			r4.push(await post(Object.assign({}, base, { email: addr })));
+			// past the "one mail per 10 minutes" rule; the per-IP limit is cleared so only the per-address limit counts
+			q(`update oc_abp_subscriber set date_added = DATE_SUB(NOW(), INTERVAL 1 DAY) where email='${addr}'`);
+			q('delete from oc_abp_rate where expires < UNIX_TIMESTAMP() + 7200'); // hourly buckets only; the 24 h one stays
+		}
+		await sleep(1200);
+		ok('sign-up: at most 3 confirmation e-mails per address in 24 h; the 4th answer looks the same', count(addr) - c0 === 3 && r4.every(x => x === r4[0]) && /"ok":1/.test(r4[3]), (count(addr) - c0) + ' mails; ' + r4.join(' '));
+		await c.close();
+		q('delete from oc_abp_rate');
+	}
+	await settings({ signup_limit_ip: 10, signup_limit_total: 200 });
+	// double opt-in OFF: customer accounts never changed, unsubscribed addresses never re-subscribed, same answer
+	ok('settings: double opt-in switched off', (await settings({ double_optin: 0 })) === '' && setting('double_optin') === '0');
+	{
+		q(`update oc_customer set newsletter=0 where email='${custEmail}'`);
+		q(`delete from oc_abp_subscriber where email in ('${custEmail}','gone@example.com','fresh@example.com')`);
+		q("insert into oc_abp_subscriber (email,store_id,language_id,message_id,status,token,unsubscribe,consent,date_added) values ('gone@example.com',0,1,0,2,'','" + 'a'.repeat(64) + "','x',DATE_SUB(NOW(), INTERVAL 2 DAY))");
+		const { c, pg } = await shop(); await pg.goto(BASE); await sleep(2500);
+		const sub = S(ROUTE + SEP + 'subscribe');
+		const tokv = await pg.$eval('.abp-form', f => f.dataset.tok);
+		const post = (fields) => pg.evaluate(async ([u, f]) => { const fd = new FormData(); Object.entries(f).forEach(([k, v]) => fd.append(k, v)); const r = await fetch(u, { method: 'POST', body: fd, credentials: 'same-origin' }); return r.text(); }, [sub, fields]);
+		const base = { consent: '1', tok: tokv, id: idMail, website: '' };
+		const fresh = await post(Object.assign({}, base, { email: 'fresh@example.com' }));
+		const gone = await post(Object.assign({}, base, { email: 'gone@example.com' }));
+		const cust = await post(Object.assign({}, base, { email: custEmail }));
+		ok('opt-in off: new address subscribed at once (module list)', /"ok":1/.test(fresh) && q("select status from oc_abp_subscriber where email='fresh@example.com'") === '1', fresh);
+		ok('opt-in off: unsubscribed address stays unsubscribed, same answer as a new address', gone === fresh && q("select status from oc_abp_subscriber where email='gone@example.com'") === '2', gone + ' / ' + fresh);
+		ok('opt-in off: customer account newsletter flag NOT changed (module list only), same answer', cust === fresh && q(`select newsletter from oc_customer where email='${custEmail}'`) === '0' && q(`select status from oc_abp_subscriber where email='${custEmail}'`) === '1', cust + ' nl=' + q(`select newsletter from oc_customer where email='${custEmail}'`));
+		await c.close();
+		q(`delete from oc_abp_subscriber where email in ('${custEmail}','gone@example.com','fresh@example.com')`); q('delete from oc_abp_rate');
+	}
+	await settings({ double_optin: 1 });
 	await both(BASE, 'store-email-form', null);
 
 	// ================= 15. GA4 events =================
@@ -669,6 +751,36 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
 		await c.close();
 	}
 	await settings({ ga4: 1 });
+
+	// ================= "Wait for cookie consent" =================
+	ok('settings: "Wait for cookie consent" saved (default off)', setting('consent_wait') === '0' && (await settings({ consent_wait: 1 })) === '' && setting('consent_wait') === '1');
+	only([idHigh, idCp, idNew]);
+	{
+		const rec = () => { window.__ga = []; window.gtag = function () { window.__ga.push([].slice.call(arguments)); }; };
+		let { c, pg } = await shop({}, rec);
+		const tracks = []; pg.on('request', rq => { if (/track/.test(rq.url()) && rq.method() === 'POST') tracks.push(rq.url()); });
+		await pg.goto(BASE); await sleep(1500);
+		let st = await pg.evaluate(() => ({ ga: window.__ga.length, v: localStorage.getItem('abp_v'), ab: localStorage.getItem('abp_ab'), tr: sessionStorage.getItem('abp_track'), attr: !!document.querySelector('.abp[data-consent="1"]') }));
+		let v = await visibleIds(pg);
+		ok('consent wait: before consent no GA4 event, no statistics request, nothing stored; "new visitor" message waits', st.attr && st.ga === 0 && tracks.length === 0 && st.v === null && st.ab === null && st.tr === null && !v.includes(idNew) && v.includes(idHigh), JSON.stringify(st) + ' tracks=' + tracks.length + ' v=' + v.join());
+		await pg.evaluate(() => { window.abpConsent = true; document.dispatchEvent(new Event('abp:consent')); });
+		await sleep(1500);
+		st = await pg.evaluate(() => ({ ga: window.__ga.filter(x => x[1] === 'abp_view').length, v: localStorage.getItem('abp_v') }));
+		v = await visibleIds(pg);
+		ok('consent wait: after window.abpConsent = true + "abp:consent" → GA4 view, statistics request, visitor remembered, "new visitor" message shown', st.ga >= 1 && tracks.length >= 1 && st.v !== null && v.includes(idNew), JSON.stringify(st) + ' tracks=' + tracks.length + ' v=' + v.join());
+		await c.close();
+		({ c, pg } = await shop({}, () => { window.abpConsent = true; window.__ga = []; window.gtag = function () { window.__ga.push([].slice.call(arguments)); }; }));
+		await pg.goto(BASE); await sleep(1500);
+		ok('consent wait: consent already given before the script → works at once', (await pg.evaluate(() => window.__ga.filter(x => x[1] === 'abp_view').length)) >= 1 && (await visibleIds(pg)).includes(idNew));
+		await c.close();
+	}
+	await settings({ consent_wait: 0 });
+	{
+		const { c, pg } = await shop({}, () => { window.__ga = []; window.gtag = function () { window.__ga.push([].slice.call(arguments)); }; });
+		await pg.goto(BASE); await sleep(1300);
+		ok('consent wait off (default): events without any consent flag, no data-consent attribute', (await pg.evaluate(() => window.__ga.length)) >= 1 && !(await pg.$('.abp[data-consent]')));
+		await c.close();
+	}
 
 	// ================= import / export keep the 2.4.0 fields =================
 	{

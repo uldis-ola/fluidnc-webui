@@ -133,7 +133,7 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 			}
 
 			// 2.4.0
-			foreach (['max_messages' => [0, 20], 'autohide' => [0, 600]] as $key => $range) {
+			foreach (['max_messages' => [0, 20], 'autohide' => [0, 600], 'signup_limit_ip' => [1, 1000], 'signup_limit_total' => [1, 100000]] as $key => $range) {
 				if (!$this->intInRange($this->postValue($key), $range[0], $range[1])) {
 					$json['error'][$key] = sprintf($this->language->get('error_range'), $range[0], $range[1]);
 				}
@@ -163,11 +163,11 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 		if (!$json) {
 			$out = [];
 
-			foreach (['status', 'sticky', 'dismissible', 'allow_html', 'delete_data', 'arrows', 'pause_button', 'ga4', 'geo_cf', 'double_optin'] as $key) {
+			foreach (['status', 'sticky', 'dismissible', 'allow_html', 'delete_data', 'arrows', 'pause_button', 'ga4', 'geo_cf', 'double_optin', 'consent_wait'] as $key) {
 				$out[$key] = $this->postValue($key) !== '' && $this->postValue($key) !== '0' ? 1 : 0;
 			}
 
-			foreach (['interval', 'speed', 'font_size', 'padding', 'dismiss_days', 'max_messages', 'autohide', 'privacy_id'] as $key) {
+			foreach (['interval', 'speed', 'font_size', 'padding', 'dismiss_days', 'max_messages', 'autohide', 'privacy_id', 'signup_limit_ip', 'signup_limit_total'] as $key) {
 				$out[$key] = (int)$this->postValue($key);
 			}
 
@@ -1379,7 +1379,8 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 
 	private function settingKeys() {
 		return array('status', 'position', 'sticky', 'mode', 'interval', 'speed', 'font_size', 'padding', 'dismissible', 'dismiss_days', 'allow_html', 'default_bg_color', 'default_text_color', 'delete_data', 'color_mode', 'style', 'transition', 'arrows',
-			'max_messages', 'autohide', 'pause_button', 'font', 'custom_css', 'ga4', 'geo_cf', 'geo_fallback', 'privacy_id', 'double_optin');
+			'max_messages', 'autohide', 'pause_button', 'font', 'custom_css', 'ga4', 'geo_cf', 'geo_fallback', 'privacy_id', 'double_optin',
+			'signup_limit_ip', 'signup_limit_total', 'consent_wait');
 	}
 
 	private function styleList() {

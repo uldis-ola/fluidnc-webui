@@ -68,10 +68,17 @@ opciju validācija (`validate()` ar `lookup` atzvanu uz DB), valsts / zonas / va
   pieprasījumā; resursi (CSS/JS) vienreiz lapā; ar vienu joslu id `abp-bar`, ar divām — `abp-bar-bottom`. Inline: režīms stack, bez aizvēršanas.
 - *Klienta puses vārti:* `data-off` (grafiks), `data-coff` (groza nosacījumi, atjauno `…/cart`), `data-uoff` (UTM/atnākšana/jauns-atgriezies,
   izlemj pre.js), `data-toff` (trigeris), `data-over` (virs „Paziņojumi joslā”). pre.js apstrādā visus `.abp[data-abp]` + `#abp-bar`, `window.abpPre()`.
-- *Endpointi:* `subscribe` (POST, same-origin, tokens, honeypot, 10/h/IP, 200/h kopā), `confirm` / `unsubscribe` (GET rāda pogu, POST maina),
-  `cart` un `track` ar ātruma ierobežojumu (300/10 min). Pasts: OC3 `new Mail(engine)`, OC4 `new \Opencart\System\Library\Mail(engine, opts)`.
-- *Valsts:* sesijas piegādes/maksātāja adrese → klienta adrese → `CF-IPCountry` (tikai ja `geo_cf`) → veikala valsts / nezināma (`geo_fallback`).
-- *Iestatījumi:* max_messages, autohide, pause_button, font, custom_css, ga4, geo_cf, geo_fallback, privacy_id, double_optin (+ iekšējais secret).
+- *Endpointi:* `subscribe` (POST, same-origin, tokens, honeypot, `signup_limit_ip`/h/IP (10), `signup_limit_total`/h kopā (200), ≤ 3 apstiprinājuma
+  e-pasti adresei 24 h — `abp_rate` atslēga = HMAC no adreses), `confirm` / `unsubscribe` (GET rāda pogu, POST maina), `track` (300/10 min),
+  `cart` (vispirms ID pārbaude — bez ID nav DB rakstīšanas; 1200/10 min). Pasts: OC3 `new Mail(engine)`, OC4 `new \Opencart\System\Library\Mail(engine, opts)`;
+  `Features::email()` atraida vadības simbolus, pēdiņas, `\` (FILTER_VALIDATE_EMAIL pieņem `"a\<LF>X:1"@a.co`), galvenēm `headerText()` (bez CR/LF).
+  Bez dubultās apstiprināšanas: klienta konta `newsletter` nemaina, status 2 (atteicies) neatjauno, atbilde vienāda.
+- *Valsts:* sesijas piegādes/maksātāja adrese → klienta adrese → `CF-IPCountry` (tikai ja `geo_cf` UN `REMOTE_ADDR` CloudFlare diapazonos —
+  `Features::CF_IPV4/CF_IPV6`, 07.11.2026; tas pats `CF-Connecting-IP`) → veikala valsts / nezināma (`geo_fallback`).
+- *Kupons:* SQL `date_start < NOW()` un `date_end > NOW()` kā OC3 kodols (OC 4.1 to pašu dara PHP; DB laika josla = PHP), t.i. beigu dienā vairs nerāda.
+- *Iestatījumi:* max_messages, autohide, pause_button, font, custom_css, ga4, geo_cf, geo_fallback, privacy_id, double_optin, signup_limit_ip,
+  signup_limit_total, consent_wait (+ iekšējais secret). `consent_wait` → `data-consent="1"`; JS `waitConsent()`, `abp:consent` notikums,
+  `abpPre.consent()` pārrēķina A/B un apmeklētāja noteikumus.
 
 **2.3.0 „Pro Max” (shēma 7):**
 - *Bezmaksas piegāde:* `type` = standard|free_shipping, `threshold` DECIMAL(15,4) (pamatvalūtā), `progress_bar`; teksts = progresa teksts ar
@@ -145,9 +152,9 @@ OC 4.1 valodas atslēga `config_language_catalog`, citur `config_language`.
 
 | Pārbaude | Rezultāts |
 |---|---|
-| OC 3.0.5.1: 2.3.0 ar 3 ziņām → 2.4.0 caur Extension Installer, migrācija 7→8, visas 15 iespējas caur admin UI + veikals 1366/390 | 115/115 |
-| OC 4.1.0.4: jauna 2.4.0 instalācija, tās pašas pārbaudes | 105/105 |
-| `tests/unit/schema_test.php` (shēma 8: jauna, 5→8, 6→8, 7→8, pārtraukta, atkārtota; SQL; features.php abos komplektos) | 163/163 |
+| OC 3.0.5.1: 2.3.0 ar 3 ziņām → 2.4.0 caur Extension Installer, migrācija 7→8, visas 15 iespējas caur admin UI + veikals 1366/390 | 133/133 |
+| OC 4.1.0.4: jauna 2.4.0 instalācija, tās pašas pārbaudes | 123/123 |
+| `tests/unit/schema_test.php` (shēma 8: jauna, 5→8, 6→8, 7→8, pārtraukta, atkārtota; SQL; features.php abos komplektos) + 2.4.0 pārskata labojumi (e-pasta injekcija, CloudFlare CIDR, pieteikšanās, kupons, groza endpoint) | 191/191 |
 | `tests/demo/test.js` (2.2/2.3 + vairākas joslas, trigeris, pakāpes, pauze, limits, auto-hide, GA4, forma, termiņš) | 64/64 |
 | `php -l` visiem PHP failiem, `build.sh` | OK |
 

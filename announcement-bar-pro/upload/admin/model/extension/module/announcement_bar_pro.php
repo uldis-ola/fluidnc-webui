@@ -307,6 +307,9 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 			self::CODE . '_geo_fallback'       => 'store',
 			self::CODE . '_privacy_id'         => 0,
 			self::CODE . '_double_optin'       => 1,
+			self::CODE . '_signup_limit_ip'    => 10,
+			self::CODE . '_signup_limit_total' => 200,
+			self::CODE . '_consent_wait'       => 0,
 			self::CODE . '_schema'             => self::SCHEMA_VERSION
 		);
 	}

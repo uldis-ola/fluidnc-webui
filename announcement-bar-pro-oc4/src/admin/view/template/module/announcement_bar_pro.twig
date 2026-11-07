@@ -360,6 +360,22 @@
                 </div>
               </div>
               <div class="row mb-3">
+                <label for="input-signup-limit-ip" class="col-sm-3 col-form-label">{{ entry_signup_limit_ip }}</label>
+                <div class="col-sm-9">
+                  <input type="number" min="1" max="1000" name="module_announcement_bar_pro_signup_limit_ip" value="{{ setting.signup_limit_ip|e }}" id="input-signup-limit-ip" class="form-control abp-num"/>
+                  <div class="form-text">{{ help_signup_limit_ip }}</div>
+                  <div id="error-signup-limit-ip" class="invalid-feedback"></div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label for="input-signup-limit-total" class="col-sm-3 col-form-label">{{ entry_signup_limit_total }}</label>
+                <div class="col-sm-9">
+                  <input type="number" min="1" max="100000" name="module_announcement_bar_pro_signup_limit_total" value="{{ setting.signup_limit_total|e }}" id="input-signup-limit-total" class="form-control abp-num"/>
+                  <div class="form-text">{{ help_signup_limit_total }}</div>
+                  <div id="error-signup-limit-total" class="invalid-feedback"></div>
+                </div>
+              </div>
+              <div class="row mb-3">
                 <label class="col-sm-3 col-form-label">{{ entry_subscribers }}</label>
                 <div class="col-sm-9">
                   <p class="abp-subs"><span class="abp-state abp-state-active">{{ subscriber_counts[1] }} {{ text_sub_confirmed }}</span> <span class="abp-state abp-state-scheduled">{{ subscriber_counts[0] }} {{ text_sub_pending }}</span> <span class="abp-state abp-state-disabled">{{ subscriber_counts[2] }} {{ text_sub_unsubscribed }}</span></p>
@@ -390,6 +406,15 @@
                     <input type="checkbox" name="module_announcement_bar_pro_ga4" value="1" id="input-ga4" class="form-check-input"{% if setting.ga4 %} checked{% endif %}/>
                   </div>
                   <div class="form-text">{{ help_ga4 }}</div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label for="input-consent-wait" class="col-sm-3 col-form-label">{{ entry_consent_wait }}</label>
+                <div class="col-sm-9">
+                  <div class="form-check form-switch form-switch-lg">
+                    <input type="checkbox" name="module_announcement_bar_pro_consent_wait" value="1" id="input-consent-wait" class="form-check-input"{% if setting.consent_wait %} checked{% endif %}/>
+                  </div>
+                  <div class="form-text">{{ help_consent_wait }}</div>
                 </div>
               </div>
             </div>

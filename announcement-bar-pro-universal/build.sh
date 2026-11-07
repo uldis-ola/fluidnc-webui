@@ -27,6 +27,17 @@ done
 for f in abp_admin.js abp_admin.css; do
 	cmp -s "$OC3/upload/admin/view/javascript/announcement_bar_pro/$f" "$OC4/admin/view/javascript/$f" 		|| { echo "Shared admin file differs between kits: $f" >&2; exit 1; }
 done
+# The feature library is shared below its "shared body" marker (the namespace header above it differs per kit):
+# that part must be byte-identical, LF line endings only.
+F3="$OC3/upload/system/library/announcementbarpro/features.php"
+F4="$OC4/system/library/features.php"
+MARK='---- shared body:'
+for f in "$F3" "$F4"; do
+	[ "$(grep -c -- "$MARK" "$f")" = 1 ] || { echo "Shared-body marker missing or repeated in $f" >&2; exit 1; }
+	[ "$(tr -cd '\r' < "$f" | wc -c)" -eq 0 ] || { echo "CR (Windows) line endings in $f — use LF" >&2; exit 1; }
+done
+cmp -s <(sed "1,/$MARK/d" "$F3") <(sed "1,/$MARK/d" "$F4") \
+	|| { echo "features.php differs between kits below the shared-body marker:" >&2; diff <(sed "1,/$MARK/d" "$F3") <(sed "1,/$MARK/d" "$F4") | head -20 >&2; exit 1; }
 STAGE=$(mktemp -d); trap 'rm -rf "$STAGE"' EXIT
 cp -r "$OC3/upload" "$OC3/install.xml" "$STAGE/"
 cp -r "$OC4/install.json" "$OC4/admin" "$OC4/catalog" "$OC4/system" "$STAGE/"

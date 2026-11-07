@@ -9,9 +9,12 @@
   'use strict';
 
   // Do Not Track, Global Privacy Control, or the shop's consent tool set window.abpConsent = false before this script.
+  // "Wait for cookie consent" (setting; data-consent="1" on the bars): until the shop's consent tool sets
+  // window.abpConsent = true, nothing is stored, read or sent (A/B choice, visitor memory, campaign, statistics, GA4).
+  function waitConsent() { return window.abpConsent !== true && !!document.querySelector('.abp[data-consent="1"]'); }
   function privacyOff() {
     var d = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
-    return d === '1' || d === 'yes' || navigator.globalPrivacyControl === true || window.abpConsent === false;
+    return d === '1' || d === 'yes' || navigator.globalPrivacyControl === true || window.abpConsent === false || waitConsent();
   }
   function storage(name) { try { var s = window[name]; s.getItem('abp'); return s; } catch (e) { return null; } }
   function readList(s, key) { try { var v = JSON.parse((s && s.getItem(key)) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
@@ -79,6 +82,14 @@
     for (i = 0; i < items.length; i++) { if ((items[i].getAttribute('data-style') || 'solid') !== 'solid' && !items[i].hasAttribute('data-img')) { styled = true; } }
     if (bar.getAttribute('data-color') === 'auto' || styled) { bar.className += ' abp-auto-pending'; }
 
+    rules(bar, items);
+    prepRest(bar, items, isBar);
+  }
+
+  /* A/B variant and campaign / referrer / visitor rules of a bar's messages; run again by abpPre.consent() when
+     the visitor accepts cookies later on this page ("Wait for cookie consent"). */
+  function rules(bar, items) {
+    var i;
     // A/B test: a stable random variant per browser (localStorage "abp_ab"); without storage everyone sees A.
     var ab = null, off = privacyOff();
     if (!off) { try { ab = JSON.parse(window.localStorage.getItem('abp_ab') || '{}'); if (!ab || typeof ab !== 'object') { ab = {}; } } catch (e0) { ab = null; } }
@@ -104,15 +115,17 @@
     for (i = 0; i < items.length; i++) {
       var el = items[i];
       if (el.hasAttribute('data-utm') || el.hasAttribute('data-vis')) {
-        var ok = true, rules = null;
-        if (el.hasAttribute('data-utm')) { try { rules = JSON.parse(el.getAttribute('data-utm')); } catch (e5) { rules = null; } ok = !!rules && campaignOk(rules); }
+        var ok = true, rule = null;
+        if (el.hasAttribute('data-utm')) { try { rule = JSON.parse(el.getAttribute('data-utm')); } catch (e5) { rule = null; } ok = !!rule && campaignOk(rule); }
         if (ok && el.hasAttribute('data-vis')) { ok = getVisitor() === el.getAttribute('data-vis'); }
         if (ok) { el.removeAttribute('data-uoff'); } else { el.setAttribute('data-uoff', '1'); }
       }
       if (el.hasAttribute('data-trig') && fired.indexOf(el.getAttribute('data-id')) !== -1) { el.removeAttribute('data-toff'); }
     }
+  }
 
-    var now = Date.now();
+  function prepRest(bar, items, isBar) {
+    var i, now = Date.now();
     var read = function (name) {
       try {
         var v = JSON.parse(window[name].getItem('abp_dismiss2') || 'null');
@@ -179,5 +192,16 @@
   }
 
   window.abpPre = run;
+  // Consent given later on this page: forget the "no storage" answers and decide A/B and visitor rules again.
+  run.consent = function () {
+    try {
+      campaign = null;
+      visitor = null;
+      var list = document.querySelectorAll('.abp[data-abp-pre="1"]');
+      for (var i = 0; i < list.length; i++) {
+        try { rules(list[i], list[i].querySelectorAll('.abp-item')); } catch (e1) { /* one broken box must not stop the others */ }
+      }
+    } catch (e) { /* never break the page */ }
+  };
   run();
 })();

@@ -829,6 +829,8 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		if (!in_array($this->postValue('font'), \Announcementbarpro\Features::FONTS, true))     $this->error['font'] = $this->language->get('error_value');
 		if (!in_array($this->postValue('geo_fallback'), array('store', 'none'), true))         $this->error['geo_fallback'] = $this->language->get('error_value');
 		if (!$this->validPrivacyId($this->postValue('privacy_id')))                            $this->error['privacy_id'] = $this->language->get('error_value');
+		if (!$this->intInRange($this->postValue('signup_limit_ip'), 1, 1000))                  $this->error['signup_limit_ip'] = sprintf($this->language->get('error_range'), 1, 1000);
+		if (!$this->intInRange($this->postValue('signup_limit_total'), 1, 100000))             $this->error['signup_limit_total'] = sprintf($this->language->get('error_range'), 1, 100000);
 		if (strlen($this->postValue('custom_css')) > self::MAX_CSS * 2)                         $this->error['custom_css'] = sprintf($this->language->get('error_text_length'), self::MAX_CSS);
 
 		if ($this->error) {
@@ -1107,7 +1109,10 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			'geo_cf'             => !empty($p[self::CODE . '_geo_cf']) ? 1 : 0,
 			'geo_fallback'       => $this->postValue('geo_fallback'),
 			'privacy_id'         => (int)$this->postValue('privacy_id'),
-			'double_optin'       => !empty($p[self::CODE . '_double_optin']) ? 1 : 0
+			'double_optin'       => !empty($p[self::CODE . '_double_optin']) ? 1 : 0,
+			'signup_limit_ip'    => (int)$this->postValue('signup_limit_ip'),
+			'signup_limit_total' => (int)$this->postValue('signup_limit_total'),
+			'consent_wait'       => !empty($p[self::CODE . '_consent_wait']) ? 1 : 0
 		);
 
 		$data = array();
@@ -1312,7 +1317,8 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 
 	private function settingKeys() {
 		return array('status', 'position', 'sticky', 'mode', 'interval', 'speed', 'font_size', 'padding', 'dismissible', 'dismiss_days', 'allow_html', 'default_bg_color', 'default_text_color', 'delete_data', 'color_mode', 'style', 'transition', 'arrows',
-			'max_messages', 'autohide', 'pause_button', 'font', 'custom_css', 'ga4', 'geo_cf', 'geo_fallback', 'privacy_id', 'double_optin');
+			'max_messages', 'autohide', 'pause_button', 'font', 'custom_css', 'ga4', 'geo_cf', 'geo_fallback', 'privacy_id', 'double_optin',
+			'signup_limit_ip', 'signup_limit_total', 'consent_wait');
 	}
 
 	private function styleList() {

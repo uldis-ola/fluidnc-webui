@@ -364,6 +364,23 @@ foreach (array('OC3' => '/announcement-bar-pro/upload/catalog/model/extension/mo
 	$sql[$kit] = isset($m[0]) ? $m[0] : '';
 	check("$kit catalog track(): whitelisted columns, status = 1, (int) id, overflow cap, B only with ab_test", strpos($sql[$kit], "'view'  => array('a' => 'views', 'b' => 'views_b')") !== false && strpos($sql[$kit], "'copy'  => array('a' => 'copies', 'b' => 'copies_b')") !== false && strpos($sql[$kit], "AND `status` = '1'") !== false && strpos($sql[$kit], "'\" . (int)\$message_id . \"'") !== false && strpos($sql[$kit], '< 4294967295') !== false && strpos($sql[$kit], "AND `ab_test` = '1'") !== false);
 	check("$kit catalog getActiveMessages(): 2.1 / 2.2 fallbacks when schema < 6 / < 7", strpos($src, "'all' AS `device`, '' AS `mobile_text`") !== false && strpos($src, "'standard' AS `type`") !== false && strpos($src, "'' AS `text_b`") !== false);
+	preg_match('/function getUsableCoupon\(.*?\n\t}/s', $src, $m);
+	check("$kit catalog getUsableCoupon(): dates checked in SQL like OpenCart (start < NOW(), end > NOW() — hidden on its end date)", isset($m[0]) && strpos($m[0], "AND `status` = '1' AND (`date_start` = '0000-00-00' OR `date_start` < NOW()) AND (`date_end` = '0000-00-00' OR `date_end` > NOW())") !== false && strpos($m[0], "date('Y-m-d')") === false);
+}
+
+// 12b. Catalog controller (2.4.0 review fixes): source checks in both kits.
+foreach (array('OC3' => '/announcement-bar-pro/upload/catalog/controller/extension/module/announcement_bar_pro.php', 'OC4' => '/announcement-bar-pro-oc4/src/catalog/controller/module/announcement_bar_pro.php') as $kit => $file) {
+	$src = file_get_contents($root . $file);
+	preg_match('/function signUp\(.*?\n\t}/s', $src, $m);
+	$su = isset($m[0]) ? $m[0] : '';
+	check("$kit signUp(): opt-in off never touches customer accounts nor re-subscribes an unsubscribed address; 3 mails / address / 24 h", $su !== '' && strpos($su, 'setCustomerNewsletter') === false && strpos($su, "!\$double && \$existing && (int)\$existing['status'] === 2") !== false && strpos($su, "limited('subscribe-mail', 3, 86400, strtolower(\$email))") !== false);
+	check("$kit subscribe(): per-IP / per-shop limits from the settings (defaults 10 / 200)", strpos($src, "_signup_limit_ip'), 1, 1000, 10), 3600)") !== false && strpos($src, "_signup_limit_total'), 1, 100000, 200), 3600, false)") !== false);
+	preg_match('/public function cart\(.*?\n\t}/s', $src, $m);
+	$ca = isset($m[0]) ? $m[0] : '';
+	check("$kit cart(): ids validated before the rate limit (no DB write without ids), 1200 / 10 min", $ca !== '' && strpos($ca, 'if ($ids && ') !== false && strpos($ca, "limited('cart', 1200, 600)") !== false && strpos($ca, '$ids') < strpos($ca, 'limited('));
+	check("$kit CloudFlare headers only through the library (REMOTE_ADDR in CloudFlare's ranges)", strpos($src, 'HTTP_CF_') === false && strpos($src, '->cfCountry(') !== false && strpos($src, '->clientIp(') !== false);
+	check("$kit confirmation mail: header values without CR / LF", strpos($src, '$mail->setTo($this->fx->headerText($email))') !== false && strpos($src, 'setSubject($this->fx->headerText(') !== false);
+	check("$kit consent wait passed to the template", strpos($src, "'consent'      => \$schema >= 8 && (bool)\$this->config->get(self::CODE . '_consent_wait')") !== false);
 }
 check('catalog track() identical in both kits', preg_replace('/\s+|: void|int |string /', '', preg_replace('/^.*?\{/s', '', $sql['OC3'])) === preg_replace('/\s+|: void|int |string /', '', preg_replace('/^.*?\{/s', '', $sql['OC4'])));
 
@@ -433,6 +450,19 @@ foreach (array('OC3' => '\Announcementbarpro\Features', 'OC4' => '\Opencart\Syst
 	check("$kit token: valid for its session after 2 s; not too early, not for another session or key, not after 2 days, not forged", $f->tokenValid($tok, 'secret', 'sess1', $T + 5) && !$f->tokenValid($tok, 'secret', 'sess1', $T + 1) && !$f->tokenValid($tok, 'secret', 'sess2', $T + 5) && !$f->tokenValid($tok, 'other', 'sess1', $T + 5) && !$f->tokenValid($tok, 'secret', 'sess1', $T + 172801) && !$f->tokenValid($T . '.' . str_repeat('0', 32), 'secret', 'sess1', $T + 5) && !$f->tokenValid($tok, '', 'sess1', $T + 5));
 	check("$kit csvCell: formula injection neutralised, quotes doubled", $f->csvCell('=HYPERLINK("x")') === '"\'=HYPERLINK(""x"")"' && $f->csvCell('+1') === '"\'+1"' && $f->csvCell('a@b.lv') === '"a@b.lv"');
 	check("$kit email(): valid, too long, invalid", $f->email(' a@b.lv ') === 'a@b.lv' && $f->email(str_repeat('a', 90) . '@b.lv') === '' && $f->email('a@b') === '' && $f->email('<a@b.lv>') === '');
+	// Header / SMTP injection through a quoted local part that FILTER_VALIDATE_EMAIL accepts (2.4.0 review).
+	$inj = array("\"a\\\nX-Injected:1\"@a.co", "\"a\\\rX:1\"@a.co", "a@a.co\r\nBcc: x@evil.co", "a@a.co\nRCPT TO:<x@evil.co>", "\"x y\"@a.co", "\"a\\\\b\"@a.co", "a\x00@a.co", "a\x7f@a.co", "a@a.co\t1");
+	$all = true;
+	foreach ($inj as $x) { if ($f->email($x) !== '') { $all = false; echo '   accepted: ' . json_encode($x) . "\n"; } }
+	check("$kit email(): injection strings refused (quoted local part with escaped CR / LF, raw CR / LF, quotes, backslash, NUL, DEL)", $all && filter_var("\"a\\\nX-Injected:1\"@a.co", FILTER_VALIDATE_EMAIL) !== false);
+	check("$kit email(): ordinary addresses still valid", $f->email('first.last+tag@sub.example.co.uk') === 'first.last+tag@sub.example.co.uk' && $f->email("o'brien@example.ie") === "o'brien@example.ie");
+	check("$kit headerText(): CR / LF / control characters → space", $f->headerText("Shop\r\nBcc: x@evil.co") === 'Shop Bcc: x@evil.co' && $f->headerText("a\x00b\tc") === 'a b c' && $f->headerText('Veikals Ā') === 'Veikals Ā');
+	check("$kit ipInCidr(): IPv4 / IPv6, prefix edges, other family never matches", $f->ipInCidr('104.16.0.1', '104.16.0.0/13') && $f->ipInCidr('104.23.255.255', '104.16.0.0/13') && !$f->ipInCidr('104.24.0.0', '104.16.0.0/13') && $f->ipInCidr('2a06:98c7:ffff::1', '2a06:98c0::/29') && !$f->ipInCidr('2a06:98c8::1', '2a06:98c0::/29') && !$f->ipInCidr('104.16.0.1', '2400:cb00::/32') && !$f->ipInCidr('x', '104.16.0.0/13') && !$f->ipInCidr('104.16.0.1', '104.16.0.0/33') && $f->ipInCidr('1.2.3.4', '0.0.0.0/0'));
+	check("$kit isCloudflare(): published ranges (v4, v6, v4-mapped) only", $f->isCloudflare('173.245.48.10') && $f->isCloudflare('131.0.75.255') && $f->isCloudflare('2606:4700:10::6816:1') && $f->isCloudflare('::ffff:162.158.1.1') && !$f->isCloudflare('8.8.8.8') && !$f->isCloudflare('127.0.0.1') && !$f->isCloudflare('2001:db8::1') && !$f->isCloudflare('') && count(constant(get_class($f) . '::CF_IPV4')) === 15 && count(constant(get_class($f) . '::CF_IPV6')) === 7);
+	$cf   = array('REMOTE_ADDR' => '162.158.10.20', 'HTTP_CF_CONNECTING_IP' => '203.0.113.7', 'HTTP_CF_IPCOUNTRY' => 'lv');
+	$fake = array('REMOTE_ADDR' => '198.51.100.9', 'HTTP_CF_CONNECTING_IP' => '203.0.113.7', 'HTTP_CF_IPCOUNTRY' => 'LV');
+	check("$kit clientIp(): CF-Connecting-IP only from a CloudFlare REMOTE_ADDR with the setting on", $f->clientIp($cf, true) === '203.0.113.7' && $f->clientIp($cf, false) === '162.158.10.20' && $f->clientIp($fake, true) === '198.51.100.9' && $f->clientIp(array('REMOTE_ADDR' => '162.158.10.20', 'HTTP_CF_CONNECTING_IP' => 'junk'), true) === '162.158.10.20' && $f->clientIp(array(), true) === '');
+	check("$kit cfCountry(): CF-IPCountry only from CloudFlare with the setting on; XX / T1 / junk ignored", $f->cfCountry($cf, true) === 'LV' && $f->cfCountry($cf, false) === '' && $f->cfCountry($fake, true) === '' && $f->cfCountry(array('REMOTE_ADDR' => '162.158.10.20', 'HTTP_CF_IPCOUNTRY' => 'XX'), true) === '' && $f->cfCountry(array('REMOTE_ADDR' => '162.158.10.20', 'HTTP_CF_IPCOUNTRY' => 'T1'), true) === '' && $f->cfCountry(array('REMOTE_ADDR' => '162.158.10.20', 'HTTP_CF_IPCOUNTRY' => 'LVA'), true) === '');
 	check("$kit imagePath(): only catalog images, no traversal / quotes", $f->imagePath('catalog/demo/a b.jpg') && !$f->imagePath('catalog/../config.php') && !$f->imagePath('catalog/x".jpg') && !$f->imagePath('image/catalog/x.jpg') && !$f->imagePath('catalog/x.php'));
 	$tpl = $f->templates(); $complete = true;
 	foreach ($tpl as $k => $x) { foreach (array('en', 'lv', 'ru') as $l) { if (empty($x['name'][$l]) || empty($x['text'][$l])) { $complete = false; } } }

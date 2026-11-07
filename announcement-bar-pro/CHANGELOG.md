@@ -1,7 +1,7 @@
 # Changelog
 
 ## 2.4.0 — 2026-11-07
-Several bars + inline boxes with priority, country / cart / campaign / new-or-returning targeting, per-country and per-currency free-shipping amounts, OpenCart coupons, tiered goals, triggers, recurring countdown, e-mail sign-up with double opt-in, background image, system fonts, custom CSS, auto-hide, pause button, 13 templates, GA4 events; DB schema 8. Full list: `CHANGELOG.md` of the universal package (`announcement-bar-pro-universal`).
+Several bars + inline boxes with priority, country / cart / campaign / new-or-returning targeting, per-country and per-currency free-shipping amounts, OpenCart coupons, tiered goals, triggers, recurring countdown, e-mail sign-up with double opt-in, background image, system fonts, custom CSS, auto-hide, pause button, 13 templates, GA4 events; DB schema 8. Pre-release review fixes: e-mail header injection through quoted addresses closed, CloudFlare headers trusted only from CloudFlare IP ranges, no account newsletter changes or re-subscriptions without double opt-in, 3 confirmation mails per address per day, sign-up limits in Settings, coupon hidden on its end date (as OpenCart), Wait for cookie consent setting, cheaper cart endpoint. Full list: `CHANGELOG.md` of the universal package (`announcement-bar-pro-universal`).
 
 ## 2.0.5 — 2026-11-05
 Fixes from the black-box test on OpenCart 4.1.0.4 (all apply to both packages):

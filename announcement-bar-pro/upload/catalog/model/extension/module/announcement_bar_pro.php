@@ -120,23 +120,20 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 
 	/**
 	 * Code of an OpenCart coupon that can be used right now (status on, inside its dates, total and per-customer
-	 * uses left, login rule), else ''. Same rules as OpenCart's own coupon check.
+	 * uses left, login rule), else ''. Same rules as OpenCart's own coupon check (the minimum cart total is not a reason
+	 * to hide the code).
 	 */
 	public function getUsableCoupon($coupon_id, $customer_id) {
-		$query = $this->db->query("SELECT `coupon_id`, `code`, `logged`, `uses_total`, `uses_customer`, `date_start`, `date_end` FROM `" . DB_PREFIX . "coupon` WHERE `coupon_id` = '" . (int)$coupon_id . "' AND `status` = '1'");
+		// Dates exactly as OpenCart's coupon total checks them: date_start < NOW() and date_end > NOW() (DATE columns, so
+		// a coupon is no longer accepted on its end date). OpenCart 3 does it in SQL; 4.1 compares the same values in PHP
+		// with strtotime(), and both set the database time zone to PHP's, so NOW() is the same moment.
+		$query = $this->db->query("SELECT `coupon_id`, `code`, `logged`, `uses_total`, `uses_customer` FROM `" . DB_PREFIX . "coupon` WHERE `coupon_id` = '" . (int)$coupon_id . "' AND `status` = '1' AND (`date_start` = '0000-00-00' OR `date_start` < NOW()) AND (`date_end` = '0000-00-00' OR `date_end` > NOW())");
 
 		if (!$query->num_rows) {
 			return '';
 		}
 
 		$coupon = $query->row;
-		$today  = date('Y-m-d');
-		$start  = substr((string)$coupon['date_start'], 0, 10);
-		$end    = substr((string)$coupon['date_end'], 0, 10);
-
-		if (($start !== '' && $start !== '0000-00-00' && $start > $today) || ($end !== '' && $end !== '0000-00-00' && $end < $today)) {
-			return '';
-		}
 
 		if ((int)$coupon['logged'] && !$customer_id) {
 			return '';

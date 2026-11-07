@@ -368,6 +368,22 @@
                 </div>
               </div>
               <div class="form-group">
+                <label class="col-sm-3 control-label" for="input-signup-limit-ip">{{ entry_signup_limit_ip }}</label>
+                <div class="col-sm-9">
+                  <input type="number" min="1" max="1000" name="module_announcement_bar_pro_signup_limit_ip" id="input-signup-limit-ip" value="{{ setting.signup_limit_ip|e }}" class="form-control abp-num" />
+                  <span class="abp-help">{{ help_signup_limit_ip }}</span>
+                  {% if error_settings.signup_limit_ip %}<div class="text-danger">{{ error_settings.signup_limit_ip|e }}</div>{% endif %}
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label" for="input-signup-limit-total">{{ entry_signup_limit_total }}</label>
+                <div class="col-sm-9">
+                  <input type="number" min="1" max="100000" name="module_announcement_bar_pro_signup_limit_total" id="input-signup-limit-total" value="{{ setting.signup_limit_total|e }}" class="form-control abp-num" />
+                  <span class="abp-help">{{ help_signup_limit_total }}</span>
+                  {% if error_settings.signup_limit_total %}<div class="text-danger">{{ error_settings.signup_limit_total|e }}</div>{% endif %}
+                </div>
+              </div>
+              <div class="form-group">
                 <label class="col-sm-3 control-label">{{ entry_subscribers }}</label>
                 <div class="col-sm-9">
                   <p class="form-control-static abp-subs"><span class="abp-state abp-state-active">{{ subscriber_counts[1] }} {{ text_sub_confirmed }}</span> <span class="abp-state abp-state-scheduled">{{ subscriber_counts[0] }} {{ text_sub_pending }}</span> <span class="abp-state abp-state-disabled">{{ subscriber_counts[2] }} {{ text_sub_unsubscribed }}</span></p>
@@ -396,6 +412,13 @@
                 <div class="col-sm-9">
                   <div class="checkbox"><label><input type="checkbox" name="module_announcement_bar_pro_ga4" id="input-ga4" value="1"{% if setting.ga4 %} checked="checked"{% endif %} /> {{ text_yes }}</label></div>
                   <span class="abp-help">{{ help_ga4 }}</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label" for="input-consent-wait">{{ entry_consent_wait }}</label>
+                <div class="col-sm-9">
+                  <div class="checkbox"><label><input type="checkbox" name="module_announcement_bar_pro_consent_wait" id="input-consent-wait" value="1"{% if setting.consent_wait %} checked="checked"{% endif %} /> {{ text_yes }}</label></div>
+                  <span class="abp-help">{{ help_consent_wait }}</span>
                 </div>
               </div>
             </div>

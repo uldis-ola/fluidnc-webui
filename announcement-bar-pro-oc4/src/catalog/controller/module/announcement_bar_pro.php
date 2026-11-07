@@ -379,6 +379,8 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 			'max'          => $schema >= 8 ? $this->clamp($this->config->get(self::CODE . '_max_messages'), 0, 20, 0) : 0,
 			'font'         => in_array($font, \Opencart\System\Library\Extension\AnnouncementBarPro\Features::FONTS, true) ? $font : '',
 			'ga4'          => $schema >= 8 && (bool)$this->config->get(self::CODE . '_ga4'),
+			// "Wait for cookie consent": A/B, visitor memory, statistics and GA4 only once window.abpConsent === true.
+			'consent'      => $schema >= 8 && (bool)$this->config->get(self::CODE . '_consent_wait'),
 			'custom_css'   => $schema >= 8 ? $this->fx->css((string)$this->config->get(self::CODE . '_custom_css')) : '',
 			'transition'   => $this->config->get(self::CODE . '_transition') === 'slide' ? 'slide' : 'fade',
 			'interval'     => $this->clamp($this->config->get(self::CODE . '_interval'), 2, 60, 5),
@@ -760,7 +762,8 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 
 	/**
 	 * Country and zone: address chosen in this visit (shipping, then payment), the customer's own address,
-	 * CloudFlare's CF-IPCountry (only when switched on), else the store country (or unknown). No external service.
+	 * CloudFlare's CF-IPCountry (only when switched on and the request comes from a CloudFlare address), else the store
+	 * country (or unknown). No external service.
 	 */
 	private function place() {
 		if ($this->place !== null) {
@@ -784,9 +787,10 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 		}
 
 		if (!$country && $this->config->get(self::CODE . '_geo_cf')) {
-			$iso = isset($this->request->server['HTTP_CF_IPCOUNTRY']) && is_string($this->request->server['HTTP_CF_IPCOUNTRY']) ? strtoupper($this->request->server['HTTP_CF_IPCOUNTRY']) : '';
+			// Only on requests that come from CloudFlare's own addresses: anyone else could send the header.
+			$iso = $this->features()->cfCountry(is_array($this->request->server) ? $this->request->server : array(), true);
 
-			if (preg_match('/^[A-Z]{2}$/', $iso) && $iso !== 'XX' && $iso !== 'T1') {
+			if ($iso !== '') {
 				$this->load->model(self::ROUTE);
 				$country = $this->model_extension_announcement_bar_pro_module_announcement_bar_pro->getCountryIdByIso($iso);
 			}
@@ -837,10 +841,13 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 		try {
 			$schema = (int)$this->config->get(self::CODE . '_schema');
 
-			if (isset($this->request->server['REQUEST_METHOD']) && $this->request->server['REQUEST_METHOD'] === 'GET' && $this->config->get(self::CODE . '_status') && $schema >= 7 && $this->sameOrigin(true) && !$this->limited('cart', 300, 600)) {
-				$this->abp = $this->sanitizer();
+			$this->abp = $this->sanitizer();
+			$ids       = $this->abp->idList(isset($this->request->get['ids']) && is_string($this->request->get['ids']) ? $this->request->get['ids'] : '', 20);
+
+			// Cheap checks first: without valid ids there is nothing to do (no rate-limit write either). The limit
+			// (1200 per 10 minutes per visitor) only stops scripted floods: shoppers change the cart far less often.
+			if ($ids && isset($this->request->server['REQUEST_METHOD']) && $this->request->server['REQUEST_METHOD'] === 'GET' && $this->config->get(self::CODE . '_status') && $schema >= 7 && $this->sameOrigin(true) && !$this->limited('cart', 1200, 600)) {
 				$this->fx  = $this->features();
-				$ids       = $this->abp->idList(isset($this->request->get['ids']) && is_string($this->request->get['ids']) ? $this->request->get['ids'] : '', 20);
 
 				if ($ids) {
 					$language_id = (int)$this->config->get('config_language_id');
@@ -978,7 +985,7 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 				$json['error'] = $text('abp_error_token');
 			} elseif (!empty($post['website'])) {
 				$json['ok'] = 1; // honeypot filled: a bot — pretend it worked, do nothing
-			} elseif ($this->limited('subscribe', 10, 3600) || $this->limited('subscribe-all', 200, 3600, false)) {
+			} elseif ($this->limited('subscribe', $this->clamp($this->config->get(self::CODE . '_signup_limit_ip'), 1, 1000, 10), 3600) || $this->limited('subscribe-all', $this->clamp($this->config->get(self::CODE . '_signup_limit_total'), 1, 100000, 200), 3600, false)) {
 				$json['error'] = $text('abp_error_rate');
 			} else {
 				$email = $this->fx->email(isset($post['email']) && is_string($post['email']) ? html_entity_decode($post['email'], ENT_QUOTES, 'UTF-8') : '');
@@ -1011,16 +1018,31 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 		$this->response->setOutput(json_encode($json));
 	}
 
-	/** Stores the sign-up and sends the confirmation e-mail (double opt-in), or subscribes at once (opt-in off). */
+	/**
+	 * Stores the sign-up and sends the confirmation e-mail (double opt-in), or subscribes at once (opt-in off).
+	 * The answer is the same whether or not the address was known. Without double opt-in nobody proves that the
+	 * address is theirs, so customer accounts' newsletter flags are never changed then and an unsubscribed address is
+	 * never subscribed again (only its owner can, through the confirmation e-mail of double opt-in).
+	 */
 	private function signUp($email, $message_id) {
 		$model    = $this->model_extension_announcement_bar_pro_module_announcement_bar_pro;
 		$store_id = (int)$this->config->get('config_store_id');
 		$double   = (bool)$this->config->get(self::CODE . '_double_optin');
 		$existing = $model->getSubscriber($email, $store_id);
-		$done     = array('ok' => 1, 'msg' => '');
+		$done     = array('ok' => 1, 'msg' => $double ? '' : $this->language->get('abp_text_email_done'));
 
 		// Already confirmed, or a confirmation e-mail went out less than 10 minutes ago: same answer, nothing sent.
 		if ($existing && ((int)$existing['status'] === 1 || ((int)$existing['status'] === 0 && strtotime($existing['date_added']) > time() - 600))) {
+			return $done;
+		}
+
+		// Opt-in off: an unsubscribed address stays unsubscribed (same answer, nothing changes).
+		if (!$double && $existing && (int)$existing['status'] === 2) {
+			return $done;
+		}
+
+		// At most 3 confirmation e-mails per address in 24 hours (keyed hash of the address; same answer, nothing sent).
+		if ($double && $this->limited('subscribe-mail', 3, 86400, strtolower($email))) {
 			return $done;
 		}
 
@@ -1051,10 +1073,10 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 		));
 
 		if (!$double) {
-			$model->setCustomerNewsletter($email, true);
+			// The module's own list only: a customer account's newsletter flag changes only after a confirmed opt-in.
 			$model->countSubscribe($message_id);
 
-			return array('ok' => 1, 'msg' => $this->language->get('abp_text_email_done'));
+			return $done;
 		}
 
 		if (!$this->sendConfirmation($email, $token, $unsub)) {
@@ -1068,12 +1090,16 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 
 	/** Double opt-in e-mail through the shop's own mail settings. False when it could not be sent. */
 	private function sendConfirmation($email, $token, $unsub) {
+		if ($this->fx->email($email) === '') {
+			return false;
+		}
+
 		if ((string)$this->config->get('config_mail_engine') === '' || (string)$this->config->get('config_email') === '') {
 			$this->log->write('Announcement Bar Pro: sign-up confirmation not sent — the shop\'s mail settings are incomplete.');
 			return false;
 		}
 
-		$store   = html_entity_decode((string)$this->config->get('config_name'), ENT_QUOTES, 'UTF-8');
+		$store   = $this->fx->headerText(html_entity_decode((string)$this->config->get('config_name'), ENT_QUOTES, 'UTF-8'));
 		$lang    = 'language=' . $this->config->get('config_language');
 		$confirm = str_replace('&amp;', '&', $this->url->link(self::ROUTE . $this->sep() . 'confirm', $lang . '&t=' . $token));
 		$leave   = str_replace('&amp;', '&', $this->url->link(self::ROUTE . $this->sep() . 'unsubscribe', $lang . '&t=' . $unsub));
@@ -1101,10 +1127,11 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 				'smtp_timeout'  => $this->config->get('config_mail_smtp_timeout')
 			]);
 
-			$mail->setTo($email);
-			$mail->setFrom($this->config->get('config_email'));
+			// No CR / LF can reach a header (the address was validated already; this is a second line of defence).
+			$mail->setTo($this->fx->headerText($email));
+			$mail->setFrom($this->fx->headerText($this->config->get('config_email')));
 			$mail->setSender($store);
-			$mail->setSubject(sprintf($l('abp_mail_subject'), $store));
+			$mail->setSubject($this->fx->headerText(sprintf($l('abp_mail_subject'), $store)));
 			$mail->setText($text);
 			$mail->setHtml($html);
 			$mail->send();
@@ -1189,7 +1216,8 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 
 	/**
 	 * Rate limit of a public endpoint: true when this visitor (IP, never stored — only a keyed hash) made more than $max
-	 * requests in the current $window seconds. $per_ip = false counts every visitor together. Needs schema 8.
+	 * requests in the current $window seconds. $per_ip = false counts every visitor together; a string counts that key
+	 * (an e-mail address — also kept only as a keyed hash). Needs schema 8.
 	 */
 	private function limited($action, $max, $window, $per_ip = true) {
 		if ((int)$this->config->get(self::CODE . '_schema') < 8) {
@@ -1198,20 +1226,18 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 
 		$this->load->model(self::ROUTE);
 
-		$bucket = hash_hmac('sha1', $action . '|' . ($per_ip ? $this->clientIp() : '*'), (string)$this->config->get(self::CODE . '_secret'));
+		$who    = is_string($per_ip) ? 'k:' . $per_ip : ($per_ip ? $this->clientIp() : '*');
+		$bucket = hash_hmac('sha1', $action . '|' . $who, (string)$this->config->get(self::CODE . '_secret'));
 
 		return $this->model_extension_announcement_bar_pro_module_announcement_bar_pro->hit($bucket, (int)$window) > (int)$max;
 	}
 
-	/** Visitor IP for the rate limit; behind CloudFlare (only when switched on) its CF-Connecting-IP header. */
+	/**
+	 * Visitor IP for the rate limit: REMOTE_ADDR; behind CloudFlare (only when switched on, and only when REMOTE_ADDR is
+	 * one of CloudFlare's published addresses) its CF-Connecting-IP header.
+	 */
 	private function clientIp() {
-		$server = $this->request->server;
-
-		if ($this->config->get(self::CODE . '_geo_cf') && isset($server['HTTP_CF_CONNECTING_IP']) && is_string($server['HTTP_CF_CONNECTING_IP']) && filter_var($server['HTTP_CF_CONNECTING_IP'], FILTER_VALIDATE_IP)) {
-			return $server['HTTP_CF_CONNECTING_IP'];
-		}
-
-		return isset($server['REMOTE_ADDR']) && is_string($server['REMOTE_ADDR']) ? $server['REMOTE_ADDR'] : '';
+		return $this->features()->clientIp(is_array($this->request->server) ? $this->request->server : array(), (bool)$this->config->get(self::CODE . '_geo_cf'));
 	}
 
 	/* ------------------------------------------------------------------ *
