@@ -175,6 +175,27 @@ const setting = k => q("select value from oc_setting where `key`='module_announc
 	const phoneW = await p.$eval('#abp-preview-frame', f => f.getBoundingClientRect().width);
 	ok('form: phone preview ≈ 390 px wide', phoneW > 300 && phoneW <= 390, String(phoneW));
 	await p.click('[data-abp-pv="device"][data-value="desktop"]'); await sleep(300);
+	// 2.3.0 fix: icons in the sandboxed preview (icon font embedded as data:font/woff2)
+	{
+		const cerr = [];
+		const onc = m => { if (m.type() === 'error') cerr.push(m.text()); }, onpe = e => cerr.push('pageerror ' + e.message);
+		p.on('console', onc); p.on('pageerror', onpe);
+		await p.fill('#input-icon', 'fa-star'); await sleep(3500);
+		const srcdoc = await p.$eval('#abp-preview-frame', f => f.srcdoc || '');
+		const fr = pvFrame();
+		const ico = fr ? await fr.evaluate(async () => {
+			const i = document.querySelector('#abp-bar .abp-ico');
+			if (!i) { return { none: true }; }
+			try { await document.fonts.ready; } catch (e) { /* ignore */ }
+			const r = i.getBoundingClientRect(), cs = getComputedStyle(i), bc = getComputedStyle(i, '::before').content;
+			return { w: r.width, h: r.height, cls: i.className, fam: cs.fontFamily, before: bc, loaded: [...document.fonts].filter(f => f.status === 'loaded').map(f => f.family) };
+		}).catch(e => ({ err: e.message })) : { err: 'no frame' };
+		p.off('console', onc); p.off('pageerror', onpe);
+		ok('preview icon: srcdoc embeds the icon font (data:font/woff2)', srcdoc.includes('data:font/woff2'), 'srcdoc length ' + srcdoc.length);
+		ok('preview icon: icon element has non-zero width, font loaded in the frame', ico.w > 0 && /star/.test(ico.cls) && ico.loaded && ico.loaded.length > 0, JSON.stringify(ico));
+		ok('preview icon: no console errors while the icon is chosen', cerr.length === 0, cerr.join(' | '));
+		await p.screenshot({ path: `${SHOTS}/${TAG}-admin-form-icon.png`, fullPage: false });
+	}
 	await p.screenshot({ path: `${SHOTS}/${TAG}-admin-form-preview.png`, fullPage: false });
 	await p.screenshot({ path: `${SHOTS}/${TAG}-admin-form-full.png`, fullPage: true });
 
@@ -212,9 +233,53 @@ const setting = k => q("select value from oc_setting where `key`='module_announc
 		ok('free shipping: server render after reload matches (success)', /You have free shipping!/.test((await fsTxt()).t));
 		// endpoint: same-origin only, read-only JSON
 		const direct = await (await p.request.get(BASE + 'index.php?route=' + ROUTE + SEP + 'cart&ids=' + idFs)).text();
-		ok('free shipping endpoint: request without browser origin headers → empty JSON, no error output', direct.trim() === '{"m":{}}', direct.slice(0, 200));
+		ok('free shipping endpoint: GET without Origin/Referer/Sec-Fetch-Site (2.3.0: lenient for read-only) → data, no error output', /^\{"m":\{"\d+":/.test(direct.trim()) && direct.includes('"' + idFs + '"'), direct.slice(0, 200));
 		await pg.screenshot({ path: `${SHOTS}/${TAG}-store-free-shipping.png`, clip: { x: 0, y: 0, width: 1366, height: 200 } });
 		await c.close();
+	}
+
+	// ---- 1b. (2.3.0 review fix) free-shipping endpoint honours store + customer-group restrictions and Sec-Fetch-Site ----
+	{
+		const gid = q("select value from oc_setting where `key`='config_customer_group_id' limit 1");
+		const r1 = OC4 ? q("insert into oc_store (name,url) values ('Other store','http://other.example/')") : q("insert into oc_store (name,url,`ssl`) values ('Other store','http://other.example/','')");
+		const otherStore = q('select max(store_id) from oc_store');
+		q('insert into oc_customer_group (approval,sort_order) values (0,5)');
+		const otherGroup = q('select max(customer_group_id) from oc_customer_group');
+		const r2 = q(`insert into oc_customer_group_description (customer_group_id,language_id,name,description) values (${otherGroup},1,'Wholesale','')`);
+		ok('endpoint filters: fixtures (second store, second customer group) created', otherStore !== '0' && otherStore !== '' && otherGroup !== gid && !/SQLERR/.test(r1 + r2 + otherStore + otherGroup), [r1, r2, otherStore, otherGroup, gid].join(' '));
+		const mk = async (label, mark) => {
+			const er = await saveForm(0, async () => {
+				await p.selectOption('[name="type"]', 'free_shipping');
+				await p.fill('textarea[name="message_description[1][text]"]', 'Filter test ' + label + ' {remaining}');
+				await p.fill('[name="threshold"]', '150');
+				await p.fill('textarea[name="message_description[1][success_text]"]', 'Filter done ' + label);
+				await p.$$eval('input[name="stores[]"], input[name="customer_groups[]"]', es => es.forEach(x => { x.checked = false; }));
+				await mark();
+			});
+			return [er, q('select max(message_id) from oc_abp_message')];
+		};
+		const [eS, idOS] = await mk('otherstore', () => p.setChecked(`input[name="stores[]"][value="${otherStore}"]`, true, { force: true }));
+		const [eG, idOG] = await mk('othergroup', () => p.setChecked(`input[name="customer_groups[]"][value="${otherGroup}"]`, true, { force: true }));
+		const [eK, idGG] = await mk('guestgroup', () => p.setChecked(`input[name="customer_groups[]"][value="${gid}"]`, true, { force: true }));
+		const lst = (id, col) => { try { return JSON.parse(q(`select ${col} from oc_abp_message where message_id=${id}`) || '[]').map(String); } catch (x) { return ['ERR']; } };
+		const fx = { s: lst(idOS, 'stores'), gS: lst(idOS, 'customer_groups'), g: lst(idOG, 'customer_groups'), sG: lst(idOG, 'stores'), k: lst(idGG, 'customer_groups'), sK: lst(idGG, 'stores') };
+		ok('endpoint filters: 3 restricted free-shipping messages saved through the form', !eS && !eG && !eK && fx.s.join() === otherStore && !fx.gS.length && fx.g.join() === otherGroup && !fx.sG.length && fx.k.join() === gid && !fx.sK.length, [eS, eG, eK].join('|') + ' ' + JSON.stringify(fx));
+		const url = BASE + 'index.php?route=' + ROUTE + SEP + 'cart&ids=' + [idFs, idOS, idOG, idGG].join(',');
+		const get = async h => (await fetch(url, { headers: h || {} })).text();
+		const j1 = JSON.parse(await get()), k1 = Object.keys(j1.m || {});
+		ok('endpoint filters: other-store message NOT returned', !k1.includes(idOS), JSON.stringify(k1));
+		ok('endpoint filters: message for another customer group NOT returned', !k1.includes(idOG), JSON.stringify(k1));
+		ok('endpoint filters: message for the guest group and the unrestricted one ARE returned', k1.includes(idGG) && k1.includes(idFs), JSON.stringify(k1) + ' ' + JSON.stringify(j1).slice(0, 200));
+		const t2 = await get({ 'Sec-Fetch-Site': 'cross-site' });
+		ok('endpoint: Sec-Fetch-Site: cross-site → empty object', t2.trim() === '{"m":{}}', t2.slice(0, 200));
+		const t3 = JSON.parse(await get({ 'Sec-Fetch-Site': 'same-origin' }));
+		ok('endpoint: Sec-Fetch-Site: same-origin → data', Object.keys(t3.m || {}).includes(idGG), JSON.stringify(t3).slice(0, 200));
+		const t4 = JSON.parse(await get({ Origin: 'http://evil.example' }));
+		ok('endpoint: foreign Origin (no Sec-Fetch-Site) → empty object', Object.keys(t4.m || {}).length === 0, JSON.stringify(t4).slice(0, 200));
+		// keep the later checks unchanged: switch the fixtures off again
+		q(`update oc_abp_message set status=0 where message_id in (${idOS},${idOG})`);
+		globalThis.__idGG = idGG;
+		q(`update oc_abp_message set status=0 where message_id=${idGG}`);
 	}
 
 	// ================= 2. Coupon + copy =================
@@ -265,6 +330,28 @@ const setting = k => q("select value from oc_setting where `key`='module_announc
 		await sleep(1500);
 		const st = q(`select concat(views,'/',views_b) from oc_abp_message where message_id=${id1}`).split('/').map(Number);
 		ok('A/B: views counted per variant (once per browser session)', st[0] === 12 - nb && st[1] === nb, st.join('/') + ' expected ' + (12 - nb) + '/' + nb);
+	}
+	// 2.3.0 review fix: no A/B storage under GPC / consent refused; variant A is shown
+	{
+		const gpc = () => Object.defineProperty(navigator, 'globalPrivacyControl', { value: true, configurable: true });
+		const noc = () => { window.abpConsent = false; };
+		const run = async (init, n) => {
+			const out = [];
+			for (let i = 0; i < n; i++) {
+				const { c, pg } = await shop();
+				if (init) await c.addInitScript(init);
+				await pg.goto(BASE); await pg.waitForSelector('#abp-bar'); await sleep(600);
+				const it = (await barInfo(pg)).items.find(x => x.id === id1);
+				out.push({ v: it && it.variant, txt: it && it.txt, ls: await pg.evaluate(() => window.localStorage.getItem('abp_ab')), gpc: await pg.evaluate(() => navigator.globalPrivacyControl === true) });
+				await c.close();
+			}
+			return out;
+		};
+		const g = await run(gpc, 10), n = await run(noc, 10), nm = await run(null, 1);
+		ok('A/B: navigator.globalPrivacyControl=true → localStorage "abp_ab" not written, always variant A (10 fresh browsers)', g.every(x => x.gpc && x.ls === null && x.v === 'a'), JSON.stringify(g.slice(0, 3)));
+		ok('A/B: window.abpConsent=false → localStorage "abp_ab" not written, always variant A (10 fresh browsers)', n.every(x => x.ls === null && x.v === 'a'), JSON.stringify(n.slice(0, 3)));
+		ok('A/B: normal browser → "abp_ab" written with the message id', !!nm[0].ls && nm[0].ls.includes('"' + id1 + '"') && /^[ab]$/.test(nm[0].v), JSON.stringify(nm[0]));
+		ok('A/B (GPC + no consent): the A text and button are shown', [...g, ...n].every(x => /Orders open soon/.test(x.txt) && /Contact us/.test(x.txt) && !/Version B/.test(x.txt)), JSON.stringify(g.slice(0, 1)));
 	}
 	q(`update oc_abp_message set views=150,clicks=3,views_b=150,clicks_b=9 where message_id=${id1}`);
 	await p.goto(A(ROUTE));
@@ -468,6 +555,17 @@ const setting = k => q("select value from oc_setting where `key`='module_announc
 	await p.goto(A(ROUTE));
 	const badges = await p.$$eval('.abp-badge', bs => bs.map(x => x.className + ':' + x.textContent.trim()).join(' | '));
 	ok('list: free-shipping / coupon / targeting badges', /abp-b-fs/.test(badges) && /SAVE-10/.test(badges) && /abp-b-target/.test(badges), badges.slice(0, 300));
+	// 2.3.0 fix: icon-only badges carry screen-reader text
+	q(`update oc_abp_message set device='mobile' where message_id=${globalThis.__idGG}`);
+	await p.goto(A(ROUTE));
+	{
+		const SR = OC4 ? '.visually-hidden' : '.sr-only';
+		const bb = await p.$$eval('.abp-badge', (els, sr) => els.map(e => { const s = e.querySelector(sr); const clone = e.cloneNode(true); clone.querySelectorAll(sr).forEach(x => x.remove()); return { cls: e.className, sr: s ? s.textContent.trim() : null, visible: clone.textContent.trim() }; }), SR);
+		const iconOnly = bb.filter(x => x.visible === '');
+		ok('list: icon-only badges (targeting, device) exist and each has non-empty ' + SR + ' text', iconOnly.length >= 2 && iconOnly.every(x => x.sr && x.sr.length > 0) && iconOnly.some(x => /abp-b-target/.test(x.cls)), JSON.stringify(iconOnly));
+		const hidden = await p.$eval('.abp-b-target ' + SR, e => { const s = getComputedStyle(e); return { w: e.getBoundingClientRect().width, pos: s.position }; }).catch(x => ({ err: x.message }));
+		ok('list: ' + SR + ' text is visually hidden (1px / absolute), not display:none', hidden.pos === 'absolute' && hidden.w <= 2, JSON.stringify(hidden));
+	}
 	await p.screenshot({ path: `${SHOTS}/${TAG}-admin-list.png`, fullPage: true });
 	await p.goto(A(ROUTE, '&tab=settings')); await sleep(500);
 	await p.screenshot({ path: `${SHOTS}/${TAG}-admin-settings.png`, fullPage: true });
