@@ -395,7 +395,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			'cart'         => $schema >= 7 && $need['cart'] ? $link('cart') : '',
 			'subscribe'    => $schema >= 8 && $need['email'] ? $link('subscribe') : '',
 			'token'        => $schema >= 8 && $need['email'] ? $this->fx->token($this->config->get(self::CODE . '_secret'), $this->session->getId()) : '',
-			'privacy'      => $schema >= 8 && $need['email'] && (int)$this->config->get(self::CODE . '_privacy_id') > 0 ? $this->url->link('information/information', 'information_id=' . (int)$this->config->get(self::CODE . '_privacy_id'), $https) : '',
+			'privacy'      => $schema >= 8 && $need['email'] && (int)$this->config->get(self::CODE . '_privacy_id') > 0 ? str_replace('&amp;', '&', $this->url->link('information/information', 'information_id=' . (int)$this->config->get(self::CODE . '_privacy_id'), $https)) : '',
 			'now'          => time() * 1000, // server clock: countdown/expiry/schedule must not trust the visitor's clock
 			'tz'           => (int)date('Z'), // store time zone offset for the weekly schedule and cut-off times
 			'label'        => $this->language->get('abp_text_label'),
