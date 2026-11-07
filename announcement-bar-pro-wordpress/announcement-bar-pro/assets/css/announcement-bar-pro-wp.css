@@ -1,0 +1,16 @@
+/* Announcement Bar Pro for WordPress — additions to the shared storefront styles (announcement-bar-pro.css). */
+/* Built-in SVG icons (the shared styles were written for an icon font). */
+.abp svg.abp-ico{display:inline-block;width:1.15em;height:1.15em;vertical-align:-.2em;flex:none;stroke:currentColor;}
+/* Sticky top bar below the WordPress toolbar of logged-in users. */
+.admin-bar .abp-sticky{top:32px;}
+@media screen and (max-width:782px){.admin-bar .abp-sticky{top:46px;}}
+@media screen and (max-width:600px){.admin-bar .abp-sticky{top:0;}}
+/* Themes style every button / link / input: keep the bar's own look. */
+.abp button,.abp input,.abp a{font-family:inherit;letter-spacing:inherit;text-transform:none;}
+.abp .abp-btn,.abp .abp-link{text-decoration:none;box-shadow:none;}
+.abp .abp-link:hover .abp-txt,.abp .abp-link:focus .abp-txt{text-decoration:underline;}
+.abp button{min-height:0;line-height:1;}
+/* WooCommerce mini-cart and blocks. */
+.widget_shopping_cart_content .abp-inline-minicart,.woocommerce-mini-cart__empty-message+.abp-inline-minicart{margin:0 0 10px;}
+.wp-block-woocommerce-cart+.abp-inline,.abp-inline+.wp-block-woocommerce-cart{margin-top:12px;}
+.wp-block-woocommerce-product-price+.abp-inline-product{margin-top:8px;}
