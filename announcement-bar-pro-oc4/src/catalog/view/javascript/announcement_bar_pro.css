@@ -1,50 +1,128 @@
-/* Announcement Bar Pro v2.2.0 — shared by the OpenCart 3 and OpenCart 4 packages */
-.abp{position:relative;width:100%;box-sizing:border-box;line-height:1.4;z-index:1030;overflow:hidden;font-family:inherit;}
+/* Announcement Bar Pro v2.3.0 — shared by the OpenCart 3 and OpenCart 4 packages */
+.abp{position:relative;width:100%;box-sizing:border-box;line-height:1.45;z-index:1030;overflow:hidden;font-family:inherit;font-weight:500;letter-spacing:.005em;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;}
 .abp *,.abp *:before,.abp *:after{box-sizing:border-box;}
 .abp.abp-sticky{position:-webkit-sticky;position:sticky;top:0;}
-.abp.abp-pos-bottom{position:fixed;left:0;right:0;bottom:0;box-shadow:0 -2px 6px rgba(0,0,0,.15);}
-.abp-item{text-align:center;padding-left:44px;padding-right:44px;word-wrap:break-word;overflow-wrap:break-word;}
+.abp.abp-pos-bottom{position:fixed;left:0;right:0;bottom:0;box-shadow:0 -6px 24px rgba(0,0,0,.12);}
+.abp.abp-pinned{position:fixed;top:0;left:0;right:0;}
+.abp-item{position:relative;text-align:center;padding-left:16px;padding-right:16px;word-wrap:break-word;overflow-wrap:break-word;}
+.abp-has-close .abp-item{padding-left:52px;padding-right:52px;}
+.abp-has-nav .abp-item{padding-left:52px;padding-right:52px;}
+.abp-has-nav.abp-has-close .abp-item{padding-left:88px;padding-right:88px;}
+.abp-inner{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;column-gap:.75em;row-gap:.35em;min-width:0;}
+.abp-v{display:inline-flex;flex-wrap:wrap;align-items:center;justify-content:center;column-gap:.65em;row-gap:.3em;min-width:0;max-width:100%;}
+.abp-v-b{display:none;}
+.abp-item[data-variant="b"] .abp-v-a{display:none;}
+.abp-item[data-variant="b"] .abp-v-b{display:inline-flex;}
 .abp-item a{color:inherit;}
 .abp-link{text-decoration:none;display:inline;}
-.abp-link:hover,.abp-link:focus{text-decoration:underline;color:inherit;}
-.abp-text a{text-decoration:underline;}
-.abp-btn{display:inline-block;margin-left:10px;padding:1px 10px;border:1px solid;border-radius:3px;font-weight:600;text-decoration:none;white-space:nowrap;}
-.abp-btn:hover,.abp-btn:focus{text-decoration:none;opacity:.85;color:inherit;}
-.abp-countdown{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;}
-.abp i[class*="fa-"]{font-size:1em;}
-.abp-close{position:absolute;top:4px;right:8px;background:transparent;border:0;font-size:1.6em;line-height:1;padding:2px 8px;cursor:pointer;opacity:.8;z-index:2;}
-.abp-close:hover,.abp-close:focus{opacity:1;}
+.abp-link:hover,.abp-link:focus{text-decoration:underline;text-underline-offset:.2em;color:inherit;}
+.abp-body,.abp-txt{min-width:0;}
+.abp-text a{text-decoration:underline;text-underline-offset:.18em;}
+.abp-text strong,.abp-text b{font-weight:700;}
+.abp-countdown{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:.02em;}
+.abp-remaining{font-weight:700;white-space:nowrap;}
+.abp i[class*="fa-"]{font-size:1em;line-height:1;}
+.abp-ico{margin-right:.15em;}
+/* Buttons: pill (filled / outline / link). Colours come from --abp-btn-bg / --abp-btn-fg set on the item. */
+.abp .abp-btn{display:inline-flex;align-items:center;justify-content:center;margin:0;padding:.3em 1.05em;border:1.5px solid transparent;border-radius:999px;font-size:.9em;font-weight:650;line-height:1.3;letter-spacing:.02em;text-decoration:none;text-transform:none;white-space:nowrap;box-shadow:none;transition:transform .15s ease,opacity .15s ease,box-shadow .15s ease;}
+.abp .abp-btn-filled{background:var(--abp-btn-bg,#fff);color:var(--abp-btn-fg,#111);border-color:var(--abp-btn-bg,#fff);}
+.abp .abp-btn-outline{background:transparent;color:inherit;border-color:currentColor;}
+.abp .abp-btn-link{background:none;border:0;padding:0 .1em;border-radius:3px;text-decoration:underline;text-underline-offset:.22em;text-decoration-thickness:1.5px;}
+.abp .abp-btn:hover,.abp .abp-btn:focus{text-decoration:none;color:inherit;opacity:.9;transform:translateY(-1px);}
+.abp .abp-btn-filled:hover,.abp .abp-btn-filled:focus{color:var(--abp-btn-fg,#111);box-shadow:0 4px 14px rgba(0,0,0,.18);}
+.abp .abp-btn-link:hover,.abp .abp-btn-link:focus{text-decoration:underline;transform:none;}
+/* Coupon chip */
+.abp-coupon{display:inline-flex;align-items:center;gap:.45em;padding:.14em .18em .14em .7em;border:1.5px dashed currentColor;border-radius:9px;white-space:nowrap;line-height:1.3;}
+.abp .abp-code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-weight:700;font-size:.95em;letter-spacing:.09em;color:inherit;background:none;padding:0;}
+.abp .abp-copy{-webkit-appearance:none;appearance:none;display:inline-flex;align-items:center;gap:.35em;margin:0;padding:.22em .7em;min-width:0;min-height:0;width:auto;height:auto;border:0;border-radius:6px;background:var(--abp-btn-bg,#fff);color:var(--abp-btn-fg,#111);font:inherit;font-size:.8em;font-weight:650;letter-spacing:.02em;line-height:1.35;text-transform:none;box-shadow:none;cursor:pointer;transition:opacity .15s ease;}
+.abp .abp-copy:hover{opacity:.88;}
+.abp .abp-copy svg{width:1.05em;height:1.05em;flex:none;}
+.abp .abp-copy .abp-ok{display:none;}
+.abp .abp-copy.abp-copied .abp-ok{display:inline;}
+.abp .abp-copy.abp-copied .abp-cp{display:none;}
+.abp-sr{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+/* Free-shipping progress */
+.abp-progress{position:relative;display:block;height:4px;width:100%;max-width:420px;margin:.5em auto .1em;border-radius:999px;overflow:hidden;}
+.abp-progress:before{content:"";position:absolute;left:0;top:0;right:0;bottom:0;background:currentColor;opacity:.22;}
+.abp-progress-fill{position:relative;display:block;height:100%;width:0;border-radius:inherit;background:var(--abp-accent,currentColor);transition:width .7s cubic-bezier(.2,.8,.2,1);}
+/* Close + navigation buttons (SVG icons, theme button styles reset) */
+.abp .abp-close,.abp .abp-nav{-webkit-appearance:none;appearance:none;position:absolute;top:50%;margin:0;padding:0;width:32px;height:32px;min-width:0;min-height:0;display:inline-flex;align-items:center;justify-content:center;transform:translateY(-50%);background:transparent;border:0;border-radius:999px;color:inherit;font:inherit;line-height:1;box-shadow:none;text-transform:none;cursor:pointer;opacity:.8;z-index:2;transition:opacity .15s ease,background-color .15s ease;}
+.abp .abp-close:before,.abp .abp-nav:before{content:"";position:absolute;left:0;top:0;right:0;bottom:0;border-radius:inherit;background:currentColor;opacity:0;transition:opacity .15s ease;}
+.abp .abp-close:hover,.abp .abp-close:focus,.abp .abp-nav:hover,.abp .abp-nav:focus{opacity:1;}
+.abp .abp-close:hover:before,.abp .abp-nav:hover:before{opacity:.12;}
+.abp .abp-close svg,.abp .abp-nav svg{position:relative;width:14px;height:14px;}
+.abp .abp-close{right:10px;}
+.abp .abp-prev{left:10px;}
+.abp .abp-next{right:10px;}
+.abp-has-close .abp-next{right:46px;}
+.abp .abp-nav[hidden]{display:none;}
 /* Visible keyboard focus even where a theme sets button:focus{outline:none!important} (OpenCart 4.1). */
-.abp-close:focus-visible,.abp-btn:focus-visible,.abp-link:focus-visible,.abp-text a:focus-visible{box-shadow:0 0 0 2px currentColor;border-radius:3px;}
-.abp.abp-pinned{position:fixed;top:0;left:0;right:0;}
+.abp-close:focus-visible,.abp-nav:focus-visible,.abp-btn:focus-visible,.abp-link:focus-visible,.abp-text a:focus-visible,.abp-copy:focus-visible{outline:none;box-shadow:0 0 0 2px currentColor;}
 /* rotate */
 .abp-mode-rotate .abp-track{display:flex;flex-direction:column;justify-content:center;}
 .abp-mode-rotate .abp-item{display:none;}
-.abp-mode-rotate .abp-item.abp-active{display:block;animation:abp-fade .4s ease;}
+.abp-mode-rotate .abp-item.abp-active{display:block;animation:abp-fade .45s ease both;}
+.abp-tr-slide.abp-mode-rotate .abp-item.abp-active{animation:abp-slide .5s cubic-bezier(.2,.8,.2,1) both;}
+.abp-tr-slide.abp-back.abp-mode-rotate .abp-item.abp-active{animation-name:abp-slide-back;}
 @keyframes abp-fade{from{opacity:0}to{opacity:1}}
+@keyframes abp-slide{from{opacity:0;transform:translateY(55%)}to{opacity:1;transform:none}}
+@keyframes abp-slide-back{from{opacity:0;transform:translateY(-55%)}to{opacity:1;transform:none}}
 /* stack */
-.abp-mode-stack .abp-item+.abp-item{border-top:1px solid rgba(255,255,255,.15);}
+.abp-mode-stack .abp-item+.abp-item{box-shadow:inset 0 1px 0 rgba(127,127,127,.25);}
 /* marquee */
 .abp-mode-marquee .abp-viewport{overflow:hidden;white-space:nowrap;padding-right:36px;}
 .abp-mode-marquee .abp-track{display:inline-block;white-space:nowrap;will-change:transform;}
 .abp-mode-marquee .abp-track.abp-run{animation:abp-marquee var(--abp-duration,20s) linear infinite;}
 .abp-mode-marquee .abp-viewport:hover .abp-track,.abp-mode-marquee:focus-within .abp-track,.abp-mode-marquee.abp-paused .abp-track{animation-play-state:paused;}
-.abp-mode-marquee .abp-item{display:inline-block;padding-left:24px;padding-right:24px;}
+.abp-mode-marquee .abp-item{display:inline-block;padding-left:28px;padding-right:28px;}
+.abp-mode-marquee .abp-inner,.abp-mode-marquee .abp-v{display:inline-flex;flex-wrap:nowrap;}
+.abp-mode-marquee .abp-progress{display:none;}
 @keyframes abp-marquee{from{transform:translateX(var(--abp-from,100vw))}to{transform:translateX(var(--abp-to,-100%))}}
-@media (max-width:767px){.abp-item{padding-left:12px;padding-right:44px;}.abp-btn{margin-left:6px;white-space:normal;}}
-@media (prefers-reduced-motion:reduce){.abp-mode-rotate .abp-item.abp-active{animation:none;}}
+/* Styles (data-style on each message; the bar follows the message on screen) */
+.abp-item[data-style="minimal"]{box-shadow:inset 0 3px 0 var(--abp-accent,currentColor);font-weight:500;}
+.abp-mode-stack .abp-item[data-style="minimal"]+.abp-item{box-shadow:inset 0 3px 0 var(--abp-accent,currentColor),inset 0 4px 0 rgba(127,127,127,.18);}
+.abp-item[data-style="soft"]{box-shadow:inset 0 -1px 0 rgba(0,0,0,.06);}
+.abp.abp-glass{background-color:transparent!important;background-image:none!important;-webkit-backdrop-filter:blur(14px) saturate(1.6);backdrop-filter:blur(14px) saturate(1.6);box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 8px 24px rgba(0,0,0,.08);}
+.abp.abp-glass.abp-pos-bottom{box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 -8px 24px rgba(0,0,0,.1);}
+.abp-item[data-style="gradient"] .abp-btn-filled{box-shadow:0 2px 10px rgba(0,0,0,.15);}
+@media (max-width:767px){
+  .abp-item{padding-left:14px;padding-right:14px;}
+  .abp-has-close .abp-item{padding-left:14px;padding-right:46px;}
+  .abp-has-nav .abp-item{padding-left:38px;padding-right:38px;}
+  .abp-has-nav.abp-has-close .abp-item{padding-left:38px;padding-right:72px;}
+  .abp .abp-btn{white-space:normal;padding:.26em .9em;}
+  .abp .abp-close{right:6px;}
+  .abp .abp-prev{left:4px;}
+  .abp .abp-next{right:4px;}
+  .abp-has-close .abp-next{right:38px;}
+  .abp .abp-close,.abp .abp-nav{width:30px;height:30px;}
+  .abp-inner{column-gap:.55em;}
+  .abp-v{column-gap:.5em;}
+}
+@media (prefers-reduced-motion:reduce){
+  .abp-mode-rotate .abp-item.abp-active,.abp-tr-slide.abp-mode-rotate .abp-item.abp-active{animation:none;}
+  .abp-progress-fill,.abp .abp-btn,.abp .abp-copy,.abp .abp-close,.abp .abp-nav{transition:none;}
+  .abp .abp-btn:hover,.abp .abp-btn:focus{transform:none;}
+}
 @media print{.abp{display:none!important;}}
-/* Automatic colours: hidden only until the theme colour is read (max 2 s, even if the script is blocked). */
+/* Automatic colours / styles: hidden only until the colours are worked out (max 2 s, even if the script is blocked). */
 .abp.abp-auto-pending{visibility:hidden;animation:abp-reveal 0s linear 2s forwards;}
 @keyframes abp-reveal{to{visibility:visible}}
-/* Right-to-left languages (Arabic, Hebrew, Persian …): mirror the close button and spacing. */
-[dir="rtl"] .abp-close{right:auto;left:8px;}
-[dir="rtl"] .abp-btn{margin-left:0;margin-right:10px;}
-@media (max-width:767px){[dir="rtl"] .abp-item{padding-left:44px;padding-right:12px;}[dir="rtl"] .abp-btn{margin-right:6px;}}
+/* Right-to-left languages (Arabic, Hebrew, Persian …): mirror the buttons and spacing. */
+[dir="rtl"] .abp .abp-close{right:auto;left:10px;}
+[dir="rtl"] .abp .abp-prev{left:auto;right:10px;}
+[dir="rtl"] .abp .abp-next{right:auto;left:10px;}
+[dir="rtl"] .abp-has-close .abp-next{left:46px;}
+[dir="rtl"] .abp .abp-nav svg{transform:scaleX(-1);}
+[dir="rtl"] .abp-ico{margin-right:0;margin-left:.15em;}
+[dir="rtl"] .abp-coupon{padding:.14em .7em .14em .18em;}
+@media (max-width:767px){[dir="rtl"] .abp-has-close .abp-item{padding-left:46px;padding-right:14px;}[dir="rtl"] .abp-has-nav.abp-has-close .abp-item{padding-left:72px;padding-right:38px;}[dir="rtl"] .abp .abp-close{left:6px;}[dir="rtl"] .abp-has-close .abp-next{left:38px;}}
 /* Some themes (OpenCart 4.0 default) keep an empty fixed #alert toast container over the top-right corner,
    which would swallow clicks on the close button. An empty container never needs pointer events. */
 #alert:empty{pointer-events:none;}
-/* 2.2.0 — optional phone text and device targeting (breakpoint 768 px; the script uses the same one). */
+/* Optional phone text and device targeting (breakpoint 768 px; the script uses the same one). */
 .abp-text-m{display:none;}
 @media (max-width:767px){.abp-text-m{display:inline;}.abp-text-d{display:none;}.abp-item[data-device="desktop"]{display:none!important;}}
 @media not all and (max-width:767px){.abp-item[data-device="mobile"]{display:none!important;}}
+/* Weekly schedule: messages outside their days / hours (the script switches them on and off). */
+.abp-item[data-off]{display:none!important;}

@@ -5,11 +5,11 @@ namespace Opencart\Admin\Model\Extension\AnnouncementBarPro\Module;
  * Announcement Bar Pro — admin model (OpenCart 4.0.2+ / 4.1)
  * Tables: {prefix}abp_message, {prefix}abp_message_description
  *
- * @version 2.2.0
+ * @version 2.3.0
  */
 class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 	public const CODE           = 'module_announcement_bar_pro';
-	public const SCHEMA_VERSION = 6;
+	public const SCHEMA_VERSION = 7;
 
 	/**
 	 * Creates tables (if missing) and fills missing default settings. Idempotent.
@@ -42,6 +42,22 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 			`device` VARCHAR(8) NOT NULL DEFAULT 'all',
 			`views` INT(10) UNSIGNED NOT NULL DEFAULT '0',
 			`clicks` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+			`type` VARCHAR(16) NOT NULL DEFAULT 'standard',
+			`threshold` DECIMAL(15,4) NOT NULL DEFAULT '0.0000',
+			`progress_bar` TINYINT(1) NOT NULL DEFAULT '1',
+			`coupon` VARCHAR(32) NOT NULL DEFAULT '',
+			`copies` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+			`ab_test` TINYINT(1) NOT NULL DEFAULT '0',
+			`views_b` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+			`clicks_b` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+			`copies_b` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+			`weekdays` VARCHAR(7) NOT NULL DEFAULT '',
+			`time_start` VARCHAR(5) NOT NULL DEFAULT '',
+			`time_end` VARCHAR(5) NOT NULL DEFAULT '',
+			`categories` TEXT NOT NULL,
+			`products` TEXT NOT NULL,
+			`style` VARCHAR(16) NOT NULL DEFAULT '',
+			`button_style` VARCHAR(16) NOT NULL DEFAULT 'outline',
 			`date_added` DATETIME NOT NULL,
 			`date_modified` DATETIME NOT NULL,
 			PRIMARY KEY (`message_id`),
@@ -54,10 +70,14 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 			`text` TEXT NOT NULL,
 			`link_text` TEXT NOT NULL,
 			`mobile_text` TEXT NOT NULL,
+			`success_text` TEXT NOT NULL,
+			`text_b` TEXT NOT NULL,
+			`mobile_text_b` TEXT NOT NULL,
+			`link_text_b` TEXT NOT NULL,
 			PRIMARY KEY (`message_id`, `language_id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
 
-		// Schema 6 (2.2.0): phone text, device targeting, statistics. Added only when missing (upgraded shops).
+		// Schema 6 (2.2.0) and 7 (2.3.0): columns added only when missing (upgraded shops); see schemaColumns().
 		foreach ($this->schemaColumns() as [$table, $column, $definition]) {
 			$this->addColumnIfMissing($table, $column, $definition);
 		}
@@ -121,8 +141,8 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 	}
 
 	/**
-	 * Columns added by schema 6: [table, column, definition]. Fresh installs get them in CREATE TABLE.
-	 * mobile_text is "TEXT NOT NULL" without a DEFAULT: MySQL (unlike MariaDB) refuses a literal default on
+	 * Columns added by schema 6 (2.2.0) and 7 (2.3.0): [table, column, definition]. Fresh installs get them in CREATE TABLE.
+	 * TEXT columns are "TEXT NOT NULL" without a DEFAULT: MySQL (unlike MariaDB) refuses a literal default on
 	 * TEXT; existing rows get '' when the column is added, and every INSERT sets the value.
 	 */
 	public function schemaColumns(): array {
@@ -130,7 +150,28 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 			['abp_message', 'device', "VARCHAR(8) NOT NULL DEFAULT 'all'"],
 			['abp_message', 'views', "INT(10) UNSIGNED NOT NULL DEFAULT '0'"],
 			['abp_message', 'clicks', "INT(10) UNSIGNED NOT NULL DEFAULT '0'"],
-			['abp_message_description', 'mobile_text', 'TEXT NOT NULL']
+			['abp_message_description', 'mobile_text', 'TEXT NOT NULL'],
+			// 2.3.0
+			['abp_message', 'type', "VARCHAR(16) NOT NULL DEFAULT 'standard'"],
+			['abp_message', 'threshold', "DECIMAL(15,4) NOT NULL DEFAULT '0.0000'"],
+			['abp_message', 'progress_bar', "TINYINT(1) NOT NULL DEFAULT '1'"],
+			['abp_message', 'coupon', "VARCHAR(32) NOT NULL DEFAULT ''"],
+			['abp_message', 'copies', "INT(10) UNSIGNED NOT NULL DEFAULT '0'"],
+			['abp_message', 'ab_test', "TINYINT(1) NOT NULL DEFAULT '0'"],
+			['abp_message', 'views_b', "INT(10) UNSIGNED NOT NULL DEFAULT '0'"],
+			['abp_message', 'clicks_b', "INT(10) UNSIGNED NOT NULL DEFAULT '0'"],
+			['abp_message', 'copies_b', "INT(10) UNSIGNED NOT NULL DEFAULT '0'"],
+			['abp_message', 'weekdays', "VARCHAR(7) NOT NULL DEFAULT ''"],
+			['abp_message', 'time_start', "VARCHAR(5) NOT NULL DEFAULT ''"],
+			['abp_message', 'time_end', "VARCHAR(5) NOT NULL DEFAULT ''"],
+			['abp_message', 'categories', 'TEXT NOT NULL'],
+			['abp_message', 'products', 'TEXT NOT NULL'],
+			['abp_message', 'style', "VARCHAR(16) NOT NULL DEFAULT ''"],
+			['abp_message', 'button_style', "VARCHAR(16) NOT NULL DEFAULT 'outline'"],
+			['abp_message_description', 'success_text', 'TEXT NOT NULL'],
+			['abp_message_description', 'text_b', 'TEXT NOT NULL'],
+			['abp_message_description', 'mobile_text_b', 'TEXT NOT NULL'],
+			['abp_message_description', 'link_text_b', 'TEXT NOT NULL']
 		];
 	}
 
@@ -153,6 +194,82 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 		$this->db->query("ALTER TABLE `" . DB_PREFIX . $table . "` ADD COLUMN `" . $column . "` " . $definition);
 
 		return true;
+	}
+
+	/**
+	 * Every message with its texts keyed by language code (export). Statistics are not included.
+	 */
+	public function getMessagesForExport(): array {
+		$languages = array();
+		$query     = $this->db->query("SELECT `language_id`, `code` FROM `" . DB_PREFIX . "language`");
+
+		foreach ($query->rows as $row) {
+			$languages[(int)$row['language_id']] = $row['code'];
+		}
+
+		$out   = array();
+		$query = $this->db->query("SELECT `message_id` FROM `" . DB_PREFIX . "abp_message` ORDER BY `sort_order` ASC, `message_id` ASC");
+
+		foreach ($query->rows as $row) {
+			$message = $this->getMessage((int)$row['message_id']);
+			$texts   = array();
+
+			foreach ($message['message_description'] as $language_id => $description) {
+				if (isset($languages[$language_id])) {
+					$texts[$languages[$language_id]] = $description;
+				}
+			}
+
+			$message['texts'] = $texts;
+			$out[] = $message;
+		}
+
+		return $out;
+	}
+
+	/** id => name for the given category IDs (admin language; missing IDs are left out). */
+	public function getCategoryNames(array $ids, int $language_id): array {
+		$ids = array_values(array_filter(array_map('intval', $ids)));
+
+		if (!$ids) {
+			return array();
+		}
+
+		$query = $this->db->query("SELECT c.`category_id` AS `id`, COALESCE(NULLIF(cd.`name`, ''), (SELECT x.`name` FROM `" . DB_PREFIX . "category_description` x WHERE x.`category_id` = c.`category_id` LIMIT 1), '') AS `name` FROM `" . DB_PREFIX . "category` c LEFT JOIN `" . DB_PREFIX . "category_description` cd ON (cd.`category_id` = c.`category_id` AND cd.`language_id` = '" . (int)$language_id . "') WHERE c.`category_id` IN (" . implode(',', $ids) . ")");
+
+		return $this->names($query->rows, $ids);
+	}
+
+	/** id => name for the given product IDs (admin language; missing IDs are left out). */
+	public function getProductNames(array $ids, int $language_id): array {
+		$ids = array_values(array_filter(array_map('intval', $ids)));
+
+		if (!$ids) {
+			return array();
+		}
+
+		$query = $this->db->query("SELECT p.`product_id` AS `id`, COALESCE(NULLIF(pd.`name`, ''), (SELECT x.`name` FROM `" . DB_PREFIX . "product_description` x WHERE x.`product_id` = p.`product_id` LIMIT 1), p.`model`) AS `name` FROM `" . DB_PREFIX . "product` p LEFT JOIN `" . DB_PREFIX . "product_description` pd ON (pd.`product_id` = p.`product_id` AND pd.`language_id` = '" . (int)$language_id . "') WHERE p.`product_id` IN (" . implode(',', $ids) . ")");
+
+		return $this->names($query->rows, $ids);
+	}
+
+	/** Keeps the order of $ids; names are plain text (entities decoded). */
+	private function names(array $rows, array $ids): array {
+		$found = array();
+
+		foreach ($rows as $row) {
+			$found[(int)$row['id']] = html_entity_decode((string)$row['name'], ENT_QUOTES, 'UTF-8');
+		}
+
+		$out = array();
+
+		foreach ($ids as $id) {
+			if (isset($found[$id])) {
+				$out[$id] = $found[$id];
+			}
+		}
+
+		return $out;
 	}
 
 	public function getTotalMessages(): int {
@@ -178,6 +295,9 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 			self::CODE . '_default_text_color' => '#ffffff',
 			self::CODE . '_delete_data'        => 0,
 			self::CODE . '_color_mode'         => 'auto',
+			self::CODE . '_style'              => 'solid',
+			self::CODE . '_transition'         => 'fade',
+			self::CODE . '_arrows'             => 0,
 			self::CODE . '_schema'             => self::SCHEMA_VERSION
 		];
 	}
@@ -246,7 +366,26 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 	}
 
 	public function resetStatistics(int $message_id): void {
-		$this->db->query("UPDATE `" . DB_PREFIX . "abp_message` SET `views` = '0', `clicks` = '0' WHERE `message_id` = '" . (int)$message_id . "'");
+		$this->db->query("UPDATE `" . DB_PREFIX . "abp_message` SET `views` = '0', `clicks` = '0', `copies` = '0', `views_b` = '0', `clicks_b` = '0', `copies_b` = '0' WHERE `message_id` = '" . (int)$message_id . "'");
+	}
+
+	/**
+	 * A/B test winner: variant B becomes the main text (in every language that has a B text), the test is switched
+	 * off and B's counters become the main counters. Returns false when the message has no A/B test.
+	 */
+	public function useVariantB(int $message_id): bool {
+		$message_id = (int)$message_id;
+		$query      = $this->db->query("SELECT `ab_test` FROM `" . DB_PREFIX . "abp_message` WHERE `message_id` = '" . $message_id . "'");
+
+		if (!$query->num_rows || !$query->row['ab_test']) {
+			return false;
+		}
+
+		$this->db->query("UPDATE `" . DB_PREFIX . "abp_message_description` SET `text` = `text_b`, `mobile_text` = `mobile_text_b`, `link_text` = IF(`link_text_b` <> '', `link_text_b`, `link_text`) WHERE `message_id` = '" . $message_id . "' AND `text_b` <> ''");
+		$this->db->query("UPDATE `" . DB_PREFIX . "abp_message_description` SET `text_b` = '', `mobile_text_b` = '', `link_text_b` = '' WHERE `message_id` = '" . $message_id . "'");
+		$this->db->query("UPDATE `" . DB_PREFIX . "abp_message` SET `ab_test` = '0', `views` = `views_b`, `clicks` = `clicks_b`, `copies` = `copies_b`, `views_b` = '0', `clicks_b` = '0', `copies_b` = '0', `date_modified` = NOW() WHERE `message_id` = '" . $message_id . "'");
+
+		return true;
 	}
 
 	public function editMessage(int $message_id, array $data): void {
@@ -278,7 +417,11 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 			$message['message_description'][(int)$row['language_id']] = [
 				'text'        => $row['text'],
 				'link_text'   => $row['link_text'],
-				'mobile_text' => $row['mobile_text'] ?? ''
+				'mobile_text'   => $row['mobile_text'] ?? '',
+				'success_text'  => $row['success_text'] ?? '',
+				'text_b'        => $row['text_b'] ?? '',
+				'mobile_text_b' => $row['mobile_text_b'] ?? '',
+				'link_text_b'   => $row['link_text_b'] ?? ''
 			];
 		}
 
@@ -310,7 +453,8 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 	 */
 	private function messageFields(array $data): string {
 		$page_modes = ['all', 'home', 'include', 'exclude'];
-		$device     = in_array($data['device'] ?? 'all', ['all', 'desktop', 'mobile'], true) ? $data['device'] : 'all';
+		$device     = in_array($data['device'] ?? 'all', ['all', 'desktop', 'mobile'], true) ? ($data['device'] ?? 'all') : 'all';
+		$styles     = ['solid', 'gradient', 'soft', 'minimal', 'glass'];
 
 		return implode(', ', [
 			"`status` = '" . (int)!empty($data['status']) . "'",
@@ -327,13 +471,32 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 			"`customer_groups` = '" . $this->db->escape(json_encode(array_values(array_map('intval', (array)$data['customer_groups'])))) . "'",
 			"`page_mode` = '" . $this->db->escape(in_array($data['page_mode'], $page_modes, true) ? $data['page_mode'] : 'all') . "'",
 			"`page_routes` = '" . $this->db->escape((string)$data['page_routes']) . "'",
-			"`device` = '" . $this->db->escape($device) . "'"
+			"`device` = '" . $this->db->escape($device) . "'",
+			// 2.3.0 (missing keys get neutral values, e.g. in the v1 migration)
+			"`type` = '" . (isset($data['type']) && $data['type'] === 'free_shipping' ? 'free_shipping' : 'standard') . "'",
+			"`threshold` = '" . (isset($data['threshold']) ? number_format(max(0, (float)$data['threshold']), 4, '.', '') : '0.0000') . "'",
+			"`progress_bar` = '" . (isset($data['progress_bar']) ? (int)!empty($data['progress_bar']) : 1) . "'",
+			"`coupon` = '" . $this->db->escape(isset($data['coupon']) && preg_match('/^[A-Z0-9_-]{0,32}$/', (string)$data['coupon']) ? (string)$data['coupon'] : '') . "'",
+			"`ab_test` = '" . (int)!empty($data['ab_test']) . "'",
+			"`weekdays` = '" . $this->db->escape(isset($data['weekdays']) ? (string)preg_replace('/[^1-7]/', '', (string)$data['weekdays']) : '') . "'",
+			"`time_start` = '" . $this->db->escape(isset($data['time_start']) && preg_match('/^\d{2}:\d{2}$/', (string)$data['time_start']) ? (string)$data['time_start'] : '') . "'",
+			"`time_end` = '" . $this->db->escape(isset($data['time_end']) && preg_match('/^\d{2}:\d{2}$/', (string)$data['time_end']) ? (string)$data['time_end'] : '') . "'",
+			"`categories` = '" . $this->db->escape(json_encode(array_values(array_map('intval', isset($data['categories']) ? (array)$data['categories'] : array())))) . "'",
+			"`products` = '" . $this->db->escape(json_encode(array_values(array_map('intval', isset($data['products']) ? (array)$data['products'] : array())))) . "'",
+			"`style` = '" . (isset($data['style']) && in_array($data['style'], $styles, true) ? $data['style'] : '') . "'",
+			"`button_style` = '" . (isset($data['button_style']) && in_array($data['button_style'], array('filled', 'outline', 'link'), true) ? $data['button_style'] : 'outline') . "'"
 		]);
 	}
 
 	private function saveDescriptions(int $message_id, array $descriptions): void {
 		foreach ($descriptions as $language_id => $value) {
-			$this->db->query("INSERT INTO `" . DB_PREFIX . "abp_message_description` SET `message_id` = '" . (int)$message_id . "', `language_id` = '" . (int)$language_id . "', `text` = '" . $this->db->escape((string)$value['text']) . "', `link_text` = '" . $this->db->escape((string)$value['link_text']) . "', `mobile_text` = '" . $this->db->escape((string)($value['mobile_text'] ?? '')) . "'");
+			$fields = "`message_id` = '" . (int)$message_id . "', `language_id` = '" . (int)$language_id . "', `text` = '" . $this->db->escape((string)$value['text']) . "', `link_text` = '" . $this->db->escape((string)$value['link_text']) . "'";
+
+			foreach (array('mobile_text', 'success_text', 'text_b', 'mobile_text_b', 'link_text_b') as $key) {
+				$fields .= ", `" . $key . "` = '" . $this->db->escape(isset($value[$key]) ? (string)$value[$key] : '') . "'";
+			}
+
+			$this->db->query("INSERT INTO `" . DB_PREFIX . "abp_message_description` SET " . $fields);
 		}
 	}
 
@@ -346,7 +509,11 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 	}
 
 	private function decodeRow(array $row): array {
-		foreach (['stores', 'customer_groups'] as $key) {
+		foreach (['stores', 'customer_groups', 'categories', 'products'] as $key) {
+			if (!array_key_exists($key, $row)) {
+				continue;
+			}
+
 			$decoded = json_decode((string)$row[$key], true);
 			$row[$key] = is_array($decoded) ? array_map('intval', $decoded) : [];
 		}

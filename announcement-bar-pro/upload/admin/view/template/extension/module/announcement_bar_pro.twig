@@ -1,5 +1,6 @@
 {{ header }}{{ column_left }}
 <div id="content" class="abp-admin">
+  <link rel="stylesheet" href="{{ admin_css|e }}" />
   <div class="page-header">
     <div class="container-fluid">
       <div class="pull-right">
@@ -15,6 +16,7 @@
     </div>
   </div>
   <div class="container-fluid">
+    <div id="abp-alerts">
     {% if error_warning %}
     <div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> {{ error_warning|e }}
       <button type="button" class="close" data-dismiss="alert">&times;</button>
@@ -30,6 +32,7 @@
       <button type="button" class="close" data-dismiss="alert">&times;</button>
     </div>
     {% endif %}
+    </div>
 
     <ul class="nav nav-tabs">
       <li{% if active_tab == 'messages' %} class="active"{% endif %}><a href="#tab-messages" data-toggle="tab"><i class="fa fa-bullhorn"></i> {{ tab_messages }} <span class="badge">{{ messages|length }}</span></a></li>
@@ -39,11 +42,13 @@
     <div class="tab-content">
       {# ---------------- Messages ---------------- #}
       <div class="tab-pane{% if active_tab == 'messages' %} active{% endif %}" id="tab-messages">
-        <div class="panel panel-default">
+        <div class="panel panel-default abp-card">
           <div class="panel-heading clearfix">
-            <h3 class="panel-title" style="padding-top:7px;"><i class="fa fa-list"></i> {{ text_message_list }}</h3>
-            <div class="pull-right">
-              <a href="{{ add }}" data-toggle="tooltip" title="{{ button_add|e }}" class="btn btn-primary btn-sm"><i class="fa fa-plus"></i> {{ button_add }}</a>
+            <div class="pull-left abp-card-title" style="padding-top:5px;"><span class="abp-ico-badge"><i class="fa fa-list"></i></span> {{ text_message_list }}</div>
+            <div class="pull-right abp-toolbar">
+              <a href="{{ export }}" data-toggle="tooltip" title="{{ help_export|e }}" class="btn btn-default btn-sm"><i class="fa fa-download"></i> {{ button_export }}</a>
+              <button type="button" data-abp-import="{{ import }}" data-reload="{{ reload }}" data-toggle="tooltip" title="{{ help_import|e }}" class="btn btn-default btn-sm"><i class="fa fa-upload"></i> {{ button_import }}</button>
+              <a href="{{ add }}" class="btn btn-primary btn-sm"><i class="fa fa-plus"></i> {{ button_add }}</a>
               <button type="button" data-toggle="tooltip" title="{{ button_delete|e }}" class="btn btn-danger btn-sm" id="abp-delete"><i class="fa fa-trash-o"></i></button>
             </div>
           </div>
@@ -53,45 +58,64 @@
             {% endif %}
             <form action="{{ delete }}" method="post" id="form-delete">
               <div class="table-responsive">
-                <table class="table table-bordered table-hover">
+                <table class="table table-hover abp-table">
                   <thead>
                     <tr>
-                      <td style="width:1px;" class="text-center"><input type="checkbox" onclick="$('input[name*=\'selected\']').prop('checked', this.checked);" /></td>
+                      <td style="width:1px;" class="text-center"><input type="checkbox" aria-label="{{ button_delete|e }}" onclick="$('input[name*=\'selected\']').prop('checked', this.checked);" /></td>
                       <td>{{ column_text }}</td>
                       <td class="text-center">{{ column_status }}</td>
-                      <td class="hidden-xs">{{ column_period }}</td>
-                      <td class="text-right hidden-xs">{{ column_sort_order }}</td>
+                      <td class="hidden-xs hidden-sm">{{ column_period }}</td>
                       <td class="text-right"><span data-toggle="tooltip" title="{{ help_stats|e }}">{{ column_views }}</span></td>
                       <td class="text-right">{{ column_clicks }}</td>
-                      <td class="text-right hidden-xs">{{ column_ctr }}</td>
+                      <td class="text-right hidden-xs">{{ column_copies }}</td>
+                      <td class="text-right">{{ column_ctr }}</td>
                       <td class="text-right" style="white-space:nowrap;">{{ column_action }}</td>
                     </tr>
                   </thead>
                   <tbody>
                     {% for message in messages %}
-                    <tr>
-                      <td class="text-center"><input type="checkbox" name="selected[]" value="{{ message.message_id }}" /></td>
-                      <td><span class="abp-swatch" style="background:{{ message.bg_color|e }};color:{{ message.text_color|e }};">{{ message.text|e }}</span>{% if message.device != 'all' %}<br /><small class="text-muted"><i class="fa {{ message.device == 'mobile' ? 'fa-mobile' : 'fa-desktop' }}"></i> {{ attribute(_context, 'text_device_' ~ message.device)|e }}</small>{% endif %}{% if message.missing %}<br /><small class="text-warning"><i class="fa fa-language"></i> {{ message.missing|e }}</small>{% endif %}</td>
-                      <td class="text-center">
-                        {% if message.state == 'active' %}<span class="label label-success">{{ message.state_text }}</span>
-                        {% elseif message.state == 'scheduled' %}<span class="label label-info">{{ message.state_text }}</span>
-                        {% elseif message.state == 'expired' %}<span class="label label-warning">{{ message.state_text }}</span>
-                        {% else %}<span class="label label-default">{{ message.state_text }}</span>{% endif %}
+                    <tr data-message="{{ message.message_id }}">
+                      <td class="text-center"><input type="checkbox" name="selected[]" value="{{ message.message_id }}" aria-label="{{ message.text|e }}" /></td>
+                      <td>
+                        <div class="abp-msg">
+                          <span class="abp-swatch" style="background:{{ message.bg_color|e }};color:{{ message.text_color|e }};"><span class="abp-dot"></span>{{ message.text|e }}</span>
+                          <div class="abp-badges">
+                            {% if message.fs %}<span class="abp-badge abp-b-fs" data-toggle="tooltip" title="{{ message.fs|e }}"><i class="fa fa-truck"></i> {{ message.fs|e }}</span>{% endif %}
+                            {% if message.coupon %}<span class="abp-badge abp-b-coupon" data-toggle="tooltip" title="{{ message.coupon|e }}"><i class="fa fa-ticket"></i> {{ message.coupon|e }}</span>{% endif %}
+                            {% if message.ab %}<span class="abp-badge abp-b-ab" data-toggle="tooltip" title="{{ text_badge_ab|e }}"><i class="fa fa-random"></i> A/B</span>{% endif %}
+                            {% if message.schedule %}<span class="abp-badge abp-b-schedule" data-toggle="tooltip" title="{{ message.schedule|e }}"><i class="fa fa-clock-o"></i> {{ message.schedule|e }}</span>{% endif %}
+                            {% if message.targeting %}<span class="abp-badge abp-b-target" data-toggle="tooltip" title="{{ message.targeting|e }}"><i class="fa fa-crosshairs"></i></span>{% endif %}
+                            {% if message.device != 'all' %}<span class="abp-badge" data-toggle="tooltip" title="{{ attribute(_context, 'text_device_' ~ message.device)|e }}"><i class="fa {{ message.device == 'mobile' ? 'fa-mobile' : 'fa-desktop' }}"></i></span>{% endif %}
+                            {% if message.missing %}<span class="abp-badge abp-b-warn" data-toggle="tooltip" title="{{ message.missing|e }}"><i class="fa fa-language"></i></span>{% endif %}
+                          </div>
+                        </div>
                       </td>
-                      <td class="hidden-xs">{{ message.date_start ? message.date_start|e : '—' }} → {{ message.date_end ? message.date_end|e : '∞' }}</td>
-                      <td class="text-right hidden-xs">{{ message.sort_order }}</td>
-                      <td class="text-right">{{ message.views }}</td>
-                      <td class="text-right">{{ message.clicks }}</td>
-                      <td class="text-right hidden-xs">{{ message.ctr != '' ? message.ctr|e ~ ' %' : '—' }}</td>
-                      <td class="text-right" style="white-space:nowrap;">
+                      <td class="text-center"><span class="abp-state abp-state-{{ message.state|e }}">{{ message.state_text|e }}</span></td>
+                      <td class="hidden-xs hidden-sm abp-muted" style="white-space:nowrap;">{{ message.date_start ? message.date_start|e : '—' }} → {{ message.date_end ? message.date_end|e : '∞' }}</td>
+                      {% if message.ab %}
+                      <td class="text-right abp-stats"><span class="abp-ctr"><span class="abp-ctr-v">A</span> {{ message.views }}</span><span class="abp-ctr"><span class="abp-ctr-v">B</span> {{ message.views_b }}</span></td>
+                      <td class="text-right abp-stats"><span class="abp-ctr">{{ message.clicks }}</span><span class="abp-ctr">{{ message.clicks_b }}</span></td>
+                      <td class="text-right abp-stats hidden-xs"><span class="abp-ctr">{{ message.copies }}</span><span class="abp-ctr">{{ message.copies_b }}</span></td>
+                      <td class="text-right abp-stats"{% if not message.better %} title="{{ text_ab_waiting|e }}"{% endif %}>
+                        <span class="abp-ctr{% if message.better == 'a' %} abp-win{% endif %}" data-abp-ctr="a"{% if message.better == 'a' %} data-toggle="tooltip" title="{{ text_ab_better|e }}"{% endif %}>{{ message.ctr != '' ? message.ctr|e ~ ' %' : '—' }}{% if message.better == 'a' %} <i class="fa fa-star abp-star"></i>{% endif %}</span>
+                        <span class="abp-ctr{% if message.better == 'b' %} abp-win{% endif %}" data-abp-ctr="b"{% if message.better == 'b' %} data-toggle="tooltip" title="{{ text_ab_better|e }}"{% endif %}>{{ message.ctr_b != '' ? message.ctr_b|e ~ ' %' : '—' }}{% if message.better == 'b' %} <i class="fa fa-star abp-star"></i>{% endif %}</span>
+                      </td>
+                      {% else %}
+                      <td class="text-right abp-stats">{{ message.views }}</td>
+                      <td class="text-right abp-stats">{{ message.clicks }}</td>
+                      <td class="text-right abp-stats hidden-xs">{{ message.copies }}</td>
+                      <td class="text-right abp-stats">{{ message.ctr != '' ? message.ctr|e ~ ' %' : '—' }}</td>
+                      {% endif %}
+                      <td class="text-right abp-actions">
                         <a href="{{ message.edit }}" data-toggle="tooltip" title="{{ button_edit|e }}" class="btn btn-primary btn-sm"><i class="fa fa-pencil"></i></a>
+                        {% if message.ab %}<button type="button" data-abp-use-b="{{ use_b }}" data-reload="{{ reload }}" data-id="{{ message.message_id }}" data-toggle="tooltip" title="{{ button_use_b|e }}" class="btn btn-success btn-sm abp-use-b"><i class="fa fa-trophy"></i> B</button>{% endif %}
                         <button type="button" data-abp-post="{{ duplicate }}" value="{{ message.message_id }}" data-toggle="tooltip" title="{{ button_duplicate|e }}" class="btn btn-default btn-sm abp-duplicate"><i class="fa fa-copy"></i></button>
-                        <button type="button" data-abp-post="{{ reset }}" data-abp-confirm="1" value="{{ message.message_id }}" data-toggle="tooltip" title="{{ button_reset_stats|e }}" class="btn btn-warning btn-sm abp-reset"{% if not message.views and not message.clicks %} disabled="disabled"{% endif %}><i class="fa fa-eraser"></i></button>
+                        <button type="button" data-abp-post="{{ reset }}" data-abp-confirm="1" value="{{ message.message_id }}" data-toggle="tooltip" title="{{ button_reset_stats|e }}" class="btn btn-warning btn-sm abp-reset"{% if not message.has_stats %} disabled="disabled"{% endif %}><i class="fa fa-eraser"></i></button>
                       </td>
                     </tr>
                     {% else %}
                     <tr>
-                      <td class="text-center" colspan="9">{{ text_no_messages }}</td>
+                      <td class="abp-empty" colspan="9"><i class="fa fa-bullhorn"></i>{{ text_no_messages }}</td>
                     </tr>
                     {% endfor %}
                   </tbody>
@@ -104,150 +128,197 @@
       </div>
 
       {# ---------------- Settings ---------------- #}
-      <div class="tab-pane{% if active_tab == 'settings' %} active{% endif %}" id="tab-settings">
-        <div class="panel panel-default">
-          <div class="panel-body">
-            <form action="{{ action }}" method="post" enctype="multipart/form-data" id="form-settings" class="form-horizontal">
-              <fieldset>
-                <legend>{{ text_general }}</legend>
-                <div class="form-group">
-                  <label class="col-sm-3 control-label" for="input-status">{{ entry_status }}</label>
-                  <div class="col-sm-9">
-                    <select name="module_announcement_bar_pro_status" id="input-status" class="form-control">
-                      <option value="1"{% if setting.status %} selected="selected"{% endif %}>{{ text_enabled }}</option>
-                      <option value="0"{% if not setting.status %} selected="selected"{% endif %}>{{ text_disabled }}</option>
-                    </select>
-                  </div>
+      <div class="tab-pane{% if active_tab == 'settings' %} active{% endif %} abp-settings" id="tab-settings">
+        <form action="{{ action }}" method="post" enctype="multipart/form-data" id="form-settings" class="form-horizontal">
+          <div class="panel panel-default abp-card">
+            <div class="panel-heading"><div class="abp-card-title"><span class="abp-ico-badge"><i class="fa fa-sliders"></i></span> {{ text_general }}</div></div>
+            <div class="panel-body">
+              <div class="form-group">
+                <label class="col-sm-3 control-label" for="input-status">{{ entry_status }}</label>
+                <div class="col-sm-9">
+                  <select name="module_announcement_bar_pro_status" id="input-status" class="form-control abp-num">
+                    <option value="1"{% if setting.status %} selected="selected"{% endif %}>{{ text_enabled }}</option>
+                    <option value="0"{% if not setting.status %} selected="selected"{% endif %}>{{ text_disabled }}</option>
+                  </select>
+                  <span class="abp-help">{{ help_status }}</span>
                 </div>
-                <div class="form-group">
-                  <label class="col-sm-3 control-label" for="input-mode"><span data-toggle="tooltip" title="{{ help_mode|e }}">{{ entry_mode }}</span></label>
-                  <div class="col-sm-9">
-                    <select name="module_announcement_bar_pro_mode" id="input-mode" class="form-control">
-                      {% for value in ['rotate', 'marquee', 'stack'] %}
-                      <option value="{{ value }}"{% if setting.mode == value %} selected="selected"{% endif %}>{{ attribute(_context, 'text_mode_' ~ value) }}</option>
-                      {% endfor %}
-                    </select>
-                    {% if error_settings.mode %}<div class="text-danger">{{ error_settings.mode|e }}</div>{% endif %}
-                  </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label" for="input-mode">{{ entry_mode }}</label>
+                <div class="col-sm-9">
+                  <select name="module_announcement_bar_pro_mode" id="input-mode" class="form-control">
+                    {% for value in ['rotate', 'marquee', 'stack'] %}
+                    <option value="{{ value }}"{% if setting.mode == value %} selected="selected"{% endif %}>{{ attribute(_context, 'text_mode_' ~ value) }}</option>
+                    {% endfor %}
+                  </select>
+                  <span class="abp-help">{{ help_mode }}</span>
+                  {% if error_settings.mode %}<div class="text-danger">{{ error_settings.mode|e }}</div>{% endif %}
                 </div>
-                <div class="form-group" data-abp-show="rotate">
-                  <label class="col-sm-3 control-label" for="input-interval">{{ entry_interval }}</label>
-                  <div class="col-sm-9">
-                    <input type="number" min="2" max="60" name="module_announcement_bar_pro_interval" id="input-interval" value="{{ setting.interval|e }}" class="form-control abp-num" />
-                    {% if error_settings.interval %}<div class="text-danger">{{ error_settings.interval|e }}</div>{% endif %}
-                  </div>
+              </div>
+              <div class="form-group" data-abp-show-mode="rotate">
+                <label class="col-sm-3 control-label" for="input-interval">{{ entry_interval }}</label>
+                <div class="col-sm-9">
+                  <input type="number" min="2" max="60" name="module_announcement_bar_pro_interval" id="input-interval" value="{{ setting.interval|e }}" class="form-control abp-num" />
+                  <span class="abp-help">{{ help_interval }}</span>
+                  {% if error_settings.interval %}<div class="text-danger">{{ error_settings.interval|e }}</div>{% endif %}
                 </div>
-                <div class="form-group" data-abp-show="marquee">
-                  <label class="col-sm-3 control-label" for="input-speed">{{ entry_speed }}</label>
-                  <div class="col-sm-9">
-                    <input type="number" min="20" max="300" name="module_announcement_bar_pro_speed" id="input-speed" value="{{ setting.speed|e }}" class="form-control abp-num" />
-                    {% if error_settings.speed %}<div class="text-danger">{{ error_settings.speed|e }}</div>{% endif %}
-                  </div>
+              </div>
+              <div class="form-group" data-abp-show-mode="rotate">
+                <label class="col-sm-3 control-label" for="input-transition">{{ entry_transition }}</label>
+                <div class="col-sm-9">
+                  <select name="module_announcement_bar_pro_transition" id="input-transition" class="form-control abp-num" style="max-width:220px;">
+                    {% for value in ['fade', 'slide'] %}
+                    <option value="{{ value }}"{% if setting.transition == value %} selected="selected"{% endif %}>{{ attribute(_context, 'text_transition_' ~ value) }}</option>
+                    {% endfor %}
+                  </select>
+                  <span class="abp-help">{{ help_transition }}</span>
+                  {% if error_settings.transition %}<div class="text-danger">{{ error_settings.transition|e }}</div>{% endif %}
                 </div>
-                <div class="form-group">
-                  <label class="col-sm-3 control-label" for="input-allow-html"><span data-toggle="tooltip" title="{{ help_allow_html|e }}">{{ entry_allow_html }}</span></label>
-                  <div class="col-sm-9">
-                    <div class="checkbox"><label><input type="checkbox" name="module_announcement_bar_pro_allow_html" id="input-allow-html" value="1"{% if setting.allow_html %} checked="checked"{% endif %} /> {{ text_yes }}</label></div>
-                  </div>
+              </div>
+              <div class="form-group" data-abp-show-mode="rotate">
+                <label class="col-sm-3 control-label" for="input-arrows">{{ entry_arrows }}</label>
+                <div class="col-sm-9">
+                  <div class="checkbox"><label><input type="checkbox" name="module_announcement_bar_pro_arrows" id="input-arrows" value="1"{% if setting.arrows %} checked="checked"{% endif %} /> {{ text_yes }}</label></div>
+                  <span class="abp-help">{{ help_arrows }}</span>
                 </div>
-              </fieldset>
-
-              <fieldset>
-                <legend>{{ text_appearance }}</legend>
-                <div class="form-group">
-                  <label class="col-sm-3 control-label" for="input-position">{{ entry_position }}</label>
-                  <div class="col-sm-9">
-                    <select name="module_announcement_bar_pro_position" id="input-position" class="form-control">
-                      <option value="top"{% if setting.position == 'top' %} selected="selected"{% endif %}>{{ text_position_top }}</option>
-                      <option value="bottom"{% if setting.position == 'bottom' %} selected="selected"{% endif %}>{{ text_position_bottom }}</option>
-                    </select>
-                    {% if error_settings.position %}<div class="text-danger">{{ error_settings.position|e }}</div>{% endif %}
-                  </div>
+              </div>
+              <div class="form-group" data-abp-show-mode="marquee">
+                <label class="col-sm-3 control-label" for="input-speed">{{ entry_speed }}</label>
+                <div class="col-sm-9">
+                  <input type="number" min="20" max="300" name="module_announcement_bar_pro_speed" id="input-speed" value="{{ setting.speed|e }}" class="form-control abp-num" />
+                  <span class="abp-help">{{ help_speed }}</span>
+                  {% if error_settings.speed %}<div class="text-danger">{{ error_settings.speed|e }}</div>{% endif %}
                 </div>
-                <div class="form-group" id="abp-sticky-group">
-                  <label class="col-sm-3 control-label" for="input-sticky"><span data-toggle="tooltip" title="{{ help_sticky|e }}">{{ entry_sticky }}</span></label>
-                  <div class="col-sm-9">
-                    <div class="checkbox"><label><input type="checkbox" name="module_announcement_bar_pro_sticky" id="input-sticky" value="1"{% if setting.sticky %} checked="checked"{% endif %} /> {{ text_yes }}</label></div>
-                  </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label" for="input-allow-html">{{ entry_allow_html }}</label>
+                <div class="col-sm-9">
+                  <div class="checkbox"><label><input type="checkbox" name="module_announcement_bar_pro_allow_html" id="input-allow-html" value="1"{% if setting.allow_html %} checked="checked"{% endif %} /> {{ text_yes }}</label></div>
+                  <span class="abp-help">{{ help_allow_html }}</span>
                 </div>
-                <div class="form-group">
-                  <label class="col-sm-3 control-label" for="input-font-size">{{ entry_font_size }}</label>
-                  <div class="col-sm-9">
-                    <input type="number" min="10" max="30" name="module_announcement_bar_pro_font_size" id="input-font-size" value="{{ setting.font_size|e }}" class="form-control abp-num" />
-                    {% if error_settings.font_size %}<div class="text-danger">{{ error_settings.font_size|e }}</div>{% endif %}
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label class="col-sm-3 control-label" for="input-padding">{{ entry_padding }}</label>
-                  <div class="col-sm-9">
-                    <input type="number" min="0" max="30" name="module_announcement_bar_pro_padding" id="input-padding" value="{{ setting.padding|e }}" class="form-control abp-num" />
-                    {% if error_settings.padding %}<div class="text-danger">{{ error_settings.padding|e }}</div>{% endif %}
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label class="col-sm-3 control-label" for="input-color-mode"><span data-toggle="tooltip" title="{{ help_color_mode|e }}">{{ entry_color_mode }}</span></label>
-                  <div class="col-sm-9">
-                    <select name="module_announcement_bar_pro_color_mode" id="input-color-mode" class="form-control">
-                      <option value="auto"{% if setting.color_mode == 'auto' %} selected="selected"{% endif %}>{{ text_color_auto }}</option>
-                      <option value="custom"{% if setting.color_mode != 'auto' %} selected="selected"{% endif %}>{{ text_color_custom }}</option>
-                    </select>
-                    {% if error_settings.color_mode %}<div class="text-danger">{{ error_settings.color_mode|e }}</div>{% endif %}
-                  </div>
-                </div>
-                {% for key in ['default_bg_color', 'default_text_color'] %}
-                <div class="form-group">
-                  <label class="col-sm-3 control-label" for="input-{{ key }}"><span data-toggle="tooltip" title="{{ help_default_color|e }}">{{ attribute(_context, 'entry_' ~ key) }}</span></label>
-                  <div class="col-sm-9">
-                    <div class="input-group abp-color">
-                      <span class="input-group-addon"><input type="color" value="{{ attribute(setting, key)|e }}" aria-label="{{ attribute(_context, 'entry_' ~ key)|e }}" /></span>
-                      <input type="text" name="module_announcement_bar_pro_{{ key }}" id="input-{{ key }}" value="{{ attribute(setting, key)|e }}" maxlength="7" class="form-control" />
-                    </div>
-                    {% if attribute(error_settings, key) is defined %}<div class="text-danger">{{ attribute(error_settings, key)|e }}</div>{% endif %}
-                  </div>
-                </div>
-                {% endfor %}
-              </fieldset>
-
-              <fieldset>
-                <legend>{{ text_dismiss }}</legend>
-                <div class="form-group">
-                  <label class="col-sm-3 control-label" for="input-dismissible">{{ entry_dismissible }}</label>
-                  <div class="col-sm-9">
-                    <div class="checkbox"><label><input type="checkbox" name="module_announcement_bar_pro_dismissible" id="input-dismissible" value="1"{% if setting.dismissible %} checked="checked"{% endif %} /> {{ text_yes }}</label></div>
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label class="col-sm-3 control-label" for="input-dismiss-days"><span data-toggle="tooltip" title="{{ help_dismiss_days|e }}">{{ entry_dismiss_days }}</span></label>
-                  <div class="col-sm-9">
-                    <input type="number" min="0" max="365" name="module_announcement_bar_pro_dismiss_days" id="input-dismiss-days" value="{{ setting.dismiss_days|e }}" class="form-control abp-num" />
-                    {% if error_settings.dismiss_days %}<div class="text-danger">{{ error_settings.dismiss_days|e }}</div>{% endif %}
-                  </div>
-                </div>
-              </fieldset>
-
-              <fieldset>
-                <legend>{{ text_advanced }}</legend>
-                <div class="form-group">
-                  <label class="col-sm-3 control-label" for="input-delete-data"><span data-toggle="tooltip" title="{{ help_delete_data|e }}">{{ entry_delete_data }}</span></label>
-                  <div class="col-sm-9">
-                    <div class="checkbox"><label><input type="checkbox" name="module_announcement_bar_pro_delete_data" id="input-delete-data" value="1"{% if setting.delete_data %} checked="checked"{% endif %} /> {{ text_yes }}</label></div>
-                  </div>
-                </div>
-              </fieldset>
-            </form>
+              </div>
+            </div>
           </div>
-        </div>
+
+          <div class="panel panel-default abp-card">
+            <div class="panel-heading"><div class="abp-card-title"><span class="abp-ico-badge"><i class="fa fa-paint-brush"></i></span> {{ text_appearance }}</div></div>
+            <div class="panel-body">
+              <div class="form-group">
+                <label class="col-sm-3 control-label">{{ entry_style }}</label>
+                <div class="col-sm-9">
+                  <div class="abp-styles" role="radiogroup" aria-label="{{ entry_style|e }}">
+                    {% for style in styles %}
+                    <div class="abp-style-opt">
+                      <input type="radio" name="module_announcement_bar_pro_style" id="input-style-{{ style.value }}" value="{{ style.value }}"{% if setting.style == style.value %} checked="checked"{% endif %} />
+                      <label for="input-style-{{ style.value }}"><span class="abp-sw abp-sw-{{ style.value }}"><i></i><b></b></span><span class="abp-name">{{ style.name|e }}</span><span class="abp-desc">{{ style.help|e }}</span></label>
+                    </div>
+                    {% endfor %}
+                  </div>
+                  <span class="abp-help">{{ help_style }}</span>
+                  {% if error_settings.style %}<div class="text-danger">{{ error_settings.style|e }}</div>{% endif %}
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label" for="input-color-mode">{{ entry_color_mode }}</label>
+                <div class="col-sm-9">
+                  <select name="module_announcement_bar_pro_color_mode" id="input-color-mode" class="form-control">
+                    <option value="auto"{% if setting.color_mode == 'auto' %} selected="selected"{% endif %}>{{ text_color_auto }}</option>
+                    <option value="custom"{% if setting.color_mode != 'auto' %} selected="selected"{% endif %}>{{ text_color_custom }}</option>
+                  </select>
+                  <span class="abp-help">{{ help_color_mode }}</span>
+                  {% if error_settings.color_mode %}<div class="text-danger">{{ error_settings.color_mode|e }}</div>{% endif %}
+                </div>
+              </div>
+              {% for key in ['default_bg_color', 'default_text_color'] %}
+              <div class="form-group">
+                <label class="col-sm-3 control-label" for="input-{{ key }}">{{ attribute(_context, 'entry_' ~ key) }}</label>
+                <div class="col-sm-9">
+                  <div class="input-group abp-color">
+                    <span class="input-group-addon"><input type="color" value="{{ attribute(setting, key)|e }}" aria-label="{{ attribute(_context, 'entry_' ~ key)|e }}" /></span>
+                    <input type="text" name="module_announcement_bar_pro_{{ key }}" id="input-{{ key }}" value="{{ attribute(setting, key)|e }}" maxlength="7" class="form-control" />
+                  </div>
+                  <span class="abp-help">{{ help_default_color }}</span>
+                  {% if attribute(error_settings, key) is defined %}<div class="text-danger">{{ attribute(error_settings, key)|e }}</div>{% endif %}
+                </div>
+              </div>
+              {% endfor %}
+              <div class="form-group">
+                <label class="col-sm-3 control-label" for="input-position">{{ entry_position }}</label>
+                <div class="col-sm-9">
+                  <select name="module_announcement_bar_pro_position" id="input-position" class="form-control">
+                    <option value="top"{% if setting.position == 'top' %} selected="selected"{% endif %}>{{ text_position_top }}</option>
+                    <option value="bottom"{% if setting.position == 'bottom' %} selected="selected"{% endif %}>{{ text_position_bottom }}</option>
+                  </select>
+                  <span class="abp-help">{{ help_position }}</span>
+                  {% if error_settings.position %}<div class="text-danger">{{ error_settings.position|e }}</div>{% endif %}
+                </div>
+              </div>
+              <div class="form-group" id="abp-sticky-group">
+                <label class="col-sm-3 control-label" for="input-sticky">{{ entry_sticky }}</label>
+                <div class="col-sm-9">
+                  <div class="checkbox"><label><input type="checkbox" name="module_announcement_bar_pro_sticky" id="input-sticky" value="1"{% if setting.sticky %} checked="checked"{% endif %} /> {{ text_yes }}</label></div>
+                  <span class="abp-help">{{ help_sticky }}</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label" for="input-font-size">{{ entry_font_size }}</label>
+                <div class="col-sm-9">
+                  <input type="number" min="10" max="30" name="module_announcement_bar_pro_font_size" id="input-font-size" value="{{ setting.font_size|e }}" class="form-control abp-num" />
+                  <span class="abp-help">{{ help_font_size }}</span>
+                  {% if error_settings.font_size %}<div class="text-danger">{{ error_settings.font_size|e }}</div>{% endif %}
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label" for="input-padding">{{ entry_padding }}</label>
+                <div class="col-sm-9">
+                  <input type="number" min="0" max="30" name="module_announcement_bar_pro_padding" id="input-padding" value="{{ setting.padding|e }}" class="form-control abp-num" />
+                  <span class="abp-help">{{ help_padding }}</span>
+                  {% if error_settings.padding %}<div class="text-danger">{{ error_settings.padding|e }}</div>{% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel panel-default abp-card">
+            <div class="panel-heading"><div class="abp-card-title"><span class="abp-ico-badge"><i class="fa fa-times-circle"></i></span> {{ text_dismiss }}</div></div>
+            <div class="panel-body">
+              <div class="form-group">
+                <label class="col-sm-3 control-label" for="input-dismissible">{{ entry_dismissible }}</label>
+                <div class="col-sm-9">
+                  <div class="checkbox"><label><input type="checkbox" name="module_announcement_bar_pro_dismissible" id="input-dismissible" value="1"{% if setting.dismissible %} checked="checked"{% endif %} /> {{ text_yes }}</label></div>
+                  <span class="abp-help">{{ help_dismissible }}</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label" for="input-dismiss-days">{{ entry_dismiss_days }}</label>
+                <div class="col-sm-9">
+                  <input type="number" min="0" max="365" name="module_announcement_bar_pro_dismiss_days" id="input-dismiss-days" value="{{ setting.dismiss_days|e }}" class="form-control abp-num" />
+                  <span class="abp-help">{{ help_dismiss_days }}</span>
+                  {% if error_settings.dismiss_days %}<div class="text-danger">{{ error_settings.dismiss_days|e }}</div>{% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel panel-default abp-card">
+            <div class="panel-heading"><div class="abp-card-title"><span class="abp-ico-badge"><i class="fa fa-wrench"></i></span> {{ text_advanced }}</div></div>
+            <div class="panel-body">
+              <div class="form-group">
+                <label class="col-sm-3 control-label" for="input-delete-data">{{ entry_delete_data }}</label>
+                <div class="col-sm-9">
+                  <div class="checkbox"><label><input type="checkbox" name="module_announcement_bar_pro_delete_data" id="input-delete-data" value="1"{% if setting.delete_data %} checked="checked"{% endif %} /> {{ text_yes }}</label></div>
+                  <span class="abp-help">{{ help_delete_data }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
   </div>
 </div>
-<style>
-.abp-admin .abp-num{max-width:140px;}
-.abp-admin .abp-color{max-width:220px;}
-.abp-admin .abp-color .input-group-addon{padding:2px 4px;}
-.abp-admin .abp-color input[type=color]{width:32px;height:26px;border:0;padding:0;background:none;cursor:pointer;}
-.abp-admin .abp-swatch{display:inline-block;padding:3px 8px;border-radius:3px;max-width:100%;}
-</style>
+<script type="application/json" id="abp-config">{{ config_json }}</script>
+<script type="text/javascript" src="{{ admin_js|e }}"></script>
 <script type="text/javascript"><!--
 (function ($) {
   var hex = /^#[0-9a-fA-F]{6}$/;
@@ -275,7 +346,7 @@
 
   function toggle() {
     var mode = $('#input-mode').val();
-    $('[data-abp-show]').each(function () { $(this).toggle($(this).data('abp-show') === mode); });
+    $('[data-abp-show-mode]').each(function () { $(this).toggle($(this).data('abp-show-mode') === mode); });
     $('#abp-sticky-group').toggle($('#input-position').val() === 'top');
   }
   $('#input-mode, #input-position').on('change', toggle);

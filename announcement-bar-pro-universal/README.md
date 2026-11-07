@@ -3,7 +3,7 @@
 Paziņojumu josla veikala augšā vai apakšā: akcijas, piegādes nosacījumi, svarīgas ziņas.
 *An announcement bar for the top or bottom of every store page.*
 
-- **Versija / Version:** 2.2.0
+- **Versija / Version:** 2.3.0 "Pro Max"
 - **Viena paka visām versijām / One package for all versions:** `announcement_bar_pro.ocmod.zip`
   - OpenCart **3.0.x** (tested 3.0.5.1; code uses only APIs present since 3.0.0.0), PHP 7.3+
   - OpenCart **4.0.x / 4.1.x** (tested 4.0.2.3 and 4.1.0.4; 4.0.0–4.0.1 handled in code, not runtime-tested), PHP 8.0+
@@ -25,6 +25,19 @@ The source code is in the repository folders `announcement-bar-pro` (OpenCart 3)
 4. Pievienojiet pirmo paziņojumu. Svaigā instalācijā modulis jau ir ieslēgts, un krāsas ir „Automātiski”.
 
 Paka pati nosaka OpenCart versiju: OpenCart 3 ņem tikai savus failus (`upload/` + `install.xml`), OpenCart 4 tikai savus (`install.json` + `admin/`, `catalog/`, `system/`).
+
+### Iespēju pārskats
+| | |
+|---|---|
+| **Paziņojumi** | Neierobežots skaits, teksts katrā valodā + īsāks teksts telefonam, ikona, poga ar saiti (aizpildīta / ar apmali / saite), `{countdown}` |
+| **Bezmaksas piegāde** | „Vēl {remaining} līdz bezmaksas piegādei” — atlikums no groza summas, apmeklētāja valūtā, ar progresa joslu; mainās uzreiz pēc AJAX „Grozā” bez lapas pārlādes; summu sasniedzot — sava teksta ziņa |
+| **Atlaides kods** | Kods ar pogu „Kopēt” (starpliktuve, redzams un ekrāna lasītājam paziņots „Nokopēts!”), kopēšanas skaitītājs |
+| **A/B tests** | Otra teksta versija (B); katrs apmeklētājs saņem A vai B un to patur; skatījumi, klikšķi un kopēšana katrai versijai; pēc 100 skatījumiem labākā atzīmēta; „Izmantot B kā galveno” |
+| **Grafiks** | Sākuma / beigu datums, nedēļas dienas un diennakts laiks (arī pāri pusnaktij) veikala laikā — pārbauda serveris un lapā atvērtais skripts |
+| **Kur rādīt** | Veikali, klientu grupas, lapas (`product/*`), ierīces, izvēlētas kategorijas un preces (arī preču lapas no izvēlētajām kategorijām) |
+| **Izskats** | 5 stili — vienkrāsas, krāsu pāreja, maigs, minimālistisks, stikls — visi ar kontrastu vismaz 4,5:1; izgaišana vai slīdēšana, bultiņas, `prefers-reduced-motion` |
+| **Admin** | Sadaļās sakārtota forma ar dzīvo priekšskatījumu (veikala īstais skripts un stili, dators / telefons, A/B, groza stāvoklis), saraksts ar krāsu paraugu, statusiem, ikonām un CTR, eksports / imports (JSON) |
+| **Statistika** | Skatījumi, klikšķi, kopēšana, CTR; bez personas datiem, ievēro Do Not Track / GPC |
 
 ### Automātiska pielāgošanās jebkurai tēmai
 Nekas nav jāiestata:
@@ -52,11 +65,20 @@ Nekas nav jāiestata:
 - **Statistika:** paziņojumu sarakstā ir skatījumi, klikšķi un CTR (%), katram paziņojumam poga „Atiestatīt statistiku”.
 - **Dublēt:** paziņojuma kopija ar visām valodām un iestatījumiem; kopija ir izslēgta un ar nulles statistiku.
 
+### Jaunums 2.3.0 „Pro Max”
+- **Bezmaksas piegādes progress:** paziņojuma veids ar summu (veikala pamatvalūtā), tekstu ar `{remaining}` un tekstu sasniegšanai katrā valodā, neobligātu progresa joslu. Atlikumu aprēķina serveris no groza summas (bez nodokļiem) un formatē apmeklētāja valūtā; pēc OpenCart AJAX groza pieprasījumiem (pievienot / dzēst / mainīt, abās versijās) to atjauno neliels lasīšanas JSON pieprasījums tajā pašā domēnā.
+- **Atlaides kods ar „Kopēt”:** A–Z, 0–9, - un _, līdz 32 zīmēm (glabā ar lielajiem burtiem); kopēšanas skaitītājs statistikā.
+- **A/B tests:** teksts B, teksts B telefonam un pogas teksts B. Versija tiek izlozēta vienreiz katrai pārlūkprogrammai (`localStorage`, bez tās — A). Sarakstā abi CTR, labākais atzīmēts, kad katrai versijai ir vismaz 100 skatījumu; „Izmantot B kā galveno” pārkopē B uz A un izslēdz testu.
+- **Nedēļas grafiks:** dienas un laika logs HH:MM–HH:MM (var pāriet pāri pusnaktij) veikala laika joslā; kopā ar sākuma / beigu datumu. Atvērtā lapā skripts paziņojumu parāda un paslēpj pats.
+- **Kategorijas un preces:** izvēle ar automātisko meklēšanu (katras OpenCart versijas savs meklēšanas maršruts). Paziņojums redzams tikai šajās kategoriju lapās, šo preču lapās un to preču lapās, kas ir izvēlētajās kategorijās.
+- **Eksports / imports (JSON):** teksti pēc valodas koda; imports līdz 1 MB, visas pārbaudes kā formā, valodas, kuru veikalā nav, tiek izlaistas; importētie paziņojumi ir izslēgti.
+- **Dizains:** 5 joslas stili (moduļa iestatījums + katram paziņojumam savs), pogas kā „pill”, SVG aizvēršanas ikona, koda „čips” ar raustītu apmali, gluda progresa josla, izgaišana / slīdēšana, bultiņas. Admin: sadaļas un dzīvais priekšskatījums.
+
 ### Privātums (statistika)
-Statistika ir tikai skaitītāji datubāzē (skatījumi un klikšķi katram paziņojumam). Netiek saglabāti personas dati — ne IP adreses, ne lietotāja aģents, ne klienta ID — un modulis neliek savas sīkdatnes. Lai vienu apmeklētāju neskaitītu vairākkārt, tiek izmantota pārlūka `sessionStorage` un veikala esošā OpenCart sesija (katram paziņojumam ne vairāk kā viens skatījums un viens klikšķis sesijā, kopā ne vairāk kā 100 notikumi). Ja apmeklētāja pārlūkā ieslēgts **Do Not Track** vai **Global Privacy Control**, nekas netiek sūtīts.
+Statistika ir tikai skaitītāji datubāzē (skatījumi, klikšķi un koda kopēšana katram paziņojumam un A/B versijai). A/B versijas izvēle tiek glabāta tikai apmeklētāja pārlūkā (`localStorage` `abp_ab`: paziņojuma numurs → `a`/`b`). Netiek saglabāti personas dati — ne IP adreses, ne lietotāja aģents, ne klienta ID — un modulis neliek savas sīkdatnes. Lai vienu apmeklētāju neskaitītu vairākkārt, tiek izmantota pārlūka `sessionStorage` un veikala esošā OpenCart sesija (katram paziņojumam ne vairāk kā viens skatījums un viens klikšķis sesijā, kopā ne vairāk kā 100 notikumi). Ja apmeklētāja pārlūkā ieslēgts **Do Not Track** vai **Global Privacy Control**, nekas netiek sūtīts.
 
 ### Jaunināšana
-- **OpenCart 3:** augšupielādējiet jauno paku virs vecās (jebkuras iepriekšējās versijas), *Modifications → Refresh* un vienreiz atveriet moduļa lapu. Iestatījumi un paziņojumi paliek. Atverot moduļa lapu, datubāzei tiek pievienotas 2.2.0 kolonnas (vajag tiesības *modify*); līdz tam josla strādā kā 2.1 versijā, bez statistikas.
+- **OpenCart 3:** augšupielādējiet jauno paku virs vecās (jebkuras iepriekšējās versijas), *Modifications → Refresh* un vienreiz atveriet moduļa lapu. Iestatījumi un paziņojumi paliek. Atverot moduļa lapu, datubāzei tiek pievienotas trūkstošās 2.2.0 un 2.3.0 kolonnas (vajag tiesības *modify*; atkārtota atvēršana neko nemaina); līdz tam josla strādā kā iepriekšējā versijā. Paziņojumi, iestatījumi un aizvērto paziņojumu atslēgas paliek; esošo paziņojumu pogas paliek „ar apmali”, kā līdz šim.
 - **OpenCart 4:** instalētājs nepieņem paku, kamēr vecā ir instalēta. Secība: *Modules → Announcement Bar Pro → Uninstall* → *Installer → Announcement Bar Pro → Uninstall* (sarkanā) un **Delete** → augšupielādēt jauno → **Install** → *Modules → Install*. Paziņojumi paliek (ja nav ieslēgts „Dzēst paziņojumus atinstalējot”), bet iestatījumi atgriežas noklusētie: modulis ir **izslēgts** un krāsas „Pielāgotas” — ieslēdziet tos atkārtoti *Iestatījumos*.
 - Ja iepriekšējā versija bija instalēta, krāsas paliek „Pielāgotas”, un rezerves notikums tiek pievienots automātiski.
 
@@ -80,17 +102,39 @@ Statistika ir tikai skaitītāji datubāzē (skatījumi un klikšķi katram pazi
 3. *Extensions → Extensions → Modules* → **Announcement Bar Pro** → **Install** → **Edit**.
 4. Add your first message. A fresh install is already enabled, with colours set to Automatic.
 
-### What is new in 2.2.0
+### Feature overview
+| | |
+|---|---|
+| **Messages** | Unlimited, text per language + a shorter phone text, icon, button with link (filled / outline / link), `{countdown}` |
+| **Free shipping** | "Add {remaining} more for free shipping" — remaining amount from the cart subtotal, in the visitor's currency, with a progress bar; updates right after an AJAX add-to-cart without a page reload; its own text once reached |
+| **Coupon code** | Code chip with a Copy button (clipboard, visible and announced "Copied!"), copy counter |
+| **A/B test** | A second version (B) of the text; every visitor gets A or B and keeps it; views, clicks and copies per version; the better one is marked after 100 views each; "Use B as the main text" |
+| **Schedule** | Start / end date, weekdays and a daily time window (may cross midnight) in store time — checked by the server and by the open page |
+| **Targeting** | Stores, customer groups, pages (`product/*`), devices, chosen categories and products (including product pages in the chosen categories) |
+| **Design** | 5 styles — Solid, Gradient, Soft, Minimal, Glass — all with contrast of at least 4.5:1; fade or slide, prev/next arrows, `prefers-reduced-motion` |
+| **Admin** | Form in sections with a live preview (the shop's real script and styles; computer / phone, A/B, cart state), list with colour swatch, status badges, icons and CTR, JSON export / import |
+| **Statistics** | Views, clicks, copies, CTR; no personal data, honours Do Not Track / GPC |
+
+### What is new in 2.3.0 "Pro Max"
+- **Free-shipping progress:** message type with an amount (store default currency), a per-language text with `{remaining}` and a per-language text for when it is reached, optional progress bar. The server computes the remaining amount from the cart subtotal (without tax) and formats it in the visitor's currency; after OpenCart's own AJAX cart requests (add / remove / update, both versions) a small read-only same-origin JSON request updates it.
+- **Coupon code with Copy:** A–Z, 0–9, - and _, up to 32 (stored uppercase); copies are counted.
+- **A/B test:** text B, phone text B and button text B. The version is drawn once per browser (`localStorage`; without it: A). The list shows both CTRs and marks the better one once each version has 100 views; "Use B as the main text" copies B into A and ends the test.
+- **Weekly schedule:** weekdays and a daily window HH:MM–HH:MM (may cross midnight) in the store's time zone, together with start / end dates. An open page shows and hides the message by itself.
+- **Categories and products:** chosen with autocomplete (each OpenCart version's own catalog autocomplete route). The message shows only on those category pages, on those products' pages and on pages of products in those categories.
+- **Export / import (JSON):** texts keyed by language code; import up to 1 MB, every message validated like the form, unknown languages skipped, imported messages switched off.
+- **Design:** 5 bar styles (module setting + per-message override), pill buttons, SVG close icon, dashed coupon chip, smooth progress bar, fade / slide, arrows. Admin in sections with a live preview.
+
+### What was new in 2.2.0
 - **Phone text (optional):** per language, a shorter text shown on screens narrower than 768 px. Empty = the normal text everywhere. Same HTML rules, `{countdown}` works.
 - **Devices:** per message — all devices, computers only (768 px and wider) or phones only. The bar rearranges itself when a phone is rotated or the window is resized; when no message fits the screen size, the bar is not shown.
 - **Statistics:** views, clicks and CTR (%) in the message list, with "Reset statistics" per message.
 - **Duplicate:** copies a message with all languages and settings; the copy is switched off and starts with zero statistics.
 
 ### Privacy (statistics)
-Statistics are plain counters in the database (views and clicks per message). No personal data is stored — no IP address, user agent or customer ID — and the module sets no cookies of its own. To avoid counting one visitor several times it uses the browser's `sessionStorage` and the shop's existing OpenCart session (at most one view and one click per message per session, 100 events in total). Nothing is sent when the visitor's browser has **Do Not Track** or **Global Privacy Control** switched on.
+Statistics are plain counters in the database (views, clicks and coupon copies per message and A/B version). The A/B choice is kept only in the visitor's browser (`localStorage` `abp_ab`: message number → `a`/`b`). No personal data is stored — no IP address, user agent or customer ID — and the module sets no cookies of its own. To avoid counting one visitor several times it uses the browser's `sessionStorage` and the shop's existing OpenCart session (at most one view and one click per message per session, 100 events in total). Nothing is sent when the visitor's browser has **Do Not Track** or **Global Privacy Control** switched on.
 
 ### Upgrade
-- **OpenCart 3:** upload the new package over the old one, *Modifications → Refresh*, open the module page once. Settings and messages stay. Opening the module page adds the 2.2.0 columns to the database (needs *modify* permission); until then the bar works as in 2.1, without statistics.
+- **OpenCart 3:** upload the new package over the old one, *Modifications → Refresh*, open the module page once. Settings and messages stay. Opening the module page adds the missing 2.2.0 and 2.3.0 columns (needs *modify* permission; opening it again changes nothing); until then the bar works as in the previous version. Messages, settings and the keys of closed messages stay; existing buttons keep their outline look.
 - **OpenCart 4:** the installer refuses a package that is still installed. Order: *Modules → Announcement Bar Pro → Uninstall* → *Installer → Announcement Bar Pro → Uninstall* (red) and **Delete** → upload the new one → **Install** → *Modules → Install*. Messages stay (unless "Delete messages on uninstall" is on), but settings return to defaults: the module is **off** and colours are Custom — switch them back in *Settings*.
 
 ### Automatic theme adaptation
@@ -102,8 +146,10 @@ Statistics are plain counters in the database (views and clicks per message). No
 - Missing **Font Awesome** drops the icons. **RTL** languages are mirrored. The font is inherited from the theme.
 
 ### Security
-- `modify` permission is checked on every save, delete, duplicate and statistics reset; every admin URL carries `user_token`.
-- The public statistics endpoint accepts only POST `id` (integer) and `type` (`view`/`click`), counts only enabled messages and always returns an empty 204.
+- `modify` permission is checked on every save, delete, duplicate, statistics reset, "Use B" and import; every admin URL carries `user_token`. Write buttons ignore double clicks.
+- The public statistics endpoint accepts only POST `id` (integer), `type` (`view`/`click`/`copy`) and `v` (`a`/`b`) from the shop's own pages, counts only enabled messages inside their date window and always returns an empty 204. It never writes the session.
+- The free-shipping endpoint is a read-only GET (`ids`, max. 20) that answers same-origin requests only, with JSON built from server-sanitized HTML; it never outputs errors.
+- Import never trusts the file: at most 1 MB, our export format only, every message goes through the form's validation and sanitizing and is created switched off; `modify` permission and `user_token` are required.
 - All input is whitelist-validated, and every SQL value is cast or escaped.
 - HTML mode uses a whitelist sanitizer on save and again on render.
 - Twig runs with autoescape off in OpenCart, so output is escaped explicitly.

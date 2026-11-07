@@ -9,7 +9,7 @@ Paziņojumu josla (announcement bar) OpenCart veikalam: josla lapas augšā vai 
 piegādes info, atpakaļskaitīšanu u. tml. Viena instalācijas paka der **OpenCart 3.0.x, 4.0.x un 4.1.x**.
 Josla automātiski pielāgojas veikala tēmai.
 
-- Versija: **2.2.0**, DB shēma **6**
+- Versija: **2.3.0 „Pro Max”**, DB shēma **7**
 - Licence: GPL-3.0 (LICENSE.txt no OpenCart pirmkoda)
 - Valodas: LV, EN, RU (admin + veikals). Ja veikala valodai tulkojuma nav → angļu.
 - Marketplace-gatavs. Autors `3dp.lv`, saite `https://3dp.lv` (no 2.1.1; Ulda izvēle 06.11.2026).
@@ -32,14 +32,14 @@ index.html                       repo vecais saturs, ar moduli nav saistīts
 
 ```bash
 cd announcement-bar-pro-universal && ./build.sh
-# → dist/v2.2.0/announcement_bar_pro.ocmod.zip
+# → dist/v2.3.0/announcement_bar_pro.ocmod.zip
 ```
 Universālā paka satur abus komplektus vienā zip:
 - OC3 instalētājs ņem tikai `upload/` + `install.xml`;
 - OC4 instalētājs ņem `install.json` + `admin/ catalog/ system/` un ieliek `extension/announcement_bar_pro/`.
 
 **Faila nosaukumu nemainīt:** OC4 moduļa kodu ņem no zip nosaukuma (`announcement_bar_pro.ocmod.zip`).
-build.sh pārbauda, ka versijas abos komplektos sakrīt. Atsevišķas pakas: `announcement-bar-pro/build.sh`, `announcement-bar-pro-oc4/build.sh`.
+build.sh pārbauda, ka versijas abos komplektos sakrīt un ka kopīgie faili (veikala JS/CSS un admin `abp_admin.js`/`abp_admin.css`) abos komplektos ir baitu identiski. Atsevišķas pakas: `announcement-bar-pro/build.sh`, `announcement-bar-pro-oc4/build.sh`.
 
 ## 4. Funkcijas
 
@@ -49,13 +49,36 @@ ikona (Font Awesome), fona/teksta krāsa, kārtība, statuss, sākuma/beigu datu
 
 **Iestatījumi** (`module_announcement_bar_pro_*`): status, position (top/bottom), sticky, mode (rotate/marquee/stack),
 interval, speed, font_size, padding, dismissible, dismiss_days (0 = līdz cilnes aizvēršanai), allow_html,
-color_mode (auto/custom), default_bg_color, default_text_color, delete_data (dzēst ziņas pie atinstalēšanas).
+color_mode (auto/custom), default_bg_color, default_text_color, delete_data (dzēst ziņas pie atinstalēšanas),
+style (solid/gradient/soft/minimal/glass), transition (fade/slide), arrows (2.3.0).
 
 **DB tabulas:** `oc_abp_message` (message_id, status, sort_order, date_start, date_end, bg_color, text_color, link,
 link_new_tab, icon, countdown, stores, customer_groups, page_mode, page_routes, device, views, clicks, date_added,
 date_modified), `oc_abp_message_description` (message_id, language_id, text, link_text, mobile_text). Shēmas migrācija
 no v1 automātiska (tikai lietotājam ar modify tiesībām); shēma 6 pievieno kolonnas ar `SHOW COLUMNS` pārbaudi
 (`schemaColumns()` + `addColumnIfMissing()` admin modelī). `mobile_text` ir `TEXT NOT NULL` bez DEFAULT (MySQL to neatļauj).
+
+**2.3.0 „Pro Max” (shēma 7):**
+- *Bezmaksas piegāde:* `type` = standard|free_shipping, `threshold` DECIMAL(15,4) (pamatvalūtā), `progress_bar`; teksts = progresa teksts ar
+  `{remaining}`, `success_text` katrā valodā (obligāts, kur ir teksts). Serveris: `cart->getSubTotal()` (bez nodokļiem), `currency->format(…, session currency)`.
+  Endpoint `…/cart` (GET `ids`, ≤ 20, tikai same-origin, JSON `{m:{id:{a,b,p,done}}}`, sesiju nemaina, kļūdas neizvada). JS: jQuery `ajaxComplete`
+  uz `checkout/cart` / `common/cart` maršrutiem (abas versijas), `pageshow` (bfcache).
+- *Kupons:* `coupon` VARCHAR(32) (A–Z0–9_-, lielie burti), čips + „Kopēt” (Clipboard API → `execCommand`), `aria-live`, skaitītājs `copies`.
+- *A/B:* `ab_test`, `text_b`/`mobile_text_b`/`link_text_b`, skaitītāji `views_b`/`clicks_b`/`copies_b`. Abas versijas ir lapā (`.abp-v-a`/`.abp-v-b`),
+  pre.js izvēlas `data-variant` no `localStorage abp_ab` (bez glabātuves → A). Track POST `v=a|b`. „Izmantot B” = `useB` (POST): B → A, tests izslēgts,
+  B skaitītāji kļūst par galvenajiem. Labākā atzīme sarakstā, ja abām ≥ 100 skatījumu (CTR salīdzina ar reizinājumu, bez dalīšanas).
+- *Grafiks:* `weekdays` ('' = katru dienu, citādi ISO 1–7 cipari), `time_start`/`time_end` HH:MM (pāri pusnaktij pieder sākuma dienai).
+  Serveris (`Sanitizer::scheduleOpen`) atzīmē `data-off`, JS ik sekundi pārrēķina pēc `data-now` + `data-tz` (veikala laika josla, `date('Z')`).
+- *Kategorijas/preces:* `categories`/`products` (JSON saraksti, ≤ 200). Kategorijas lapa = pēdējais `path` ID; preces lapa = preces ID vai tās kategorijas
+  (`product_to_category`). Admin autocomplete: OC3 `catalog/category/autocomplete`, OC4 `catalog/category.autocomplete` (`|` < 4.0.2.0).
+- *Eksports/imports:* `export` (GET, JSON lejupielāde, teksti pēc valodas koda, bez statistikas), `import` (POST fails ≤ 1 MB, `format = announcement_bar_pro`,
+  ≤ 500 ziņas, katra caur `normalizeMessagePost → validateMessage → sanitizeMessage`, statuss 0; nezināmas valodas izlaistas un nosauktas).
+- *Stili:* `style` ('' = moduļa iestatījums), `button_style` filled|outline|link (vecām ziņām `outline`). Krāsas stiliem rēķina veikala JS (`skinOf`):
+  visi stili ≥ 4,5:1, Glass pārbaudīts pret baltu un melnu fonu; Solid ar pielāgotām krāsām netiek mainīts (kā 2.1.2). Pre.js slēpj joslu, līdz krāsas
+  ir aprēķinātas (`abp-auto-pending`, CSS atklāj pēc 2 s).
+- *Admin:* kopīgs `abp_admin.js` + `abp_admin.css` (OC3 `admin/view/javascript/announcement_bar_pro/`, OC4 `extension/announcement_bar_pro/admin/view/javascript/`,
+  ielādē no `HTTP(S)_CATALOG`). Konfigurācija JSON `<script type="application/json" id="abp-config">`. Dzīvais priekšskatījums — `iframe sandbox="allow-scripts"`
+  (bez same-origin) ar `srcdoc`, kurā ielādēti veikala īstie CSS/JS.
 
 **2.2.0:** teksts telefonam (< 768 px, CSS `.abp-text-d`/`.abp-text-m`), ierīces (`data-device`, CSS + JS izslēdz no
 rotācijas/marquee/stack, pārbūvē pie 768 px robežas), statistika (catalog `track`: POST id+type, 204, dedup OpenCart
@@ -96,7 +119,9 @@ Svarīgi: OpenCart renderē **footer pirms header** — tāpēc rezerves ceļš 
 | DB charset | utf8 | utf8 | utf8mb4 | utf8mb4 |
 | Namespace | nav | `Opencart\Admin\Controller\Extension\AnnouncementBarPro\Module` | | |
 
-OC4 admin formas ir AJAX (JSON kļūdas → `#error-*`). OC 4.1 `#container` ir `position:absolute` (apakšējai joslai spacer).
+OC4 admin formas ir AJAX (JSON kļūdas → `#error-*`; 2.3.0 kontrolieris kļūdas glabā kā OC3 (`text[2]`) un `flatErrors()` tās pārvērš par `text_2` → `#error-text-2`).
+`url->link()` abās versijās atgriež `&amp;` — Twig šīs saites drukā **bez** `|e` (citādi `&amp;amp;` un pazūd `user_token`). Admin `<link>`/saturs nedrīkst būt
+starp `{{ column_left }}` un `<div id="content">` (OC3 CSS `#column-left + #content`). OC 4.1 `#container` ir `position:absolute` (apakšējai joslai spacer).
 OC 4.1 valodas atslēga `config_language_catalog`, citur `config_language`.
 
 ## 7. Pārbaudes stāvoklis (2.1.0)
@@ -121,6 +146,20 @@ footer rezerve pārņēma ievietošanu (augsta, 2.1.0) u. c.
 `tests/unit/schema_test.php` (57/57 — migrācijas loģika ar viltus DB abiem komplektiem), `tests/demo/test.js` (28/28 —
 13 vecās + telefona teksts, ierīces, 768 px robežas šķērsošana, statistikas bākas, DNT/GPC), `build.sh` (versiju un
 kopīgo failu pārbaude). Pirms publicēšanas jāpalaiž e2e testi īstā OC 3.0.5.1 un 4.x (jaunināšana 2.1.2 → 2.2.0).
+
+**2.3.0 (07.11.2026), īsts OpenCart + MariaDB 11.4 (lokāli, `abp-testenv`), Playwright Chromium:**
+
+| Pārbaude | Rezultāts |
+|---|---|
+| OC 3.0.5.1: 2.2.0 ar 2 ziņām → 2.3.0 caur Extension Installer, migrācija, visas funkcijas caur admin UI + veikals 1366/390 | 72/72 |
+| OC 4.1.0.4: jauna 2.3.0 instalācija, tās pašas pārbaudes | 63/63 |
+| `tests/unit/schema_test.php` (shēma 7: jauna, 5→7, 6→7, pārtraukta, atkārtota; SQL whitelist; sanitizatora palīgi) | 95/95 |
+| `tests/demo/test.js` (stili, kontrasts, 320–1920 px, bezmaksas piegāde, kupons, A/B, bultiņas + 2.2.0) | 50/50 |
+| `php -l` visiem 23 PHP failiem, `build.sh` | OK |
+
+Skripti: `tests/e2e/abp23-e2e.js` + `run23.sh` (vajag `abp-testenv`: `scripts/mkshop.sh <ver> <port>`, MariaDB :3307, PHP serveris).
+Ekrānuzņēmumi: `abp-testenv/shots/v23/`. **Netestēts:** OC 4.0.x ar 2.3.0, īsts PHP 7.x, MySQL 8 (tikai MariaDB), Firefox/Safari, komerctēmas,
+3dp.lv tēma „meistars”, OC4 jaunināšana 2.2.0 → 2.3.0 (atinstalēt/instalēt ceļš).
 
 ## 8. Testu palaišana (tests/e2e)
 

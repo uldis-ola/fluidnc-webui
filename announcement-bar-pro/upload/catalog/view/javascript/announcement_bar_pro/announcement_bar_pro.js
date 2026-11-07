@@ -1,21 +1,54 @@
-/* Announcement Bar Pro v2.2.0 — no dependencies. Adapts itself to the shop theme (see "Automatic adaptation"). */
+/* Announcement Bar Pro v2.3.0 — no dependencies. Adapts itself to the shop theme (see "Automatic adaptation"). */
 (function () {
   'use strict';
 
   function init() {
     var bar = document.getElementById('abp-bar');
-    if (!bar || bar.getAttribute('data-dismissed') === '1') { return; }
+    if (!bar || bar.getAttribute('data-dismissed') === '1' || bar.abpInit) { return; }
+    bar.abpInit = true;
 
     var mode = bar.getAttribute('data-mode');
     var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var timer = null, tickTimer = null, index = 0, paused = false;
-    // Offset between server and visitor clock, so a wrong PC clock cannot shift countdowns/expiry.
+    // Offset between server and visitor clock, so a wrong PC clock cannot shift countdowns/expiry/schedules.
     var skew = (parseInt(bar.getAttribute('data-now'), 10) || Date.now()) - Date.now();
     function serverNow() { return Date.now() + skew; }
+    // Store time zone offset (seconds) for the weekly schedule.
+    var tz = parseInt(bar.getAttribute('data-tz'), 10) || 0;
 
     if (mode === 'marquee' && reduced) {
       mode = 'rotate';
       bar.className = bar.className.replace('abp-mode-marquee', 'abp-mode-rotate');
+    }
+
+    /* ---------------- A/B variant (normally set by the pre-script; here only if it did not run) ---------------- */
+    Array.prototype.forEach.call(bar.querySelectorAll('.abp-item[data-ab="1"]'), function (el) {
+      if (!el.hasAttribute('data-variant')) { el.setAttribute('data-variant', 'a'); }
+    });
+    function variant(el) { return el && el.getAttribute('data-variant') === 'b' ? 'b' : 'a'; }
+
+    /* ---------------- Weekly schedule (store time) ----------------
+       data-wd = ISO weekdays (1 = Monday … 7 = Sunday), data-t1/data-t2 = daily window HH:MM; a window that
+       crosses midnight belongs to the day it starts on. Messages outside are marked data-off (hidden by CSS). */
+    function minutes(t) { var m = /^(\d{2}):(\d{2})$/.exec(t || ''); return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : -1; }
+    function isOpen(el) {
+      var wd = el.getAttribute('data-wd') || '', t1 = minutes(el.getAttribute('data-t1')), t2 = minutes(el.getAttribute('data-t2'));
+      if (!wd && t1 < 0) { return true; }
+      var d = new Date(serverNow() + tz * 1000), day = d.getUTCDay() || 7, prev = day === 1 ? 7 : day - 1, min = d.getUTCHours() * 60 + d.getUTCMinutes();
+      var has = function (x) { return !wd || wd.indexOf(String(x)) !== -1; };
+      if (t1 < 0 || t2 < 0 || t1 === t2) { return has(day); }
+      if (t1 < t2) { return has(day) && min >= t1 && min < t2; }
+      return (min >= t1 && has(day)) || (min < t2 && has(prev));
+    }
+    function scheduled() { return bar.querySelectorAll('.abp-item[data-wd], .abp-item[data-t1]'); }
+    // Returns true when any message switched on or off.
+    function applySchedule() {
+      var changed = false;
+      Array.prototype.forEach.call(scheduled(), function (el) {
+        var off = !isOpen(el);
+        if (off !== el.hasAttribute('data-off')) { changed = true; if (off) { el.setAttribute('data-off', '1'); } else { el.removeAttribute('data-off'); } }
+      });
+      return changed;
     }
 
     /* ---------------- Device targeting (breakpoint 768 px, same as the CSS) ----------------
@@ -24,22 +57,23 @@
     var mq = window.matchMedia ? window.matchMedia('(max-width: 767px)') : null;
     var closed = false, deviceHidden = false;
     function isMobile() { return mq ? mq.matches : window.innerWidth < 768; }
-    function fits(el) { var d = el.getAttribute('data-device'); return !d || d === 'all' || (d === 'mobile') === isMobile(); }
+    function fits(el) { var d = el.getAttribute('data-device'); return !el.hasAttribute('data-off') && (!d || d === 'all' || (d === 'mobile') === isMobile()); }
     function allItems() { return bar.querySelectorAll('.abp-item'); }
     function items() { return Array.prototype.filter.call(allItems(), fits); }
 
     /* ---------------- Statistics (counters only) ----------------
        One "view" per message per browser session when it is really shown, one "click" when its button or a
-       link in it is used. Nothing is sent when the visitor asks not to be tracked (Do Not Track / GPC);
-       every failure is silent. No cookies or storage besides sessionStorage "abp_track". */
+       link in it is used, one "copy" when its coupon code is copied; A/B messages report their variant.
+       Nothing is sent when the visitor asks not to be tracked (Do Not Track / GPC); every failure is silent.
+       No cookies or storage besides sessionStorage "abp_track". */
     var trackUrl = bar.getAttribute('data-track') || '';
     var noTrack = (function (d) { return d === '1' || d === 'yes'; })(navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack) || navigator.globalPrivacyControl === true;
-    var sent = {};
+    var sent = {}, letter = { view: 'v', click: 'c', copy: 'p' };
     function track(el, type) {
       try {
         var id = el && parseInt(el.getAttribute('data-id'), 10);
-        if (!trackUrl || noTrack || !id || id < 1) { return; }
-        var key = type.charAt(0) + id, list = [];
+        if (!trackUrl || noTrack || !id || id < 1 || !letter[type]) { return; }
+        var key = letter[type] + id, list = [];
         try { list = JSON.parse(sessionStorage.getItem('abp_track') || '[]'); if (!Array.isArray(list)) { list = []; } } catch (e1) { list = []; }
         if (sent[key] || list.indexOf(key) !== -1) { return; }
         sent[key] = 1;
@@ -48,6 +82,7 @@
         var fd = new FormData();
         fd.append('id', String(id));
         fd.append('type', type);
+        fd.append('v', variant(el));
         if (!(navigator.sendBeacon && navigator.sendBeacon(trackUrl, fd)) && window.fetch) {
           window.fetch(trackUrl, { method: 'POST', body: fd, keepalive: true, credentials: 'same-origin' }).catch(function () {});
         }
@@ -147,6 +182,8 @@
       bar.style.zIndex = maxZ >= 1030 ? String(Math.min(maxZ + 1, 1039)) : '';
     }
 
+    /* ---------------- Colours and styles ----------------
+       Every style keeps WCAG contrast of at least 4.5:1 between the text and what is behind it. */
     function parseRgb(c) {
       var m = /rgba?\(([^)]+)\)/.exec(c || '');
       if (!m) { return null; }
@@ -154,20 +191,26 @@
       if (p.length < 3 || (p.length > 3 && p[3] === 0)) { return null; }
       return p.slice(0, 3);
     }
+    function hexRgb(h) { return /^#[0-9a-f]{6}$/i.test(h || '') ? [1, 3, 5].map(function (i) { return parseInt(h.substr(i, 2), 16); }) : null; }
+    function css(rgb) { return 'rgb(' + rgb.map(function (v) { return Math.max(0, Math.min(255, Math.round(v))); }).join(',') + ')'; }
+    function rgba(rgb, a) { return 'rgba(' + rgb.map(function (v) { return Math.max(0, Math.min(255, Math.round(v))); }).join(',') + ',' + a + ')'; }
+    function mix(a, b, t) { return a.map(function (v, i) { return v + (b[i] - v) * t; }); }
+    var WHITE = [255, 255, 255], BLACK = [0, 0, 0], INK = [17, 17, 17];
 
     function luminance(rgb) {
-      var c = rgb.map(function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+      var c = rgb.map(function (v) { v = Math.max(0, Math.min(255, v)) / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
       return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
     }
 
     function contrast(l1, l2) {
       return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
     }
+    function ratio(a, b) { return contrast(luminance(a), luminance(b)); }
 
     // Text colour with the higher WCAG contrast (white or #111111). If even that stays below 4.5:1
     // (mid-tone theme colours), the background is darkened or lightened just enough to reach it.
     function readable(rgb) {
-      var dark = luminance([17, 17, 17]), bg = rgb.slice(), fg, toward;
+      var dark = luminance(INK), bg = rgb.slice(), fg, toward;
       fg = contrast(luminance(bg), 1) >= contrast(luminance(bg), dark) ? '#ffffff' : '#111111';
       toward = fg === '#ffffff' ? 0 : 255;
       for (var i = 0; i < 20 && contrast(luminance(bg), fg === '#ffffff' ? 1 : dark) < 4.5; i++) {
@@ -175,6 +218,62 @@
       }
       return { bg: bg, fg: fg };
     }
+    // Moves colour c toward target until it reaches the wanted contrast against every colour in "against".
+    function push(c, target, against, want) {
+      var out = c.slice();
+      for (var i = 0; i < 40 && against.some(function (a) { return ratio(out, a) < want; }); i++) { out = mix(out, target, 0.08); }
+      return out;
+    }
+
+    var glassOk = !!(window.CSS && CSS.supports && (CSS.supports('backdrop-filter', 'blur(2px)') || CSS.supports('-webkit-backdrop-filter', 'blur(2px)')));
+
+    // Computes the look of one message: base colour (theme colour in Automatic mode, else its own) + style.
+    function skinOf(base, ownFg, style) {
+      var s = readable(base), fg = ownFg ? ownFg : (s.fg === '#ffffff' ? WHITE : INK), bg = ownFg ? base : s.bg;
+      var light = luminance(fg) > luminance(bg);
+      var out = { bg: css(bg), image: '', fg: css(fg), btnBg: css(fg), btnFg: css(bg), accent: css(fg), glass: false };
+      if (style === 'gradient') {
+        // Custom colours below 4.5:1: the first stop is moved away from the text colour just enough.
+        if (ratio(fg, bg) < 4.5) { bg = push(bg, light ? BLACK : WHITE, [fg], 4.5); out.bg = css(bg); out.btnFg = css(bg); }
+        // Second stop: same hue family, moved away from the text colour (only raises the contrast).
+        var c2 = mix(bg, light ? BLACK : WHITE, 0.3);
+        c2 = [c2[0] * 0.92 + c2[2] * 0.08, c2[1], c2[2] * 0.9 + c2[0] * 0.1];
+        if (ratio(fg, c2) < Math.max(4.5, ratio(fg, bg) - 0.01)) { c2 = mix(bg, light ? BLACK : WHITE, 0.3); }
+        out.image = 'linear-gradient(100deg,' + css(bg) + ' 0%,' + css(mix(bg, c2, 0.5)) + ' 55%,' + css(c2) + ' 100%)';
+      } else if (style === 'soft' || style === 'minimal') {
+        var tint = style === 'soft' ? mix(base, WHITE, 0.86) : mix(base, WHITE, 0.965);
+        var text = push(style === 'soft' ? mix(base, BLACK, 0.55) : mix(base, BLACK, 0.78), BLACK, [tint], 4.5);
+        var solid = readable(base);
+        out.bg = css(tint); out.fg = css(text);
+        out.accent = css(push(base, BLACK, [tint], 3));
+        out.btnBg = css(solid.bg); out.btnFg = solid.fg;
+      } else if (style === 'glass' && glassOk) {
+        // Translucent: the page behind can be white or black — the text must stay readable on both.
+        var a = 0.8, worst = function (c) { return [mix(c, WHITE, 1 - a), mix(c, BLACK, 1 - a)]; };
+        var cand = [WHITE, INK].map(function (f) {
+          var c = base.slice();
+          for (var i = 0; i < 30 && worst(c).some(function (w) { return ratio(f, w) < 4.5; }); i++) { c = mix(c, f === WHITE ? BLACK : WHITE, 0.08); }
+          return { f: f, c: c, d: Math.abs(luminance(c) - luminance(base)) };
+        });
+        var pick = cand[0].d <= cand[1].d ? cand[0] : cand[1];
+        if (ownFg && !worst(base).some(function (w) { return ratio(ownFg, w) < 4.5; })) { pick = { f: ownFg, c: base }; }
+        out.bg = rgba(pick.c, a); out.fg = css(pick.f); out.btnBg = css(pick.f); out.btnFg = css(pick.c); out.accent = css(pick.f); out.glass = true;
+      }
+      return out;
+    }
+
+    var theme = null; // theme colour (Automatic mode), read after load
+    function paintItem(el) {
+      var style = el.getAttribute('data-style') || 'solid', auto = bar.getAttribute('data-color') === 'auto';
+      var base = auto && theme ? theme : hexRgb(el.getAttribute('data-c')), own = auto ? null : hexRgb(el.getAttribute('data-t'));
+      if (!base) { return; }
+      if (!auto && style === 'solid') { return; } // custom colours are not changed
+      var k = skinOf(base, own, style), st = el.style;
+      st.backgroundColor = k.bg; st.backgroundImage = k.image; st.color = k.fg;
+      st.setProperty('--abp-btn-bg', k.btnBg); st.setProperty('--abp-btn-fg', k.btnFg); st.setProperty('--abp-accent', k.accent);
+      el.abpGlass = k.glass;
+    }
+    function paintAll() { Array.prototype.forEach.call(allItems(), paintItem); var list = items(); paintBar(list[index] || list[0]); }
 
     // The theme's main colour: primary buttons, then the menu / navbar, then the link colour.
     function themeColour() {
@@ -197,17 +296,8 @@
     }
 
     function applyAutoColours() {
-      if (bar.getAttribute('data-color') !== 'auto') { return; }
-      var rgb = themeColour();
-      if (rgb) {
-        var pick = readable(rgb);
-        var bg = 'rgb(' + pick.bg.map(Math.round).join(',') + ')';
-        var fg = pick.fg;
-        var all = allItems(), list = items();
-        for (var i = 0; i < all.length; i++) { all[i].style.backgroundColor = bg; all[i].style.color = fg; }
-        bar.querySelectorAll('.abp-link, .abp-btn').forEach(function (a) { a.style.color = fg; a.style.borderColor = fg; });
-        paintBar(list[index] || list[0]);
-      }
+      if (bar.getAttribute('data-color') === 'auto') { theme = themeColour(); }
+      paintAll();
       bar.classList.remove('abp-auto-pending');
     }
 
@@ -224,9 +314,9 @@
     function paintBar(item) {
       if (!item) { return; }
       bar.style.backgroundColor = item.style.backgroundColor;
+      bar.style.backgroundImage = item.style.backgroundImage || '';
       bar.style.color = item.style.color;
-      var close = bar.querySelector('.abp-close');
-      if (close) { close.style.color = item.style.color; }
+      bar.classList.toggle('abp-glass', !!item.abpGlass);
     }
 
     // Some themes put the whole page in an absolutely positioned wrapper (OpenCart 4.1: #container).
@@ -234,7 +324,7 @@
     function wrappers() {
       var out = [], kids = document.body.children;
       for (var i = 0; i < kids.length; i++) {
-        if (kids[i] !== bar && kids[i].className.indexOf('abp-spacer') === -1 && window.getComputedStyle(kids[i]).position === 'absolute' && kids[i].offsetHeight > window.innerHeight / 2) { out.push(kids[i]); }
+        if (kids[i] !== bar && String(kids[i].className).indexOf('abp-spacer') === -1 && window.getComputedStyle(kids[i]).position === 'absolute' && kids[i].offsetHeight > window.innerHeight / 2) { out.push(kids[i]); }
       }
       return out;
     }
@@ -277,28 +367,30 @@
       if (!track) { return; }
       track.style.minHeight = '';
       if (mode !== 'rotate') { return; }
-      var list = items(), max = 0;
+      var list = items(), max = 0, min = Infinity;
       for (var i = 0; i < list.length; i++) {
         var was = list[i].style.display;
         list[i].style.display = 'block';
-        max = Math.max(max, list[i].offsetHeight);
+        var h = list[i].offsetHeight;
+        max = Math.max(max, h); min = Math.min(min, h);
         list[i].style.display = was;
       }
       // Reserve the tallest height only when messages are similar; one very long message must not
       // turn every short one into a huge bar (e.g. on phones).
-      var min = Infinity;
-      for (var j = 0; j < list.length; j++) { var was2 = list[j].style.display; list[j].style.display = 'block'; min = Math.min(min, list[j].offsetHeight); list[j].style.display = was2; }
       if (max && max <= min * 2.5) { track.style.minHeight = max + 'px'; }
     }
 
-    function show(i) {
+    var navs = bar.querySelectorAll('.abp-nav');
+    function show(i, back) {
       var list = items();
       if (!list.length) { return; }
       index = (i + list.length) % list.length;
+      bar.classList.toggle('abp-back', !!back);
       var all = allItems();
       for (var n = 0; n < all.length; n++) {
         if (all[n] === list[index]) { all[n].classList.add('abp-active'); } else { all[n].classList.remove('abp-active'); }
       }
+      for (var b = 0; b < navs.length; b++) { navs[b].hidden = mode !== 'rotate' || list.length < 2; }
       paintBar(list[index]);
       fitBody();
       trackShown();
@@ -330,22 +422,37 @@
     function relayout() { rescan(); stabilise(); show(Math.min(index, Math.max(items().length - 1, 0))); startRotate(); startMarquee(); fitBody(); }
 
     function startTick() {
-      if (!tickTimer && bar.querySelector('.abp-countdown, .abp-item[data-end]')) { tickTimer = setInterval(tick, 1000); }
+      if (!tickTimer && bar.querySelector('.abp-countdown, .abp-item[data-end], .abp-item[data-wd], .abp-item[data-t1]')) { tickTimer = setInterval(tick, 1000); }
     }
 
     function hideBar() {
       stopRotate();
-      if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
       bar.style.display = 'none';
       fitBody();
       restoreEdges();
     }
 
+    // Something changed which messages may be shown (screen size crossed 768 px, schedule, expiry):
+    // rebuild from the messages that fit now, hide the bar when none is left, show it again when one is.
+    function refreshVisible() {
+      if (closed) { return; }
+      if (!items().length) {
+        if (bar.style.display !== 'none') { deviceHidden = true; hideBar(); }
+        return;
+      }
+      if (deviceHidden || bar.style.display === 'none') {
+        deviceHidden = false;
+        bar.style.display = '';
+      }
+      index = 0;
+      relayout();
+    }
+
     function pad(n) { return (n < 10 ? '0' : '') + n; }
 
-    // Countdowns + removal of messages whose end time passed while the page is open.
+    // Countdowns, weekly schedules and removal of messages whose end time passed while the page is open.
     function tick() {
-      var now = serverNow(), changed = false, list = allItems();
+      var now = serverNow(), changed = applySchedule(), list = allItems();
       for (var i = list.length - 1; i >= 0; i--) {
         var end = parseInt(list[i].getAttribute('data-end'), 10);
         if (end && end <= now) { list[i].parentNode.removeChild(list[i]); changed = true; }
@@ -361,11 +468,8 @@
         var d = Math.floor(left / 86400), h = Math.floor(left % 86400 / 3600), m = Math.floor(left % 3600 / 60), s = left % 60;
         nodes[c].textContent = (d > 0 ? d + (bar.getAttribute('data-days-label') || 'd') + ' ' : '') + pad(h) + ':' + pad(m) + ':' + pad(s);
       }
-      if (changed) {
-        if (!items().length) { deviceHidden = !!allItems().length; hideBar(); return; }
-        index = 0; relayout();
-      }
-      if (!bar.querySelector('.abp-countdown, .abp-item[data-end]') && tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+      if (changed) { refreshVisible(); }
+      if (!bar.querySelector('.abp-countdown, .abp-item[data-end], .abp-item[data-wd], .abp-item[data-t1]') && tickTimer) { clearInterval(tickTimer); tickTimer = null; }
     }
 
     var close = bar.querySelector('.abp-close');
@@ -386,16 +490,63 @@
         } catch (e) { /* storage blocked: bar just hides for this page view */ }
         var focusWasInside = bar.contains(document.activeElement);
         closed = true;
+        if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
         hideBar();
         // Keyboard users: continue at the first focusable element after the bar, not at <body>.
         if (focusWasInside) {
           var next = document.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
-          for (var k = 0; k < next.length; k++) {
-            if (!bar.contains(next[k]) && (bar.compareDocumentPosition(next[k]) & 4) && next[k].offsetParent !== null) { next[k].focus(); break; }
+          for (var k2 = 0; k2 < next.length; k2++) {
+            if (!bar.contains(next[k2]) && (bar.compareDocumentPosition(next[k2]) & 4) && next[k2].offsetParent !== null) { next[k2].focus(); break; }
           }
         }
       });
     }
+
+    // Previous / next message (rotate mode). Buttons: reachable with the keyboard, labelled for screen readers.
+    Array.prototype.forEach.call(navs, function (btn) {
+      btn.addEventListener('click', function () {
+        var back = btn.classList.contains('abp-prev');
+        show(index + (back ? -1 : 1), back);
+        startRotate();
+      });
+    });
+
+    // Coupon: copy the code (Clipboard API, fallback execCommand), visible + announced "Copied!".
+    function copyText(text, done) {
+      var fallback = function () {
+        var ok = false;
+        try {
+          var ta = document.createElement('textarea');
+          ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
+          document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+          ok = document.execCommand('copy');
+          document.body.removeChild(ta);
+        } catch (e) { ok = false; }
+        done(ok);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext !== false) {
+        navigator.clipboard.writeText(text).then(function () { done(true); }, fallback);
+      } else { fallback(); }
+    }
+    bar.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest('.abp-copy') : null;
+      if (!btn || !bar.contains(btn)) { return; }
+      e.preventDefault();
+      var code = btn.getAttribute('data-code') || '';
+      if (!/^[A-Z0-9_-]{1,32}$/.test(code)) { return; }
+      copyText(code, function (ok) {
+        var label = btn.querySelector('.abp-copy-label'), live = btn.parentNode.querySelector('.abp-sr');
+        var msg = ok ? (btn.getAttribute('data-copied') || 'Copied!') : code;
+        if (ok) {
+          btn.classList.add('abp-copied');
+          if (label) { label.textContent = btn.getAttribute('data-copied') || 'Copied!'; }
+          track(btn.closest('.abp-item'), 'copy');
+          clearTimeout(btn.abpT);
+          btn.abpT = setTimeout(function () { btn.classList.remove('abp-copied'); if (label) { label.textContent = btn.getAttribute('data-label') || 'Copy'; } }, 2200);
+        }
+        if (live) { live.textContent = ''; setTimeout(function () { live.textContent = msg; }, 30); }
+      });
+    });
 
     // Pause on mouse hover / keyboard focus; a tap on touch screens toggles pause (no stuck mouseenter).
     function pointerIsMouse(e) { return !e.pointerType || e.pointerType === 'mouse'; }
@@ -447,36 +598,70 @@
       if (a && bar.contains(a)) { track(a.closest('.abp-item'), 'click'); }
     });
 
-    // Crossing the 768 px breakpoint (rotation, resize): rebuild from the messages meant for this screen size.
-    function deviceChange() {
-      if (closed) { return; }
-      if (!items().length) {
-        if (!deviceHidden && bar.style.display !== 'none') { deviceHidden = true; hideBar(); }
-        return;
-      }
-      if (deviceHidden || bar.style.display === 'none') {
-        deviceHidden = false;
-        bar.style.display = '';
-        startTick();
-      }
-      index = 0;
-      relayout();
+    /* ---------------- Free-shipping progress ----------------
+       After OpenCart's own AJAX cart requests (add / remove / update, both versions) the remaining amount is
+       fetched from a small read-only endpoint (same-origin GET, JSON) and the message is updated in place. */
+    var cartUrl = bar.getAttribute('data-cart') || '', cartTimer = null, cartBusy = false;
+    function refreshCart() {
+      var ids = Array.prototype.map.call(bar.querySelectorAll('.abp-item[data-fs="1"]'), function (el) { return el.getAttribute('data-id'); }).filter(function (x) { return /^\d+$/.test(x); });
+      if (!cartUrl || !ids.length || !window.fetch || cartBusy) { return; }
+      cartBusy = true;
+      window.fetch(cartUrl + (cartUrl.indexOf('?') === -1 ? '?' : '&') + 'ids=' + ids.slice(0, 20).join(','), { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (json) {
+          cartBusy = false;
+          if (!json || typeof json.m !== 'object' || !json.m) { return; }
+          Object.keys(json.m).forEach(function (id) {
+            var el = bar.querySelector('.abp-item[data-fs="1"][data-id="' + String(parseInt(id, 10)) + '"]'), row = json.m[id];
+            if (!el || !row || typeof row !== 'object') { return; }
+            ['a', 'b'].forEach(function (v) {
+              var txt = el.querySelector('.abp-v-' + v + ' .abp-txt');
+              if (txt && typeof row[v] === 'string') { txt.innerHTML = row[v]; } // server-sanitized HTML
+            });
+            var fill = el.querySelector('.abp-progress-fill'), p = Math.max(0, Math.min(100, parseFloat(row.p) || 0));
+            if (fill) { fill.style.width = p + '%'; }
+            var prog = el.querySelector('.abp-progress');
+            if (prog) { prog.setAttribute('data-p', String(Math.round(p))); }
+            if (row.done) { el.setAttribute('data-done', '1'); } else { el.removeAttribute('data-done'); }
+          });
+          checkIcons(); stabilise(); fitBody(); startTick();
+          if (mode === 'marquee') { startMarquee(); }
+        })
+        .catch(function () { cartBusy = false; });
     }
+    function queueCart() { clearTimeout(cartTimer); cartTimer = setTimeout(refreshCart, 300); }
+    var cartHooked = false;
+    function hookCart() {
+      if (cartHooked || !cartUrl || !window.jQuery || !bar.querySelector('.abp-item[data-fs="1"]')) { return; }
+      cartHooked = true;
+      window.jQuery(document).ajaxComplete(function (e, xhr, settings) {
+        var url = settings && typeof settings.url === 'string' ? settings.url : '';
+        if (/route=(checkout|common)(\/|%2F)cart|(checkout|common)\/cart[\/.|]/i.test(url)) { queueCart(); }
+      });
+    }
+    hookCart();
+    // Back/forward cache: the cart may have changed on another page.
+    window.addEventListener('pageshow', function (e) { if (e.persisted) { queueCart(); } });
+
+    // Crossing the 768 px breakpoint (rotation, resize): rebuild from the messages meant for this screen size.
     if (mq) {
-      if (mq.addEventListener) { mq.addEventListener('change', deviceChange); } else if (mq.addListener) { mq.addListener(deviceChange); }
+      if (mq.addEventListener) { mq.addEventListener('change', refreshVisible); } else if (mq.addListener) { mq.addListener(refreshVisible); }
     }
 
+    applySchedule();
     tick();
     if (!items().length) {
       deviceHidden = true;
       hideBar();
     } else {
-      startTick();
       bar.style.display = '';
     }
+    startTick();
+    // Custom colours: paint the styles now (no wait); Automatic colours need the theme's final CSS (load).
+    if (bar.getAttribute('data-color') !== 'auto') { applyAutoColours(); }
     relayout();
 
-    function afterLoad() { checkIcons(); applyAutoColours(); relayout(); }
+    function afterLoad() { checkIcons(); applyAutoColours(); hookCart(); relayout(); }
     // Web fonts, icons and theme colours are final only after load.
     if (document.readyState === 'complete') { afterLoad(); } else { window.addEventListener('load', afterLoad); }
   }

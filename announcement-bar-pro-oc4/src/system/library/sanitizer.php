@@ -2,7 +2,7 @@
 /**
  * Announcement Bar Pro (OpenCart 4) — text / HTML / URL sanitizer.
  * Shared by admin (on save) and catalog (on render, defence in depth).
- * @version 2.2.0
+ * @version 2.3.0
  */
 namespace Opencart\System\Library\Extension\AnnouncementBarPro;
 \defined('VERSION') || exit; // not callable directly
@@ -209,6 +209,120 @@ class Sanitizer {
 		}
 
 		return preg_match('/^fa-(solid|regular|brands) fa-[a-z0-9-]{1,40}$/', $value) ? $value : '';
+	}
+
+	/* ------------------------------------------------------------------ *
+	 * 2.3.0 helpers (identical in both kits)
+	 * ------------------------------------------------------------------ */
+
+	/** Coupon code: A–Z, 0–9, "-" and "_", at most 32, stored uppercase. Returns '' if empty or invalid. */
+	public function coupon($value) {
+		$value = strtoupper(trim((string)$value));
+
+		return preg_match('/^[A-Z0-9_-]{1,32}$/', $value) ? $value : '';
+	}
+
+	/** Daily time "HH:MM" (00:00–23:59), or '' when invalid. */
+	public function clockTime($value) {
+		$value = trim((string)$value);
+
+		return preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $value) ? $value : '';
+	}
+
+	/**
+	 * Weekdays as a string of ISO numbers (1 = Monday … 7 = Sunday), sorted, e.g. "12345".
+	 * All seven days or none → '' (every day). Anything that is not 1–7 is dropped.
+	 */
+	public function weekdays($value) {
+		$list = is_array($value) ? $value : str_split(preg_replace('/[^1-7]/', '', (string)$value));
+		$days = array();
+
+		foreach ($list as $day) {
+			if (is_scalar($day) && preg_match('/^[1-7]$/', (string)$day)) {
+				$days[(int)$day] = (int)$day;
+			}
+		}
+
+		ksort($days);
+
+		return count($days) === 7 ? '' : implode('', $days);
+	}
+
+	/**
+	 * Weekly schedule check in the store's time zone. A window that crosses midnight (22:00–02:00) belongs
+	 * to the day it starts on. Same rules as the storefront script.
+	 */
+	public function scheduleOpen($weekdays, $time_start, $time_end, $timestamp = null) {
+		$timestamp = $timestamp === null ? time() : (int)$timestamp;
+		$weekdays  = (string)$weekdays;
+		$t1        = $this->clockTime($time_start);
+		$t2        = $this->clockTime($time_end);
+
+		if ($weekdays === '' && $t1 === '') {
+			return true;
+		}
+
+		$day  = (int)date('N', $timestamp);
+		$prev = $day === 1 ? 7 : $day - 1;
+		$min  = (int)date('G', $timestamp) * 60 + (int)date('i', $timestamp);
+		$has  = function ($d) use ($weekdays) {
+			return $weekdays === '' || strpos($weekdays, (string)$d) !== false;
+		};
+
+		if ($t1 === '' || $t2 === '' || $t1 === $t2) {
+			return $has($day);
+		}
+
+		$a = (int)substr($t1, 0, 2) * 60 + (int)substr($t1, 3, 2);
+		$b = (int)substr($t2, 0, 2) * 60 + (int)substr($t2, 3, 2);
+
+		if ($a < $b) {
+			return $has($day) && $min >= $a && $min < $b;
+		}
+
+		return ($min >= $a && $has($day)) || ($min < $b && $has($prev));
+	}
+
+	/**
+	 * List of positive integer IDs from an array, a JSON list or "1,2,3". Unique, at most $max; anything else dropped.
+	 */
+	public function idList($value, $max = 200) {
+		if (is_string($value)) {
+			$decoded = json_decode($value, true);
+			$value   = is_array($decoded) ? $decoded : explode(',', $value);
+		}
+
+		$out = array();
+
+		foreach ((array)$value as $id) {
+			if (is_scalar($id) && preg_match('/^\s*\d{1,10}\s*$/', (string)$id) && (int)$id > 0) {
+				$out[(int)$id] = (int)$id;
+			}
+		}
+
+		return array_slice(array_values($out), 0, (int)$max);
+	}
+
+	/**
+	 * Money amount ("50", "49.99", "49,99") → '49.9900' (4 decimals); false when invalid or out of range.
+	 */
+	public function amount($value) {
+		$value = str_replace(array(' ', "\xc2\xa0", ','), array('', '', '.'), trim((string)$value));
+
+		if (!preg_match('/^\d{1,9}(\.\d{1,4})?$/', $value)) {
+			return false;
+		}
+
+		return number_format((float)$value, 4, '.', '');
+	}
+
+	/** Text markup of one message variant: normal text, plus the phone text when there is one. Input is safe HTML. */
+	public function textHtml($html, $html_m) {
+		if ((string)$html_m === '') {
+			return '<span class="abp-text">' . $html . '</span>';
+		}
+
+		return '<span class="abp-text abp-text-d">' . $html . '</span><span class="abp-text abp-text-m">' . $html_m . '</span>';
 	}
 
 	private function cleanNode(\DOMNode $node, $in_link = false) {

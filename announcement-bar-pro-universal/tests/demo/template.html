@@ -71,9 +71,9 @@ footer{color:var(--muted);font-size:14px}
 <div class="wrap">
   <header>
     <h1>Announcement Bar Pro</h1>
-    <p>Paziņojumu josla OpenCart veikalam. Viena paka der OpenCart 3.0, 4.0 un 4.1, un josla pati pielāgojas tēmai. Labajā logā darbojas <b>moduļa īstais JavaScript un CSS</b> no versijas 2.2.0. Izvēlieties tēmu un skatieties, kā josla pielāgojas: ritiniet veikala logu un aizveriet joslu ar ×.</p>
+    <p>Paziņojumu josla OpenCart veikalam. Viena paka der OpenCart 3.0, 4.0 un 4.1, un josla pati pielāgojas tēmai. Labajā logā darbojas <b>moduļa īstais JavaScript un CSS</b> no versijas 2.3.0. Izvēlieties stilu un tēmu, ielieciet preces grozā (bezmaksas piegādes progress mainās bez pārlādes), nokopējiet atlaides kodu un salīdziniet A/B versijas.</p>
     <div class="chips">
-      <span class="chip">Viena paka · <b>v2.2.0</b></span>
+      <span class="chip">Viena paka · <b>v2.3.0 Pro Max</b></span>
       <span class="chip">OpenCart 3.0 · 4.0 · 4.1</span>
       <span class="chip">LV · EN · RU</span>
       <span class="chip">GPL-3.0</span>
@@ -101,13 +101,39 @@ footer{color:var(--muted);font-size:14px}
         </div>
       </div>
 
+      <h3>Stils</h3>
+      <div class="field">
+        <span class="lbl" id="lbl-style">Joslas stils</span>
+        <div class="seg" role="group" aria-labelledby="lbl-style">
+          <button type="button" data-style="solid" aria-pressed="false">Vienkrāsas</button>
+          <button type="button" data-style="gradient" aria-pressed="true">Pāreja</button>
+          <button type="button" data-style="soft" aria-pressed="false">Maigs</button>
+          <button type="button" data-style="minimal" aria-pressed="false">Minimāls</button>
+          <button type="button" data-style="glass" aria-pressed="false">Stikls</button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field" style="flex:1"><label for="btnstyle">Poga</label><select id="btnstyle"><option value="filled">Aizpildīta</option><option value="outline">Ar apmali</option><option value="link">Saite</option></select></div>
+        <div class="field" style="flex:1"><label for="transition">Maiņa</label><select id="transition"><option value="slide">Slīd</option><option value="fade">Izgaist</option></select></div>
+      </div>
+      <label class="check"><input type="checkbox" id="arrows" checked> Bultiņas iepriekšējais / nākamais</label>
+
+      <h3>Pro Max</h3>
+      <p class="hint">5. paziņojums: bezmaksas piegāde no 50 €. Spiediet „Grozā” veikala logā — summa un progresa josla mainās uzreiz (moduļa īstais AJAX ceļš ar simulētu groza atbildi).</p>
+      <div class="row"><span class="hint" id="cartinfo">Grozs: 0,00 €</span><button type="button" class="btn" id="emptycart">Iztukšot grozu</button></div>
+      <div class="field">
+        <label for="variant">A/B tests (3. paziņojums)</label>
+        <select id="variant"><option value="">Nejauši, paliek šai pārlūkprogrammai</option><option value="a">Rādīt versiju A</option><option value="b">Rādīt versiju B</option></select>
+      </div>
+      <p class="hint">2. paziņojumam ir atlaides kods ar pogu „Kopēt”.</p>
+
       <h3>Moduļa iestatījumi</h3>
       <div class="field">
         <span class="lbl" id="lbl-mode">Attēlošana</span>
         <div class="seg" role="group" aria-labelledby="lbl-mode">
-          <button type="button" data-mode="rotate" aria-pressed="true">Mainīgi</button>
+          <button type="button" data-mode="rotate" aria-pressed="false">Mainīgi</button>
           <button type="button" data-mode="marquee" aria-pressed="false">Skrejošā rinda</button>
-          <button type="button" data-mode="stack" aria-pressed="false">Visi</button>
+          <button type="button" data-mode="stack" aria-pressed="true">Visi</button>
         </div>
       </div>
       <div class="field">
@@ -158,6 +184,7 @@ footer{color:var(--muted);font-size:14px}
         <li>Automātiskās krāsas no tēmas; lasāma teksta krāsa</li>
         <li>Nav Font Awesome → ikonas izlaistas; RTL valodas apgrieztas</li>
         <li>Aizvēršana tiek atcerēta katram paziņojumam; atpakaļskaitīšana servera laikā</li>
+        <li><b>2.3.0 Pro Max:</b> bezmaksas piegādes progress (atlikums apmeklētāja valūtā, mainās pēc AJAX groza bez pārlādes), atlaides kods ar „Kopēt” un kopēšanas skaitītāju, A/B tests ar statistiku katrai versijai, nedēļas grafiks (dienas + laiks, arī pāri pusnaktij), rādīšana tikai izvēlētās kategorijās / precēs, eksports / imports (JSON), 5 stili (vienkrāsas, pāreja, maigs, minimāls, stikls) ar kontrastu vismaz 4,5:1, slīdēšana un bultiņas, admin ar dzīvo priekšskatījumu</li>
         <li>2.2.0: īsāks teksts telefonam; paziņojums tikai datoriem vai tikai telefoniem; skatījumu un klikšķu skaitītāji (bez personas datiem, ievēro Do Not Track / GPC); paziņojuma dublēšana</li>
       </ul>
     </div>
@@ -167,7 +194,9 @@ footer{color:var(--muted);font-size:14px}
         <table>
           <thead><tr><th>Versija</th><th>Pārbaudes</th><th>Rezultāts</th></tr></thead>
           <tbody>
-            <tr><td>OpenCart 3.0.5.1 (jaunināšana no v1)</td><td class="num">%OC3_COUNT%</td><td><span class="pill ok">%OC3_RESULT%</span></td></tr>
+            <tr><td>2.3.0 · OpenCart 3.0.5.1 (jaunināšana 2.2.0 → 2.3.0)</td><td class="num">%OC3_COUNT%</td><td><span class="pill ok">%OC3_RESULT%</span></td></tr>
+            <tr><td>2.3.0 · OpenCart 4.1.0.4 (jauna instalācija)</td><td class="num">%OC4_COUNT%</td><td><span class="pill ok">%OC4_RESULT%</span></td></tr>
+            <tr><td colspan="3" class="hint">Līdz 2.1.0 (iepriekšējās versijas):</td></tr>
             <tr><td>OpenCart 4.0.0.0*</td><td class="num">69</td><td><span class="pill ok">visas izietas</span></td></tr>
             <tr><td>OpenCart 4.0.1.1*</td><td class="num">69</td><td><span class="pill ok">visas izietas</span></td></tr>
             <tr><td>OpenCart 4.0.2.0</td><td class="num">69</td><td><span class="pill ok">visas izietas</span></td></tr>
@@ -196,7 +225,7 @@ footer{color:var(--muted);font-size:14px}
     </div>
   </section>
 
-  <footer>Veikala logs ir paraugveikals, bet josla tajā darbojas ar moduļa īsto JavaScript un CSS (versija 2.2.0). Īstā veikalā modulis joslu ievieto caur OpenCart notikumiem, nevis šīs lapas skriptu.</footer>
+  <footer>Veikala logs ir paraugveikals, bet josla tajā darbojas ar moduļa īsto JavaScript un CSS (versija 2.3.0). Īstā veikalā modulis joslu ievieto caur OpenCart notikumiem, nevis šīs lapas skriptu.</footer>
 </div>
 
 <script>
@@ -205,7 +234,8 @@ footer{color:var(--muted);font-size:14px}
   var MODULE_JS = %MODULE_JS%;
   var MODULE_PRE = %MODULE_PRE%;
   var $ = function (id) { return document.getElementById(id); };
-  var state = { mode: 'rotate', pos: 'top', theme: 'classic' };
+  var state = { mode: 'stack', pos: 'top', theme: 'classic', style: 'gradient' };
+  var cart = 0;
   var stamp = Date.now();
 
   function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -215,25 +245,53 @@ footer{color:var(--muted);font-size:14px}
     var rtl = $('rtl').checked;
     return [
       { id: 1, text: rtl ? 'شحن مجاني للطلبات فوق 50 € — ينتهي خلال {countdown}' : $('text1').value, mob: rtl ? 'شحن مجاني فوق 50 € · {countdown}' : $('text1m').value, icon: 'fa-truck', btn: rtl ? 'تسوق الآن' : 'Uz akcijām', bg: '#1e8449', fg: '#ffffff', end: stamp + (2 * 86400 + 4 * 3600 + 17 * 60) * 1000 },
-      { id: 2, text: rtl ? 'الجمعة السوداء: خصم 20٪ على جميع الأدوات' : 'Black Friday: −20 % visām frēzēm', icon: 'fa-percent', btn: '', bg: '#c0392b', fg: '#ffffff' },
-      { id: 3, text: rtl ? 'اطلب قبل 18.12 للتوصيل قبل العطلة' : 'Pasūtījumi līdz 18.12. pienāks pirms svētkiem', icon: 'fa-gift', btn: '', bg: '#1f2a44', fg: '#f6d365' },
-      { id: 4, text: rtl ? 'في الهاتف: رمز APP5 يمنح خصم 5٪' : 'Telefonā: kods APP5 dod −5 %', icon: 'fa-percent', btn: '', bg: '#6c3483', fg: '#ffffff', device: 'mobile' }
+      { id: 2, text: rtl ? 'الجمعة السوداء: خصم 20٪ على جميع الأدوات' : 'Black Friday: −20 % visām frēzēm', icon: 'fa-percent', btn: '', bg: '#c0392b', fg: '#ffffff', coupon: 'BLACK20' },
+      { id: 3, text: rtl ? 'اطلب قبل 18.12 للتوصيل قبل العطلة' : 'Pasūtījumi līdz 18.12. pienāks pirms svētkiem', textB: rtl ? 'B: التوصيل قبل العطلة' : 'B versija: pasūti šodien — saņem pirms svētkiem', btnB: 'Pasūtīt', icon: 'fa-gift', btn: '', bg: '#1f2a44', fg: '#f6d365' },
+      { id: 4, text: rtl ? 'في الهاتف: رمز APP5 يمنح خصم 5٪' : 'Telefonā: kods APP5 dod −5 %', icon: 'fa-percent', btn: '', bg: '#6c3483', fg: '#ffffff', device: 'mobile' },
+      { id: 5, fs: 50, text: rtl ? 'أضف {remaining} للشحن المجاني' : 'Vēl {remaining} līdz bezmaksas piegādei', ok: rtl ? 'لديك شحن مجاني!' : 'Jums piegāde bez maksas!', icon: 'fa-truck', btn: '', bg: '#0e7490', fg: '#ffffff' }
     ];
   }
 
   function barHtml(fallback) {
     var list = messages(), first = list[0];
-    var cls = 'abp abp-pos-' + (state.pos === 'bottom' ? 'bottom' : 'top') + (state.pos === 'sticky' ? ' abp-sticky' : '') + ' abp-mode-' + state.mode;
-    var h = '<div id="abp-bar" class="' + cls + '" role="region" aria-label="Paziņojums" data-days="1" data-interval="4" data-speed="70" data-mode="' + state.mode + '" data-now="' + Date.now() + '" data-color="' + $('colors').value + '" data-dismissible="' + ($('dismissible').checked ? 1 : 0) + '" data-fallback="' + (fallback ? 1 : 0) + '" data-days-label="d."' + ($('stats').checked ? ' data-track="https://demo.invalid/index.php?route=extension/module/announcement_bar_pro/track"' : '') + ' style="font-size:15px;background-color:' + first.bg + ';color:' + first.fg + ';"><div class="abp-viewport"><div class="abp-track">';
+    var nav = $('arrows').checked && state.mode === 'rotate';
+    var cls = 'abp abp-pos-' + (state.pos === 'bottom' ? 'bottom' : 'top') + (state.pos === 'sticky' ? ' abp-sticky' : '') + ' abp-mode-' + state.mode + ' abp-tr-' + $('transition').value + ($('dismissible').checked ? ' abp-has-close' : '') + (nav ? ' abp-has-nav' : '');
+    var h = '<div id="abp-bar" class="' + cls + '" role="region" aria-label="Paziņojums" data-days="1" data-interval="4" data-speed="70" data-mode="' + state.mode + '" data-now="' + Date.now() + '" data-tz="7200" data-color="' + $('colors').value + '" data-dismissible="' + ($('dismissible').checked ? 1 : 0) + '" data-fallback="' + (fallback ? 1 : 0) + '" data-days-label="d."' + ($('stats').checked ? ' data-track="https://demo.invalid/index.php?route=extension/module/announcement_bar_pro/track"' : '') + ' data-cart="demo-cart" style="font-size:15px;background-color:' + first.bg + ';color:' + first.fg + ';"><div class="abp-viewport"><div class="abp-track">';
     list.forEach(function (m, i) {
       var cd = function (x) { return esc(x).replace('{countdown}', m.end ? '<span class="abp-countdown" data-end="' + m.end + '"></span>' : ''); };
-      var t = m.mob ? '<span class="abp-text abp-text-d">' + cd(m.text) + '</span><span class="abp-text abp-text-m">' + cd(m.mob) + '</span>' : '<span class="abp-text">' + cd(m.text) + '</span>';
-      h += '<div class="abp-item' + (i === 0 ? ' abp-active' : '') + '" data-id="' + m.id + '" data-key="' + hash12(m.id + '|' + m.text + '|' + (m.mob || '') + '|' + m.btn) + '"' + (m.device ? ' data-device="' + m.device + '"' : '') + ' style="background-color:' + m.bg + ';color:' + m.fg + ';padding-top:8px;padding-bottom:8px;">' +
-        '<i class="fa ' + m.icon + '" aria-hidden="true"></i> ' + t +
-        (m.btn ? '<a class="abp-btn" href="#" style="color:' + m.fg + ';border-color:' + m.fg + ';">' + esc(m.btn) + '</a>' : '') + '</div>';
+      var txt = function (t, mob) { return mob ? '<span class="abp-text abp-text-d">' + cd(t) + '</span><span class="abp-text abp-text-m">' + cd(mob) + '</span>' : '<span class="abp-text">' + cd(t) + '</span>'; };
+      if (m.fs) { m.textHtml = fsText(m); }
+      var variant = function (name, t, mob, btn) {
+        return '<span class="abp-v abp-v-' + name + '"><span class="abp-body"><i class="fa ' + m.icon + ' abp-ico" aria-hidden="true"></i> <span class="abp-txt">' + (m.fs ? m.textHtml : txt(t, mob)) + '</span></span>' + (btn ? '<a class="abp-btn abp-btn-' + $('btnstyle').value + '" href="#">' + esc(btn) + '</a>' : '') + '</span>';
+      };
+      h += '<div class="abp-item' + (i === 0 ? ' abp-active' : '') + '" data-id="' + m.id + '" data-key="' + hash12(m.id + '|' + m.text + '|' + (m.mob || '') + '|' + m.btn) + '" data-style="' + state.style + '" data-c="' + m.bg + '" data-t="' + m.fg + '"' + (m.device ? ' data-device="' + m.device + '"' : '') + (m.textB ? ' data-ab="1"' : '') + (m.fs ? ' data-fs="1"' + (cart >= m.fs ? ' data-done="1"' : '') : '') +
+        ' style="background-color:' + m.bg + ';color:' + m.fg + ';--abp-btn-bg:' + m.fg + ';--abp-btn-fg:' + m.bg + ';--abp-accent:' + m.fg + ';padding-top:8px;padding-bottom:8px;"><div class="abp-inner">' +
+        variant('a', m.text, m.mob, m.btn) + (m.textB ? variant('b', m.textB, '', m.btnB) : '') +
+        (m.coupon ? '<span class="abp-coupon"><span class="abp-code">' + m.coupon + '</span><button type="button" class="abp-copy" data-code="' + m.coupon + '" data-label="Kopēt" data-copied="Nokopēts!" aria-label="Kopēt kodu ' + m.coupon + '"><span class="abp-copy-label">Kopēt</span></button><span class="abp-sr" role="status" aria-live="polite"></span></span>' : '') +
+        '</div>' + (m.fs ? '<span class="abp-progress" aria-hidden="true"><span class="abp-progress-fill" style="width:' + Math.min(100, Math.floor(cart * 100 / m.fs)) + '%;"></span></span>' : '') + '</div>';
     });
-    h += '</div></div>' + ($('dismissible').checked ? '<button type="button" class="abp-close" aria-label="Aizvērt" title="Aizvērt" style="color:' + first.fg + ';">&times;</button>' : '') + '</div>';
+    h += '</div></div>' + (nav ? '<button type="button" class="abp-nav abp-prev" aria-label="Iepriekšējais paziņojums"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" class="abp-nav abp-next" aria-label="Nākamais paziņojums"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' : '') +
+      ($('dismissible').checked ? '<button type="button" class="abp-close" aria-label="Aizvērt" title="Aizvērt"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5l9 9m0-9-9 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>' : '') + '</div>';
     return h + '<script>' + MODULE_PRE + '<\/script>';
+  }
+
+  function money(n) { return n.toFixed(2).replace('.', ',') + ' €'; }
+  // Free-shipping text exactly as the module's server sends it (initial render and the JSON refresh).
+  function fsText(m) {
+    if (cart >= m.fs) { return '<span class="abp-text">' + esc(m.ok) + '</span>'; }
+    return '<span class="abp-text">' + esc(m.text).replace('{remaining}', '<span class="abp-remaining">' + money(m.fs - cart) + '</span>') + '</span>';
+  }
+  // Demo only: the module's cart refresh runs for real; jQuery's ajaxComplete and the shop's JSON answer are simulated.
+  function cartStub() {
+    var fs = messages().filter(function (m) { return m.fs; })[0];
+    return 'window.jQuery=function(){return{ajaxComplete:function(fn){window.__abpAjax=fn;}}};' +
+      'window.__cart=' + cart + ';window.__fs=' + JSON.stringify({ fs: fs.fs, text: fs.text, ok: fs.ok }) + ';' +
+      'window.__money=function(n){return n.toFixed(2).replace(".",",")+" €";};' +
+      'window.__esc=function(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML;};' +
+      'var __f=window.fetch;window.fetch=function(u,o){if(/demo-cart/.test(String(u))){var f=window.__fs,c=window.__cart,done=c>=f.fs;' +
+      'var t=done?"<span class=abp-text>"+__esc(f.ok)+"</span>":"<span class=abp-text>"+__esc(f.text).replace("{remaining}","<span class=abp-remaining>"+__money(f.fs-c)+"</span>")+"</span>";' +
+      'return Promise.resolve({ok:true,json:function(){return Promise.resolve({m:{"5":{a:t,p:Math.min(100,Math.floor(c*100/f.fs)),done:done}}});}});}return __f?__f.apply(this,arguments):Promise.reject();};' +
+      'document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-price]");if(!b)return;window.__cart+=parseFloat(b.getAttribute("data-price"));parent.postMessage({abpCart:window.__cart},"*");setTimeout(function(){window.__abpAjax&&window.__abpAjax({}, {}, {url:"index.php?route=checkout/cart/add"});},120);});';
   }
 
   function shopHtml() {
@@ -254,7 +312,7 @@ footer{color:var(--muted);font-size:14px}
     }
     var cards = '';
     ['3018 PRO|229,00 €', 'Lāzera modulis 10 W|149,00 €', 'Frēžu komplekts|24,90 €', 'ER11 cangas|12,50 €', 'Galda skavas|18,00 €', 'Putekļu sūcējs|89,00 €', 'Gultņi 608ZZ|6,50 €', 'Siksnas GT2|9,90 €', 'Stepper driveris|14,00 €', 'Laukuma lineāls|7,90 €', 'Endmill 3 mm|5,40 €', 'Spindle 500 W|119,00 €'].forEach(function (p) {
-      var a = p.split('|'); cards += '<div class="card"><div class="img">Foto</div><div class="cap"><b>' + a[0] + '</b><br>' + a[1] + '<br><button class="btn-primary" type="button">Grozā</button></div></div>';
+      var a = p.split('|'); cards += '<div class="card"><div class="img">Foto</div><div class="cap"><b>' + a[0] + '</b><br>' + a[1] + '<br><button class="btn-primary" type="button" data-price="' + parseFloat(a[1].replace(',', '.')) + '">Grozā</button></div></div>';
     });
     var header = '<div class="top"><span>€ Valūta</span><span>Mans konts · Grozs</span></div>';
     var nav = '<div class="head"><span class="logo">Your Store</span><span class="search">Meklēt</span><span class="cart">0 prece(s) · 0,00 €</span></div><nav id="menu"><span>CNC frēzes</span><span>Lāzeri</span><span>Instrumenti</span><span>Rezerves daļas</span></nav>';
@@ -264,7 +322,7 @@ footer{color:var(--muted);font-size:14px}
     var bar = barHtml(fallback);
     var cookie = $('cookie').checked ? '<div class="cookie"><span>Mēs izmantojam sīkdatnes.</span><button type="button" onclick="this.parentNode.remove()">Piekrītu</button></div>' : '';
     var body = (fallback ? '' : bar) + header + nav + '<div class="grid">' + cards + '</div><footer>© Your Store · Kontakti · Piegāde · Atgriešana</footer>' + cookie + (fallback ? bar : '') +
-      '<script>' + MODULE_JS + '<\/script>';
+      '<script>' + cartStub() + '<\/script><script>' + MODULE_JS + '<\/script>';
     return '<!doctype html><html lang="' + (rtl ? 'ar' : 'lv') + '" dir="' + (rtl ? 'rtl' : 'ltr') + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>' + css + '</style><style>' + MODULE_CSS + '</style></head><body>' + body + '</body></html>';
   }
 
@@ -277,6 +335,8 @@ footer{color:var(--muted);font-size:14px}
 
   function render() {
     var f = $('shop');
+    try { var ab = JSON.parse(localStorage.getItem('abp_ab') || '{}') || {}; if ($('variant').value) { ab['3'] = $('variant').value; } else if (render.variant) { delete ab['3']; } render.variant = $('variant').value; localStorage.setItem('abp_ab', JSON.stringify(ab)); } catch (e) {}
+    $('cartinfo').textContent = 'Grozs: ' + money(cart);
     f.classList.toggle('narrow', $('mobile').checked);
     f.srcdoc = shopHtml();
     var extra = [];
@@ -289,7 +349,10 @@ footer{color:var(--muted);font-size:14px}
   document.querySelectorAll('[data-mode]').forEach(function (b) { b.addEventListener('click', function () { state.mode = b.dataset.mode; document.querySelectorAll('[data-mode]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); render(); }); });
   document.querySelectorAll('[data-pos]').forEach(function (b) { b.addEventListener('click', function () { state.pos = b.dataset.pos; document.querySelectorAll('[data-pos]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); render(); }); });
   $('theme').addEventListener('change', function () { state.theme = this.value; render(); });
-  ['brand', 'colors', 'text1', 'text1m', 'dismissible', 'mobile', 'cookie', 'rtl', 'fa', 'stats'].forEach(function (id) { $(id).addEventListener('change', render); });
+  document.querySelectorAll('[data-style]').forEach(function (b) { b.addEventListener('click', function () { state.style = b.dataset.style; document.querySelectorAll('[data-style]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); render(); }); });
+  window.addEventListener('message', function (e) { if (e.data && typeof e.data.abpCart === 'number') { cart = e.data.abpCart; $('cartinfo').textContent = 'Grozs: ' + money(cart); } });
+  $('emptycart').addEventListener('click', function () { cart = 0; render(); });
+  ['brand', 'colors', 'text1', 'text1m', 'dismissible', 'mobile', 'cookie', 'rtl', 'fa', 'stats', 'btnstyle', 'transition', 'arrows', 'variant'].forEach(function (id) { $(id).addEventListener('change', render); });
   ['text1', 'text1m'].forEach(function (id) { $(id).addEventListener('input', function () { clearTimeout(this.t); this.t = setTimeout(render, 400); }); });
   $('reset').addEventListener('click', function () { try { localStorage.removeItem('abp_dismiss2'); sessionStorage.removeItem('abp_dismiss2'); } catch (e) {} render(); });
   $('controls').addEventListener('submit', function (e) { e.preventDefault(); });

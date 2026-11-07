@@ -23,6 +23,10 @@ for f in announcement_bar_pro.js announcement_bar_pro_pre.js announcement_bar_pr
 	cmp -s "$OC3/upload/catalog/view/javascript/announcement_bar_pro/$f" "$OC4/catalog/view/javascript/$f" \
 		|| { echo "Shared file differs between kits: $f" >&2; exit 1; }
 done
+# The admin script and styles (live preview, autocomplete, import) are shared too (2.3.0).
+for f in abp_admin.js abp_admin.css; do
+	cmp -s "$OC3/upload/admin/view/javascript/announcement_bar_pro/$f" "$OC4/admin/view/javascript/$f" 		|| { echo "Shared admin file differs between kits: $f" >&2; exit 1; }
+done
 STAGE=$(mktemp -d); trap 'rm -rf "$STAGE"' EXIT
 cp -r "$OC3/upload" "$OC3/install.xml" "$STAGE/"
 cp -r "$OC4/install.json" "$OC4/admin" "$OC4/catalog" "$OC4/system" "$STAGE/"
