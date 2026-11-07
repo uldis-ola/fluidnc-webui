@@ -5,7 +5,7 @@ namespace Opencart\Admin\Model\Extension\AnnouncementBarPro\Module;
  * Announcement Bar Pro — admin model (OpenCart 4.0.2+ / 4.1)
  * Tables: {prefix}abp_message, {prefix}abp_message_description
  *
- * @version 2.4.0
+ * @version 2.4.1
  */
 class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 	public const CODE           = 'module_announcement_bar_pro';
@@ -370,6 +370,9 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 			self::CODE . '_signup_limit_ip'    => 10,
 			self::CODE . '_signup_limit_total' => 200,
 			self::CODE . '_consent_wait'       => 0,
+			// 2.4.1 Cloudflare Turnstile: off until both keys are entered (the secret is never shown on any page)
+			self::CODE . '_ts_site'            => '',
+			self::CODE . '_ts_secret'          => '',
 			self::CODE . '_schema'             => self::SCHEMA_VERSION
 		];
 	}

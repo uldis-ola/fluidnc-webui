@@ -4,3 +4,6 @@
 *.xml text eol=lf
 *.json text eol=lf
 *.css text eol=lf
+# Shared storefront scripts: LF, byte-identical in the OpenCart 3, OpenCart 4 and WordPress packages (2.4.1).
+announcement_bar_pro.js text eol=lf
+announcement_bar_pro_pre.js text eol=lf

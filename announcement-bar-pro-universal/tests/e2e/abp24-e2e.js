@@ -1,14 +1,19 @@
-// Announcement Bar Pro 2.4.0 on a REAL local OpenCart (Playwright Chromium).
+// Announcement Bar Pro 2.4.x on a REAL local OpenCart (Playwright Chromium).
 // OC 3.0.5.1: install 2.3.0 with messages, upgrade to 2.4.0 through the Extension Installer, migration 7→8 on the
-// first admin visit. OC 4.1.0.4: fresh 2.4.0 install. Then every 2.4.0 feature through the real admin UI and the
-// storefront at 1366 and 390 px: no JS errors, no PHP log entries, no horizontal scroll, contrast ≥ 4.5:1.
+// first admin visit, then (with a third zip) upgrade 2.4.0 → 2.4.1 (schema stays 8). OC 4.1.0.4: fresh install of the
+// newest zip. Then every 2.4.x feature through the real admin UI and the storefront at 1366 and 390 px: no JS errors,
+// no PHP log entries, no horizontal scroll, contrast ≥ 4.5:1. 2.4.1: Cloudflare Turnstile with Cloudflare's dummy keys
+// (real siteverify), the secret never printed, consent wait, and the re-subscribe rule.
 // Env: OCBASE OCDIR OCDB MYSQL MYSQLARGS SHOTS [DEV=1: use the module already installed, skip install/upgrade]
-// argv: zip230 zip240
+// argv: zip230 zip240 [zip241]
 const { chromium } = require('playwright');
 const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const [ZIP230, ZIP240] = process.argv.slice(2);
+const [ZIP230, ZIP240, ZIP241] = process.argv.slice(2);
+const ZIPNEW = ZIP241 || ZIP240;
+const crypto = require('crypto');
+const sha256 = s => crypto.createHash('sha256').update(s).digest('hex');
 const BASE = process.env.OCBASE, DIR = process.env.OCDIR, DB = process.env.OCDB, SHOTS = process.env.SHOTS, DEV = process.env.DEV === '1';
 const MAILDIR = process.env.MAILDIR || 'C:/Users/Admin/abp-testenv/mail';
 // One retry: on Windows a client start can fail now and then under load (seen once on OC4 in 2.4.0 testing).
@@ -199,8 +204,20 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
 		const s1 = await shop(); await s1.pg.goto(BASE); await s1.pg.waitForSelector('#abp-bar'); await sleep(800);
 		const keysAfter = (await s1.pg.$$eval('#abp-bar .abp-item', l => l.map(i => i.dataset.key))).sort(); await s1.c.close();
 		ok('dismiss keys unchanged by the upgrade (closed messages stay closed)', JSON.stringify(keysAfter) === JSON.stringify(keysBefore), keysBefore.join() + ' → ' + keysAfter.join());
+		if (ZIP241) {
+			// 2.4.0 → 2.4.1: files only (schema stays 8, Turnstile settings need no migration).
+			const secret0 = setting('secret'), events0 = q("select count(*) from oc_event where `code`='announcement_bar_pro'");
+			await upload(ZIP241);
+			const front = await (await p.request.get(BASE)).text();
+			ok('2.4.0 → 2.4.1 files: storefront still renders before the admin visit, new assets (?v=2.4.1)', /id="abp-bar"/.test(front) && /announcement_bar_pro\.js\?v=2\.4\.1/.test(front) && /<\/html>/i.test(front));
+			await p.goto(A(ROUTE));
+			ok('2.4.0 → 2.4.1: schema 8, same form secret, same events, settings kept, Turnstile off (no keys)', setting('schema') === '8' && setting('secret') === secret0 && q("select count(*) from oc_event where `code`='announcement_bar_pro'") === events0 && setting('mode') === 'stack' && setting('dismiss_days') === '7' && !setting('ts_site') && !setting('ts_secret'), [setting('schema'), events0, setting('ts_site')].join('/'));
+			const s2 = await shop(); await s2.pg.goto(BASE); await s2.pg.waitForSelector('#abp-bar'); await sleep(800);
+			const keys241 = (await s2.pg.$$eval('#abp-bar .abp-item', l => l.map(i => i.dataset.key))).sort(); await s2.c.close();
+			ok('2.4.0 → 2.4.1: dismiss keys unchanged', JSON.stringify(keys241) === JSON.stringify(keysBefore), keys241.join());
+		}
 	} else {
-		await upload(ZIP240);
+		await upload(ZIPNEW);
 		await p.request.get(A('extension/module.install', '&extension=announcement_bar_pro&code=announcement_bar_pro')); await sleep(500);
 		await p.goto(A(ROUTE));
 		ok('fresh 2.4.0: schema 8, switched on, tables + secret + 6 events', setting('schema') === '8' && setting('status') === '1' && q("select count(*) from information_schema.tables where table_schema=database() and table_name in ('oc_abp_subscriber','oc_abp_rate')") === '2' && /^[0-9a-f]{64}$/.test(setting('secret')) && q("select count(*) from oc_event where `code`='announcement_bar_pro'") === '6', setting('schema') + ' ' + q("select count(*) from oc_event where `code`='announcement_bar_pro'"));
@@ -720,6 +737,150 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
 	}
 	await settings({ double_optin: 1 });
 	await both(BASE, 'store-email-form', null);
+
+	// ================= 2.4.1: re-subscribe rule (a third party cannot overwrite an unsubscribe record) =================
+	const mailFiles = () => fs.existsSync(MAILDIR) ? fs.readdirSync(MAILDIR).filter(f => f.endsWith('.eml')).sort() : [];
+	const lastMailTo = (addr, seen) => { const l = mailFiles().filter(f => !seen.includes(f) && fs.readFileSync(path.join(MAILDIR, f), 'utf8').includes(addr)); return l.length ? mailText(fs.readFileSync(path.join(MAILDIR, l[l.length - 1]), 'utf8')) : ''; };
+	const linkIn = (m, kind) => ((m.match(new RegExp('https?://[^\\s"<>]+' + kind + '[^\\s"<>]*t=[0-9a-f]{64}')) || [])[0] || '').replace(/&amp;/g, '&');
+	const tokOf = url => (url.match(/t=([0-9a-f]{64})/) || [])[1] || '';
+	// Opens a confirm / unsubscribe link like the visitor: GET, then the button (POST) when there is one.
+	const pressLink = async (url, press = true) => {
+		const { c, pg } = await shop(); await pg.goto(url); await sleep(700);
+		const has = (await pg.$('#abp-page form button')) !== null;
+		if (has && press) { await pg.click('#abp-page form button'); await sleep(1200); }
+		const txt = (await pg.innerText('#abp-page').catch(() => '')).replace(/\s+/g, ' ');
+		await c.close();
+		return { has, txt };
+	};
+	// Sign-up from a fresh visitor (own browser context = "someone else") through the real endpoint.
+	const signUpAs = async (email, extra = {}) => {
+		const { c, pg } = await shop(); await pg.goto(BASE); await sleep(2500);
+		const tokv = await pg.$eval('.abp-form', f => f.dataset.tok);
+		const r = await pg.evaluate(async ([u, f]) => { const fd = new FormData(); Object.entries(f).forEach(([k, v]) => fd.append(k, v)); const x = await fetch(u, { method: 'POST', body: fd, credentials: 'same-origin' }); return x.text(); }, [S(ROUTE + SEP + 'subscribe'), Object.assign({ email, consent: '1', tok: tokv, id: idMail, website: '' }, extra)]);
+		await c.close();
+		return r;
+	};
+	{
+		const addr = 'resub@example.com';
+		q(`delete from oc_abp_subscriber where email='${addr}'`); q('delete from oc_abp_rate');
+		const rowOf = () => q(`select concat_ws('|', status, unsubscribe, consent, date_added, language_id, message_id, ifnull(date_confirmed, '-')) from oc_abp_subscriber where email='${addr}'`);
+		let seen = mailFiles();
+		const r1 = await signUpAs(addr); await sleep(1200);
+		const m1 = lastMailTo(addr, seen), confirm1 = linkIn(m1, 'confirm'), leave1 = linkIn(m1, 'unsubscribe'), t1 = tokOf(confirm1);
+		ok('2.4.1: confirmation token = creation time (first 8 hex digits ≈ now) + random part', /"ok":1/.test(r1) && !!t1 && Math.abs(parseInt(t1.slice(0, 8), 16) - Date.now() / 1000) < 600, r1 + ' ' + t1);
+		await pressLink(confirm1); await pressLink(leave1);
+		const before = rowOf();
+		ok('2.4.1 re-subscribe: own sign-up confirmed, then unsubscribed through the e-mail link (status 2)', /^2\|[0-9a-f]{64}\|/.test(before), before);
+		const subs0 = q(`select subscribes from oc_abp_message where message_id=${idMail}`);
+		seen = mailFiles();
+		const r2 = await signUpAs(addr); await sleep(1200);
+		const after = rowOf(), tokHash = q(`select token from oc_abp_subscriber where email='${addr}'`);
+		ok('2.4.1 re-subscribe: a third party signs the unsubscribed address up again → same answer; status 2, unsubscribe hash, consent, date_added, language, message, date_confirmed unchanged; only a new token hash', r2 === r1 && after === before && /^[0-9a-f]{64}$/.test(tokHash), r1 + ' / ' + r2 + ' | ' + before + ' → ' + after);
+		const m2 = lastMailTo(addr, seen), confirm2 = linkIn(m2, 'confirm'), leave2 = linkIn(m2, 'unsubscribe'), t2 = tokOf(confirm2);
+		ok('2.4.1 re-subscribe: the owner gets a confirmation e-mail with a new token and a new (derived) unsubscribe link', !!t2 && t2 !== t1 && sha256(t2) === tokHash && !!leave2 && leave2 !== leave1, confirm2 + ' ' + leave2);
+		const old = await pressLink(leave1);
+		const leaveEarly = await pressLink(leave2, false);
+		ok('2.4.1 re-subscribe: before confirming, the old unsubscribe link says "unsubscribed", the new one offers nothing; row unchanged', !old.has && /unsubscribed/i.test(old.txt) && !leaveEarly.has && rowOf() === before, old.txt + ' / ' + leaveEarly.txt);
+		// A status-2 token older than 7 days, or from the future, is refused (the time is inside the hashed token).
+		const now = Math.floor(Date.now() / 1000), mk = t => t.toString(16).padStart(8, '0') + crypto.randomBytes(28).toString('hex');
+		const res = [];
+		for (const t of [mk(now - 8 * 86400), mk(now + 3600)]) {
+			q(`update oc_abp_subscriber set token='${sha256(t)}' where email='${addr}'`);
+			res.push(await pressLink(confirm2.replace(/t=[0-9a-f]{64}/, 't=' + t)));
+		}
+		q(`update oc_abp_subscriber set token='${tokHash}' where email='${addr}'`);
+		ok('2.4.1 re-subscribe: confirmation token older than 7 days or from the future refused, row unchanged', res.every(x => !x.has && /invalid|expired/i.test(x.txt)) && rowOf() === before, JSON.stringify(res));
+		const get2 = await pressLink(confirm2, false);
+		ok('2.4.1 re-subscribe: confirm link (GET) only shows the button — still status 2', get2.has && rowOf() === before);
+		await pressLink(confirm2);
+		const derived = crypto.createHmac('sha256', setting('secret')).update('unsub|' + t2).digest('hex');
+		const now1 = q(`select concat_ws('|', status, token, unsubscribe, consent, date_added, ifnull(date_confirmed, '-')) from oc_abp_subscriber where email='${addr}'`).split('|'), b = before.split('|');
+		ok('2.4.1 re-subscribe: owner confirms → status 1, token used up, unsubscribe = sha256(HMAC("unsub|" + token)), consent + date_added kept, counter +1', now1[0] === '1' && now1[1] === '' && now1[2] === sha256(derived) && now1[2] !== b[1] && now1[3] === b[2] && now1[4] === b[3] && now1[5] !== '-' && Number(q(`select subscribes from oc_abp_message where message_id=${idMail}`)) === Number(subs0) + 1, now1.join('|'));
+		const again = await pressLink(confirm2, false);
+		await pressLink(leave2);
+		ok('2.4.1 re-subscribe: the confirm link works once; the new unsubscribe link of that e-mail unsubscribes (status 2)', !again.has && q(`select status from oc_abp_subscriber where email='${addr}'`) === '2', again.txt);
+		q(`delete from oc_abp_subscriber where email='${addr}'`); q('delete from oc_abp_rate');
+	}
+
+	// ================= 2.4.1: Cloudflare Turnstile (Cloudflare's official dummy keys, real siteverify) =================
+	const TS_SITE = '1x00000000000000000000AA', TS_PASS = '1x0000000000000000000000000000000AA', TS_FAIL = '2x0000000000000000000000000000000AA';
+	const cfLog = pg => { const l = []; pg.on('request', r => { if (/challenges\.cloudflare\.com/.test(r.url())) l.push(r.url()); }); return l; };
+	const tsToken = pg => pg.waitForFunction(() => { const i = document.querySelector('.abp-form [name="cf-turnstile-response"]'); return i && i.value ? i.value : null; }, null, { timeout: 30000 }).then(h => h.jsonValue()).catch(() => '');
+	const tsState = pg => pg.evaluate(() => { const f = document.querySelector('.abp-form'); return { form: !!f, ts: f ? f.getAttribute('data-ts') : null, wait: f ? f.getAttribute('data-ts-wait') : null, err: f ? f.getAttribute('data-err-ts') : null, box: !!document.querySelector('.abp-form .abp-ts + .abp-form-msg'), script: !!document.querySelector('script[src*="challenges.cloudflare.com"]') }; });
+	q('delete from oc_abp_rate');
+	{
+		const { c, pg } = await shop(); const cf = cfLog(pg); await pg.goto(BASE); await sleep(2000);
+		const st = await tsState(pg);
+		ok('Turnstile off (default): no data-ts, no widget box, no Cloudflare script or request', st.form && st.ts === null && !st.box && !st.script && cf.length === 0, JSON.stringify(st) + ' cf=' + cf.length);
+		await c.close();
+	}
+	ok('Turnstile settings: wrong site key format refused, nothing saved', /format/i.test(await settings({ ts_site: 'bad key!', ts_secret: TS_PASS })) && !setting('ts_secret'));
+	ok('Turnstile settings: site key without a secret refused', /secret/i.test(await settings({ ts_site: TS_SITE })) && !setting('ts_site'));
+	ok('Turnstile settings: both keys saved (Cloudflare\'s dummy keys pass the format check)', (await settings({ ts_site: TS_SITE, ts_secret: TS_PASS })) === '' && setting('ts_site') === TS_SITE && setting('ts_secret') === TS_PASS);
+	ok('Turnstile settings: saving again with the secret field empty keeps the saved secret', (await settings({ ts_site: TS_SITE })) === '' && setting('ts_secret') === TS_PASS);
+	{
+		await p.goto(A(ROUTE, '&tab=settings')); await sleep(300);
+		const adminHtml = await p.content();
+		const field = await p.evaluate(() => { const i = document.querySelector('[name="module_announcement_bar_pro_ts_secret"]'); return { type: i.type, value: i.value, remove: !!document.querySelector('[name="module_announcement_bar_pro_ts_secret_remove"]') }; });
+		const pages = [adminHtml, await (await p.request.get(A(ROUTE, '&tab=settings'))).text(), await (await p.request.get(A(ROUTE))).text(), await (await p.request.get(FORM(idMail))).text(), await (await p.request.get(A(ROUTE + SEP + 'export'))).text(), await (await p.request.get(A(ROUTE + SEP + 'exportSubscribers'))).text()];
+		const front = await (await p.request.get(BASE)).text();
+		const js = await (await p.request.get(new URL(((front.match(/src="([^"]*announcement_bar_pro\.js[^"]*)"/) || [])[1] || '').replace(/&amp;/g, '&'), BASE).href)).text();
+		ok('Turnstile secret never printed: admin settings / list / message form / export / CSV, storefront HTML and JS; password field empty with "saved" hint + remove box; site key in the form', !pages.concat(front, js).some(h => h.includes(TS_PASS)) && field.type === 'password' && field.value === '' && field.remove && /saved/i.test(adminHtml) && front.includes('data-ts="' + TS_SITE + '"') && /data-ts-wait="[^"]+"/.test(front) && /data-err-ts="[^"]+"/.test(front), JSON.stringify(field));
+		// Screenshot of the two Turnstile rows (best effort: never fails the run).
+		await p.locator('#abp-newsletter').screenshot({ path: `${SHOTS}/${TAG}-admin-turnstile.png`, timeout: 5000 }).catch(() => {});
+	}
+	q('delete from oc_abp_rate'); q("delete from oc_abp_subscriber where email like 'ts-%@example.com'");
+	{
+		const { c, pg } = await shop(); const cf = cfLog(pg); await pg.goto(BASE);
+		const token = await tsToken(pg); const st = await tsState(pg);
+		ok('Turnstile on: form carries data-ts + texts and the widget box; Cloudflare script loaded (render=explicit); the widget gave a token', st.ts === TS_SITE && !!st.wait && !!st.err && st.box && cf.some(u => /turnstile\/v0\/api\.js\?render=explicit/.test(u)) && !!token, JSON.stringify(st) + ' token=' + token + ' cf=' + cf.length);
+		const tokv = await pg.$eval('.abp-form', f => f.dataset.tok);
+		const post = fields => pg.evaluate(async ([u, f]) => { const fd = new FormData(); Object.entries(f).forEach(([k, v]) => fd.append(k, v)); const r = await fetch(u, { method: 'POST', body: fd, credentials: 'same-origin' }); return r.text(); }, [S(ROUTE + SEP + 'subscribe'), fields]);
+		const none = await post({ email: 'ts-none@example.com', consent: '1', tok: tokv, id: idMail, website: '' });
+		// (Cloudflare's always-pass test secret accepts any token, so a forged token is checked with the failing secret below.)
+		ok('Turnstile on: POST without a token → "wait a moment" (field form), nothing stored', /wait a moment/i.test(none) && /"field":"form"/.test(none) && q("select count(*) from oc_abp_subscriber where email='ts-none@example.com'") === '0', none);
+		await pg.fill('.abp-email', 'ts-pass@example.com'); await pg.check('.abp-consent input'); await pg.click('.abp-submit'); await sleep(4000);
+		const done = await pg.$eval('.abp-form-done', el => el.textContent).catch(() => '');
+		ok('Turnstile pass (sitekey 1x…AA + secret 1x…AA, real siteverify): sign-up accepted, pending row', /confirm/i.test(done) && q("select status from oc_abp_subscriber where email='ts-pass@example.com'") === '0', done + ' ' + (await pg.$eval('.abp-form-msg', el => el.textContent).catch(() => '')));
+		await c.close();
+	}
+	{
+		const { c, pg } = await shop({ viewport: { width: 390, height: 844 } }); await pg.goto(BASE); await tsToken(pg); await sleep(500);
+		await audit(pg, 'Turnstile form @390');
+		await pg.screenshot({ path: `${SHOTS}/${TAG}-store-turnstile-390.png`, fullPage: false });
+		await c.close();
+	}
+	ok('Turnstile settings: failing dummy secret 2x…AA saved', (await settings({ ts_site: TS_SITE, ts_secret: TS_FAIL })) === '' && setting('ts_secret') === TS_FAIL);
+	q('delete from oc_abp_rate');
+	{
+		const { c, pg } = await shop(); await pg.goto(BASE);
+		const token = await tsToken(pg); await sleep(500);
+		await pg.fill('.abp-email', 'ts-fail@example.com'); await pg.check('.abp-consent input'); await pg.click('.abp-submit'); await sleep(4000);
+		const msg = await pg.$eval('.abp-form-msg', el => el.textContent).catch(() => '');
+		ok('Turnstile fail (secret 2x…AA): sign-up refused with a clear message, form stays, no subscriber row', !!token && /anti-bot check failed/i.test(msg) && !(await pg.$('.abp-form-done')) && q("select count(*) from oc_abp_subscriber where email='ts-fail@example.com'") === '0', msg);
+		q('delete from oc_abp_rate');
+		const tokv = await pg.$eval('.abp-form', f => f.dataset.tok);
+		const forged = await pg.evaluate(async ([u, f]) => { const fd = new FormData(); Object.entries(f).forEach(([k, v]) => fd.append(k, v)); const r = await fetch(u, { method: 'POST', body: fd, credentials: 'same-origin' }); return r.text(); }, [S(ROUTE + SEP + 'subscribe'), { email: 'ts-forged@example.com', consent: '1', tok: tokv, id: idMail, website: '', 'cf-turnstile-response': 'forged-token-123' }]);
+		ok('Turnstile fail: a forged token posted directly → "check failed" (field form), nothing stored', /anti-bot check failed/i.test(forged) && /"field":"form"/.test(forged) && q("select count(*) from oc_abp_subscriber where email='ts-forged@example.com'") === '0', forged);
+		await pg.screenshot({ path: `${SHOTS}/${TAG}-store-turnstile-failed-1366.png`, clip: { x: 0, y: 0, width: 1366, height: 160 } });
+		await c.close();
+	}
+	ok('Turnstile + "Wait for cookie consent" saved', (await settings({ ts_site: TS_SITE, ts_secret: TS_PASS, consent_wait: 1 })) === '' && setting('consent_wait') === '1');
+	{
+		const { c, pg } = await shop(); const cf = cfLog(pg); await pg.goto(BASE); await sleep(3000);
+		const box = await pg.$eval('.abp-ts', el => el.textContent).catch(() => ''), st = await tsState(pg);
+		ok('Turnstile + consent wait: no Cloudflare script or request before window.abpConsent = true; the box shows the consent text', cf.length === 0 && !st.script && !!st.wait && box === st.wait, box + ' cf=' + cf.length);
+		await pg.evaluate(() => { window.abpConsent = true; document.dispatchEvent(new Event('abp:consent')); });
+		const token = await tsToken(pg);
+		ok('Turnstile + consent wait: after consent the widget loads and gives a token', cf.length > 0 && !!token, 'cf=' + cf.length + ' token=' + token);
+		await c.close();
+	}
+	ok('Turnstile switched off: saved secret removed, site key cleared', (await settings({ ts_site: '', ts_secret_remove: 1, consent_wait: 0 })) === '' && !setting('ts_site') && !setting('ts_secret'));
+	{
+		const front = await (await p.request.get(BASE)).text();
+		ok('Turnstile off again: no data-ts / widget box on the storefront', /abp-form/.test(front) && !/data-ts=|class="abp-ts"/.test(front));
+	}
+	q("delete from oc_abp_subscriber where email like 'ts-%@example.com'"); q('delete from oc_abp_rate');
 
 	// ================= 15. GA4 events =================
 	only([idHigh, idCp]);

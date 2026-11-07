@@ -1,9 +1,11 @@
 <?php
 /**
- * Unit tests of the shared libraries (sanitizer, features, e-mail injection guard, licence format) — the same cases
- * as the OpenCart 2.4.0 tests (announcement-bar-pro-universal/tests/unit/schema_test.php, sections 13 and 14), adapted
- * where the WordPress edition differs on purpose (ISO country codes, state codes, media-library image IDs, site time
- * zone). Runs without WordPress: php tests/unit/run.php
+ * Unit tests of the WordPress edition without WordPress: sanitizer and options of the free plugin; features, e-mail
+ * injection guard, licence format, Cloudflare Turnstile verification (mocked siteverify) and confirmation tokens of the
+ * Premium add-on — the same cases as the OpenCart tests (announcement-bar-pro-universal/tests/unit/schema_test.php,
+ * sections 13 and 14), adapted where the WordPress edition differs on purpose (ISO country codes, state codes,
+ * media-library image IDs, site time zone) — and a static check that the free plugin holds no licence or premium code
+ * (wordpress.org guideline 5). Run: php tests/unit/run.php
  *
  * @package AnnouncementBarPro
  */
@@ -22,16 +24,25 @@ function get_option( $k, $d = false ) { return isset( $GLOBALS['abpro_opts'][ $k
 function update_option( $k, $v ) { $GLOBALS['abpro_opts'][ $k ] = $v; return true; }
 function delete_option( $k ) { unset( $GLOBALS['abpro_opts'][ $k ] ); return true; }
 
+define( 'DAY_IN_SECONDS', 86400 );
 $root = dirname( __DIR__, 2 ) . '/announcement-bar-pro/includes/';
+$prem = dirname( __DIR__, 2 ) . '/announcement-bar-pro-premium/includes/';
 require $root . 'class-icons.php';
 require $root . 'class-sanitizer.php';
-require $root . 'class-features.php';
-require $root . 'class-licence.php';
+require $root . 'class-options.php';
+require $root . 'class-settings.php';
+require $prem . 'class-features.php';
+require $prem . 'class-licence.php';
+require $prem . 'class-turnstile.php';
+require $prem . 'class-subscribers.php';
 
 use AnnouncementBarPro\Sanitizer;
-use AnnouncementBarPro\Features;
-use AnnouncementBarPro\Licence;
-use AnnouncementBarPro\Local_Licence_Provider;
+use AnnouncementBarPro\Options;
+use AnnouncementBarPro\Premium\Features;
+use AnnouncementBarPro\Premium\Licence;
+use AnnouncementBarPro\Premium\Local_Licence_Provider;
+use AnnouncementBarPro\Premium\Turnstile;
+use AnnouncementBarPro\Premium\Subscribers;
 
 $pass = 0;
 $fail = 0;
@@ -186,6 +197,67 @@ check( 'licence: removed → free', ! Licence::is_pro() && Licence::get()['key']
 $GLOBALS['abpro_opts']['abpro_licence'] = array( 'key' => $bad, 'status' => 'valid' );
 Licence::reset();
 check( 'licence: a tampered stored key is not Pro', ! Licence::is_pro() );
+
+/* ---------------- Free plugin: options it does not handle ---------------- */
+$plain   = array( 'placement' => '', 'type' => 'standard', 'page_mode' => 'all', 'roles' => '[]', 'categories' => '[]', 'products' => '[]' );
+$neutral = ( new Features() )->defaults();
+check( 'options: neutral premium options do not narrow (also the stored defaults of the single build)', ! Options::narrows( $plain, $neutral ) && ! Options::narrows( $plain, array() ) && ! Options::narrows( $plain, array( 'fs_wc' => 1, 'overlay' => '55', 'recur_day' => 1, 'countries' => array( 'LV' ) ) ) );
+check( 'options: look options never narrow (image, font, coupon, e-mail, recurring countdown)', ! Options::narrows( $plain, array_merge( $neutral, array( 'image' => 5, 'font' => 'serif', 'coupon_id' => 7, 'email' => 1, 'recur' => 'daily', 'recur_time' => '14:00' ) ) ) );
+$narrow = array( array( 'countries_mode' => 'exclude', 'countries' => array( 'LV' ) ), array( 'cart_qty_min' => '1' ), array( 'utm_source' => 'news' ), array( 'referrer' => 'example.com' ), array( 'visitor' => 'new' ), array( 'trigger' => 'delay', 'trigger_value' => 2 ), array( 'cart_products' => array( 3 ) ), array( 'some_future_rule' => 'x' ) );
+$all    = true;
+foreach ( $narrow as $o ) {
+	$all = $all && Options::narrows( $plain, array_merge( $neutral, $o ) );
+}
+check( 'options: every audience rule narrows (countries, cart, campaign, referrer, visitor, trigger, unknown keys)', $all );
+check( 'options: columns that narrow (box placement, tiers, page rules, roles, products); top / bottom do not', Options::narrows( array_merge( $plain, array( 'placement' => 'cart' ) ), array() ) && Options::narrows( array_merge( $plain, array( 'type' => 'tiers' ) ), array() ) && Options::narrows( array_merge( $plain, array( 'page_mode' => 'home' ) ), array() ) && Options::narrows( array_merge( $plain, array( 'roles' => '["customer"]' ) ), array() ) && Options::narrows( array_merge( $plain, array( 'products' => '[4]' ) ), array() ) && ! Options::narrows( array_merge( $plain, array( 'placement' => 'bottom' ) ), array() ) );
+check( 'options: decode keeps unknown keys; encode; fs_wc', Options::decode( '{"fs_wc":1,"x":2}' ) === array( 'fs_wc' => 1, 'x' => 2 ) && Options::decode( 'nope' ) === array() && 1 === Options::fs_wc( array( 'fs_wc' => '1' ) ) && '{}' === Options::encode( array() ) );
+
+/* ---------------- Cloudflare Turnstile (mocked siteverify) ---------------- */
+$sent = null;
+$mock = static function ( $answer ) use ( &$sent ) {
+	return static function ( $url, $fields ) use ( $answer, &$sent ) {
+		$sent = array( $url, $fields );
+		if ( $answer instanceof \Exception ) {
+			throw $answer;
+		}
+		return $answer;
+	};
+};
+$sec  = '1x0000000000000000000000000000000AA';
+check( 'turnstile: Cloudflare dummy keys have a valid format', '1x00000000000000000000AA' === Turnstile::site_key( '1x00000000000000000000AA' ) && $sec === Turnstile::secret_key( $sec ) && '2x0000000000000000000000000000000AA' === Turnstile::secret_key( '2x0000000000000000000000000000000AA' ) );
+check( 'turnstile: malformed keys refused', '' === Turnstile::site_key( 'no key!' ) && '' === Turnstile::site_key( 'short' ) && '' === Turnstile::secret_key( "1x00000000\n00000" ) && '' === Turnstile::secret_key( array() ) );
+check( 'turnstile: on only with both keys', Turnstile::enabled( array( 'turnstile_site_key' => '1x00000000000000000000AA', 'turnstile_secret' => $sec ) ) && ! Turnstile::enabled( array( 'turnstile_site_key' => '1x00000000000000000000AA', 'turnstile_secret' => '' ) ) && ! Turnstile::enabled( array() ) );
+check( 'turnstile: success → ok; secret, token and remoteip sent to siteverify', Turnstile::OK === Turnstile::verify( $sec, 'XXXX.DUMMY.TOKEN.XXXX', '203.0.113.5', $mock( '{"success":true,"error-codes":[],"hostname":"example.com"}' ) ) && Turnstile::VERIFY_URL === $sent[0] && $sec === $sent[1]['secret'] && 'XXXX.DUMMY.TOKEN.XXXX' === $sent[1]['response'] && '203.0.113.5' === $sent[1]['remoteip'] );
+check( 'turnstile: our action accepted', Turnstile::OK === Turnstile::verify( $sec, 'tok', '', $mock( '{"success":true,"action":"abp-signup"}' ) ) );
+check( 'turnstile: refused / wrong action / "success":"true" / missing success → failed', Turnstile::FAILED === Turnstile::verify( $sec, 'tok', '', $mock( '{"success":false,"error-codes":["invalid-input-response"]}' ) ) && Turnstile::FAILED === Turnstile::verify( $sec, 'tok', '', $mock( '{"success":true,"action":"login"}' ) ) && Turnstile::FAILED === Turnstile::verify( $sec, 'tok', '', $mock( '{"success":"true"}' ) ) && Turnstile::FAILED === Turnstile::verify( $sec, 'tok', '', $mock( '{"error-codes":[]}' ) ) );
+check( 'turnstile: network error, exception, empty body, bad JSON → failed (fail closed)', Turnstile::FAILED === Turnstile::verify( $sec, 'tok', '', $mock( false ) ) && Turnstile::FAILED === Turnstile::verify( $sec, 'tok', '', $mock( new \Exception( 'timeout' ) ) ) && Turnstile::FAILED === Turnstile::verify( $sec, 'tok', '', $mock( '' ) ) && Turnstile::FAILED === Turnstile::verify( $sec, 'tok', '', $mock( '<html>' ) ) );
+$sent = null;
+check( 'turnstile: no token → missing, Cloudflare not asked', Turnstile::MISSING === Turnstile::verify( $sec, '', '1.2.3.4', $mock( '{"success":true}' ) ) && Turnstile::MISSING === Turnstile::verify( $sec, null, '1.2.3.4', $mock( '{"success":true}' ) ) && null === $sent );
+check( 'turnstile: oversized / control-character token, bad secret → failed; a bad IP is left out', Turnstile::FAILED === Turnstile::verify( $sec, str_repeat( 'a', 3000 ), '', $mock( '{"success":true}' ) ) && Turnstile::FAILED === Turnstile::verify( $sec, "a\nb", '', $mock( '{"success":true}' ) ) && Turnstile::FAILED === Turnstile::verify( 'bad secret', 'tok', '', $mock( '{"success":true}' ) ) && Turnstile::OK === Turnstile::verify( $sec, 'tok', 'not-an-ip', $mock( '{"success":true}' ) ) && ! isset( $sent[1]['remoteip'] ) );
+
+/* ---------------- Confirmation tokens (re-subscribe rule) ---------------- */
+$now = 1793000000;
+$tok = Subscribers::new_token( $now );
+check( 'tokens: 64 hex digits, creation time in the first 8', 1 === preg_match( '/^[0-9a-f]{64}$/', $tok ) && $now === Subscribers::token_time( $tok ) && Subscribers::new_token( $now ) !== $tok );
+check( 'tokens: fresh for 7 days, not older, not from the future (beyond 5 minutes)', Subscribers::token_fresh( $tok, $now ) && Subscribers::token_fresh( $tok, $now + 7 * 86400 ) && ! Subscribers::token_fresh( $tok, $now + 7 * 86400 + 1 ) && Subscribers::token_fresh( Subscribers::new_token( $now + 200 ), $now ) && ! Subscribers::token_fresh( Subscribers::new_token( $now + 400 ), $now ) );
+check( 'tokens: anything else is not a token', 0 === Subscribers::token_time( 'xyz' ) && ! Subscribers::token_fresh( str_repeat( 'g', 64 ), $now ) && ! Subscribers::token_fresh( '', $now ) );
+$GLOBALS['abpro_opts']['abpro_secret'] = str_repeat( 'ab', 32 );
+$d1 = Subscribers::derived_unsubscribe( $tok );
+check( 'tokens: derived unsubscribe token: 64 hex, bound to the token and the site secret', 1 === preg_match( '/^[0-9a-f]{64}$/', $d1 ) && $d1 === Subscribers::derived_unsubscribe( $tok ) && $d1 !== Subscribers::derived_unsubscribe( Subscribers::new_token( $now ) ) && $d1 === hash_hmac( 'sha256', 'unsub|' . $tok, str_repeat( 'ab', 32 ) ) );
+
+/* ---------------- Free plugin: no licence or premium code (wordpress.org guideline 5) ---------------- */
+$hits = array();
+$it   = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( dirname( __DIR__, 2 ) . '/announcement-bar-pro', FilesystemIterator::SKIP_DOTS ) );
+foreach ( $it as $file ) {
+	if ( ! preg_match( '/\.(php|js|css)$/', $file->getFilename() ) ) {
+		continue;
+	}
+	$src = preg_replace( '/Announcement Bar Pro|announcement-bar-pro|AnnouncementBarPro|abpro|GPL-2\.0-or-later|License URI:\s*\S+|License:\s*\S+/', '', file_get_contents( $file->getPathname() ) );
+	if ( preg_match( '/licen[cs]e|is_pro\b|abp-pro-badge|abp-locked|premium|upgrade to|Pro features|\(Pro\)|— Pro/i', $src, $m ) ) {
+		$hits[] = $file->getFilename() . ': ' . $m[0];
+	}
+}
+check( 'free plugin: no licence check, locked UI or premium upsell in its code', ! $hits, implode( ', ', array_slice( $hits, 0, 5 ) ) );
 
 echo "\n$pass passed, $fail failed\n";
 exit( $fail ? 1 : 0 );

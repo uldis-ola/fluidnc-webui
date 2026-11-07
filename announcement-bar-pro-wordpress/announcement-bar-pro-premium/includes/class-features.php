@@ -10,10 +10,10 @@
  * - cut-off times are worked out in the site's time zone (WordPress keeps PHP on UTC);
  * - template icons are names of the built-in SVG set.
  *
- * @package AnnouncementBarPro
+ * @package AnnouncementBarProPremium
  */
 
-namespace AnnouncementBarPro;
+namespace AnnouncementBarPro\Premium;
 
 defined( 'ABSPATH' ) || exit;
 

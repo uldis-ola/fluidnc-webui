@@ -1,6 +1,6 @@
 <?php
 /**
- * WooCommerce adapter: cart, visitor's place, free-shipping minimum, coupons, catalogue lookups.
+ * WooCommerce adapter: cart, visitor's place, free-shipping minimum.
  * Every method is safe without WooCommerce (it then answers "nothing").
  *
  * @package AnnouncementBarPro
@@ -162,19 +162,19 @@ class Commerce {
 
 	/**
 	 * Visitor's country and state: WooCommerce customer (shipping, then billing — WooCommerce fills it from the
-	 * address, its own geolocation setting or the store), CloudFlare's CF-IPCountry (setting, CloudFlare addresses only),
-	 * else the store's base country (setting) or unknown. No external service is called.
+	 * address, its own geolocation setting or the store), else the store's base country. The filter
+	 * "abpro_visitor_place" may change it (an add-on: CloudFlare's country header). No external service is called.
 	 *
-	 * @param array $settings Effective settings.
 	 * @return array (country, state)
 	 */
-	public static function place( array $settings ) {
+	public static function place() {
 		if ( null !== self::$place ) {
 			return self::$place;
 		}
 
 		$country = '';
 		$state   = '';
+		$source  = '';
 
 		if ( self::active() && WC()->customer instanceof \WC_Customer ) {
 			$country = (string) WC()->customer->get_shipping_country();
@@ -184,18 +184,19 @@ class Commerce {
 				$country = (string) WC()->customer->get_billing_country();
 				$state   = (string) WC()->customer->get_billing_state();
 			}
+
+			$source = '' !== $country ? 'customer' : '';
 		}
 
-		if ( '' === $country && ! empty( $settings['geo_cf'] ) ) {
-			$country = ( new Features() )->cf_country( self::server(), true );
-		}
-
-		if ( '' === $country && self::active() && 'none' !== $settings['geo_fallback'] ) {
+		if ( '' === $country && self::active() ) {
 			$country = (string) WC()->countries->get_base_country();
 			$state   = (string) WC()->countries->get_base_state();
+			$source  = 'store';
 		}
 
-		self::$place = array( strtoupper( $country ), strtoupper( $state ) );
+		$place       = array( strtoupper( $country ), strtoupper( $state ) );
+		$filtered    = apply_filters( 'abpro_visitor_place', $place, $source );
+		self::$place = is_array( $filtered ) && 2 === count( $filtered ) ? array_values( array_map( 'strval', $filtered ) ) : $place;
 
 		return self::$place;
 	}
@@ -221,15 +222,14 @@ class Commerce {
 	 * Minimum amount of WooCommerce's "Free shipping" method for the visitor's shipping zone (methods that need
 	 * a minimum amount), or 0 when there is none.
 	 *
-	 * @param array $settings Effective settings.
 	 * @return float
 	 */
-	public static function free_shipping_minimum( array $settings ) {
+	public static function free_shipping_minimum() {
 		if ( ! self::active() || ! class_exists( '\WC_Shipping_Zones' ) ) {
 			return 0.0;
 		}
 
-		list( $country, $state ) = self::place( $settings );
+		list( $country, $state ) = self::place();
 
 		if ( '' === $country ) {
 			return 0.0;
@@ -261,110 +261,5 @@ class Commerce {
 		}
 
 		return $min;
-	}
-
-	/**
-	 * Code of a coupon that a visitor could use now: published, not expired, usage limit not reached (and, for a
-	 * logged-in customer, their own limit). '' otherwise — the message then hides itself.
-	 *
-	 * @param int $coupon_id Coupon (post) ID.
-	 * @return string
-	 */
-	public static function usable_coupon( $coupon_id ) {
-		if ( ! self::active() || 'shop_coupon' !== get_post_type( (int) $coupon_id ) || 'publish' !== get_post_status( (int) $coupon_id ) ) {
-			return '';
-		}
-
-		$coupon  = new \WC_Coupon( (int) $coupon_id );
-		$expires = $coupon->get_date_expires();
-
-		if ( $expires && $expires->getTimestamp() <= time() ) {
-			return '';
-		}
-
-		if ( $coupon->get_usage_limit() > 0 && $coupon->get_usage_count() >= $coupon->get_usage_limit() ) {
-			return '';
-		}
-
-		$user = get_current_user_id();
-		if ( $user && $coupon->get_usage_limit_per_user() > 0 ) {
-			$store = $coupon->get_data_store();
-
-			if ( $store && method_exists( $store, 'get_usage_by_user_id' ) && $store->get_usage_by_user_id( $coupon, $user ) >= $coupon->get_usage_limit_per_user() ) {
-				return '';
-			}
-		}
-
-		return strtoupper( (string) $coupon->get_code() );
-	}
-
-	/**
-	 * Existence check for Features::validate().
-	 *
-	 * @return callable
-	 */
-	public static function lookup() {
-		return static function ( $kind, $values ) {
-			switch ( $kind ) {
-				case 'country':
-					$all = self::active() ? array_keys( WC()->countries->get_countries() ) : array();
-					return array_values( array_intersect( (array) $values, $all ) );
-				case 'state':
-					$out = array();
-					foreach ( (array) $values as $pair ) {
-						list( $c, $s ) = array_pad( explode( ':', (string) $pair, 2 ), 2, '' );
-						$states        = self::active() ? WC()->countries->get_states( $c ) : array();
-						if ( is_array( $states ) && isset( $states[ $s ] ) ) {
-							$out[] = $pair;
-						}
-					}
-					return $out;
-				case 'coupon':
-					return array_values(
-						array_filter(
-							(array) $values,
-							static function ( $id ) {
-								return 'shop_coupon' === get_post_type( (int) $id );
-							}
-						)
-					);
-				case 'product':
-					return array_values(
-						array_filter(
-							(array) $values,
-							static function ( $id ) {
-								return in_array( get_post_type( (int) $id ), array( 'product', 'product_variation' ), true );
-							}
-						)
-					);
-				case 'category':
-					return array_values(
-						array_filter(
-							(array) $values,
-							static function ( $id ) {
-								$term = get_term( (int) $id, 'product_cat' );
-								return $term instanceof \WP_Term;
-							}
-						)
-					);
-				case 'image':
-					return wp_attachment_is_image( (int) $values );
-			}
-
-			return array();
-		};
-	}
-
-	/**
-	 * Currency codes the shop may show: its own, plus the codes of the message (multi-currency plugins).
-	 *
-	 * @return string[]
-	 */
-	public static function currency_codes() {
-		if ( ! self::active() ) {
-			return array();
-		}
-
-		return array_keys( get_woocommerce_currencies() );
 	}
 }

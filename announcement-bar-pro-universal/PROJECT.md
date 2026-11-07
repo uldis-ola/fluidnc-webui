@@ -9,7 +9,7 @@ Paziņojumu josla (announcement bar) OpenCart veikalam: josla lapas augšā vai 
 piegādes info, atpakaļskaitīšanu u. tml. Viena instalācijas paka der **OpenCart 3.0.x, 4.0.x un 4.1.x**.
 Josla automātiski pielāgojas veikala tēmai.
 
-- Versija: **2.4.0**, DB shēma **8**
+- Versija: **2.4.1**, DB shēma **8**
 - Licence: GPL-3.0 (LICENSE.txt no OpenCart pirmkoda)
 - Valodas: LV, EN, RU (admin + veikals). Ja veikala valodai tulkojuma nav → angļu.
 - Marketplace-gatavs. Autors `3DP SIA`, saite `mailto:extension@3dp.lv` (no 2.3.0; Ulda izvēle 07.11.2026 — moduļi nav saistīti ar 3dp.lv).
@@ -32,14 +32,14 @@ index.html                       repo vecais saturs, ar moduli nav saistīts
 
 ```bash
 cd announcement-bar-pro-universal && ./build.sh
-# → dist/v2.4.0/announcement_bar_pro.ocmod.zip
+# → dist/v2.4.1/announcement_bar_pro.ocmod.zip
 ```
 Universālā paka satur abus komplektus vienā zip:
 - OC3 instalētājs ņem tikai `upload/` + `install.xml`;
 - OC4 instalētājs ņem `install.json` + `admin/ catalog/ system/` un ieliek `extension/announcement_bar_pro/`.
 
 **Faila nosaukumu nemainīt:** OC4 moduļa kodu ņem no zip nosaukuma (`announcement_bar_pro.ocmod.zip`).
-build.sh pārbauda, ka versijas abos komplektos sakrīt un ka kopīgie faili (veikala JS/CSS un admin `abp_admin.js`/`abp_admin.css`) abos komplektos ir baitu identiski. Atsevišķas pakas: `announcement-bar-pro/build.sh`, `announcement-bar-pro-oc4/build.sh`.
+build.sh pārbauda, ka versijas abos komplektos sakrīt un ka kopīgie faili (veikala JS/CSS un admin `abp_admin.js`/`abp_admin.css`) abos komplektos ir baitu identiski; veikala JS/CSS (`announcement_bar_pro.js`, `announcement_bar_pro_pre.js`, `announcement_bar_pro.css`) ir baitu identiski arī WordPress versijā (`../announcement-bar-pro-wordpress/announcement-bar-pro/assets/js|css/announcement-bar-pro*.js|css`) — ja šī mape blakus ir, build.sh tos salīdzina un atšķirības gadījumā aptur būvēšanu (2.4.1). Atsevišķas pakas: `announcement-bar-pro/build.sh`, `announcement-bar-pro-oc4/build.sh`.
 
 ## 4. Funkcijas
 
@@ -57,6 +57,10 @@ link_new_tab, icon, countdown, stores, customer_groups, page_mode, page_routes, 
 date_modified), `oc_abp_message_description` (message_id, language_id, text, link_text, mobile_text). Shēmas migrācija
 no v1 automātiska (tikai lietotājam ar modify tiesībām); shēma 6 pievieno kolonnas ar `SHOW COLUMNS` pārbaudi
 (`schemaColumns()` + `addColumnIfMissing()` admin modelī). `mobile_text` ir `TEXT NOT NULL` bez DEFAULT (MySQL to neatļauj).
+
+**2.4.1 (shēma paliek 8):** Cloudflare Turnstile pieteikšanās formai un atkārtotas pieteikšanās noteikums.
+- *Turnstile:* iestatījumi `ts_site`, `ts_secret` (ieslēgts tikai ar abām; `Features::tsSiteKey()/tsSecretKey()/tsOn()`). Slepenā atslēga nekad netiek drukāta: `settingKeys()` to nesatur, admin rāda tukšu password lauku + `ts_secret_saved`; tukšs lauks = paturēt (`tsSecretToSave()` → null), `ts_secret_remove` = dzēst. Veikalā `prepare()` dod tikai `ts` (site key), `ts_wait`, `err_ts` → twig `data-ts`, `data-ts-wait`, `data-err-ts` + `<span class="abp-ts">` pirms `.abp-form-msg`. `subscribe()` pēc visām pārbaudēm, tieši pirms `signUp()` — `turnstileError()` → `Features::tsVerify($secret, $post['cf-turnstile-response'], clientIp(), [$fx, 'httpPost'])`: 'ok' | 'missing' | 'failed' (fail closed; cits `action` nekā `abp-signup` = failed). `httpPost()` — curl ar TLS pārbaudi, citādi https stream, 8 s.
+- *Atkārtota pieteikšanās:* status 2 + dubultā apstiprināšana → `setResubscribeToken()` (tikai `token`), e-pasts ar `Features::unsubToken()` = HMAC('unsub|'.token, secret). Tokens `Features::optinToken()` = `sprintf('%08x', time())` + 56 hex; `tokenFresh()` (≤ 7 d, ≤ 5 min nākotnē). `tokenPage()` status 2 → `resubscribe()` (status 1, token '', date_confirmed, unsubscribe = sha256(atvasinātais)). `saveSubscriber()` ON DUPLICATE KEY UPDATE ar `IF(status = 2, …)`, `status` pēdējais; `confirmSubscriber()` tikai status 0.
 
 **2.4.0 (shēma 8):** jauna bibliotēka `system/library/…/features.php` (klases ķermenis abos komplektos baitu identisks, `build.sh` to pārbauda):
 opciju validācija (`validate()` ar `lookup` atzvanu uz DB), valsts / zonas / valūtas sliekšņi, pakāpes, groza nosacījumi, termiņa atskaite
@@ -147,6 +151,17 @@ starp `{{ column_left }}` un `<div id="content">` (OC3 CSS `#column-left + #cont
 OC 4.1 valodas atslēga `config_language_catalog`, citur `config_language`.
 
 ## 7. Pārbaudes stāvoklis
+
+**2.4.1 (07.–08.11.2026), tā pati vide; Turnstile ar Cloudflare oficiālajām testa atslēgām un īstu `siteverify`:**
+
+| Pārbaude | Rezultāts |
+|---|---|
+| OC 3.0.5.1: 2.3.0 → 2.4.0 → 2.4.1 (Extension Installer), + Turnstile (izslēgts / ieslēgts / 2x… neizdodas / secret nekad lapā / sīkdatņu piekrišana) + atkārtotās pieteikšanās noteikums | 162/163 (pirms pusnakts; vienīgā kļūda bija nepareizs testa pieņēmums par 1x… secret, izlabots); pēdējais palaidiens 161/164 — 2 kupona datuma pārbaudes krīt starp 00:00 un 02:00 (OpenCart DB sesija UTC, testa CURDATE() vietējā laikā), 1 vienreizēja kļūda 2.3.0 → 2.4.0 posmā (abos iepriekšējos palaidienos PASS) |
+| OC 4.1.0.4: jauna 2.4.1 instalācija, tās pašas pārbaudes | 148/150 (tās pašas 2 kupona datuma pārbaudes pēc pusnakts) |
+| `tests/unit/schema_test.php` (+ Turnstile ar viltotu siteverify, atslēgu formāti, tokena laiks, atvasinātais atteikšanās tokens, avota pārbaudes) | 243/243 |
+| `tests/demo/test.js` | 64/64 |
+
+PHP bez CA saišķa (Windows testa vide) — curl kļūda 60; `httpPost()` tad vienreiz mēģina ar sistēmas sertifikātu krātuvi (`CURLSSLOPT_NATIVE_CA`, TLS pārbaude paliek).
 
 **2.4.0 (07.11.2026), īsts OpenCart + MariaDB 11.4 (`abp-testenv`), Playwright Chromium, SMTP sink :2525:**
 

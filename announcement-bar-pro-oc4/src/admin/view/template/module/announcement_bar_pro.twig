@@ -375,6 +375,23 @@
                   <div id="error-signup-limit-total" class="invalid-feedback"></div>
                 </div>
               </div>
+              <div class="row mb-3" id="abp-turnstile">
+                <label for="input-ts-site" class="col-sm-3 col-form-label">{{ entry_ts_site }}</label>
+                <div class="col-sm-9">
+                  <input type="text" name="module_announcement_bar_pro_ts_site" value="{{ setting.ts_site|e }}" id="input-ts-site" class="form-control" style="max-width:420px;" maxlength="100" autocomplete="off" spellcheck="false"/>
+                  <div class="form-text"><span class="abp-state {{ ts_on ? 'abp-state-active' : 'abp-state-disabled' }}">{{ ts_on ? text_ts_on : text_ts_off }}</span> {{ help_ts }} <a href="https://developers.cloudflare.com/turnstile/" target="_blank" rel="noopener noreferrer">{{ text_ts_docs }}</a></div>
+                  <div id="error-ts-site" class="invalid-feedback"></div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label for="input-ts-secret" class="col-sm-3 col-form-label">{{ entry_ts_secret }}</label>
+                <div class="col-sm-9">
+                  <input type="password" name="module_announcement_bar_pro_ts_secret" value="" id="input-ts-secret" class="form-control" style="max-width:420px;" maxlength="200" autocomplete="new-password" spellcheck="false"/>
+                  <div class="form-text">{{ ts_secret_saved ? help_ts_secret_saved : help_ts_secret_new }}</div>
+                  {% if ts_secret_saved %}<div class="form-check mt-1"><input type="checkbox" name="module_announcement_bar_pro_ts_secret_remove" value="1" id="input-ts-secret-remove" class="form-check-input"/> <label for="input-ts-secret-remove" class="form-check-label">{{ text_ts_remove }}</label></div>{% endif %}
+                  <div id="error-ts-secret" class="invalid-feedback"></div>
+                </div>
+              </div>
               <div class="row mb-3">
                 <label class="col-sm-3 col-form-label">{{ entry_subscribers }}</label>
                 <div class="col-sm-9">

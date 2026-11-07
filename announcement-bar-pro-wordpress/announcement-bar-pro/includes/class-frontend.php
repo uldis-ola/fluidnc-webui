@@ -1,7 +1,7 @@
 <?php
 /**
- * Storefront: decides which messages this page gets and prints the bars (wp_body_open, footer as fallback) and the
- * inline boxes (WooCommerce cart page, under the product price, mini-cart; classic templates and blocks).
+ * Storefront: decides which messages this page gets and prints the bars (wp_body_open, footer as fallback). Boxes of
+ * other placements are printed by an add-on through inline_html().
  *
  * @package AnnouncementBarPro
  */
@@ -42,13 +42,6 @@ class Frontend {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue' ), 20 );
 		add_action( 'wp_body_open', array( $this, 'print_bars' ), 5 );
 		add_action( 'wp_footer', array( $this, 'print_bars_fallback' ), 5 );
-
-		// Inline boxes: classic WooCommerce templates, then blocks.
-		add_action( 'woocommerce_before_cart', array( $this, 'print_cart_box' ), 5 );
-		add_action( 'woocommerce_single_product_summary', array( $this, 'print_product_box' ), 11 );
-		add_action( 'woocommerce_before_mini_cart', array( $this, 'print_minicart_box' ), 5 );
-		// Blocks: cart block, product price block of block themes.
-		add_filter( 'render_block', array( $this, 'render_block' ), 10, 3 );
 	}
 
 	/**
@@ -56,7 +49,7 @@ class Frontend {
 	 *
 	 * @return bool
 	 */
-	private function storefront() {
+	public function storefront() {
 		return ! is_admin() && ! is_feed() && ! is_embed() && ! is_robots() && ! ( defined( 'REST_REQUEST' ) && REST_REQUEST ) && ! is_customize_preview();
 	}
 
@@ -72,10 +65,7 @@ class Frontend {
 
 		$this->prepared = array(
 			'groups' => array(),
-			'need'   => array(
-				'cart'  => false,
-				'email' => false,
-			),
+			'need'   => array( 'cart' => false ),
 		);
 
 		try {
@@ -85,12 +75,11 @@ class Frontend {
 				return $this->prepared;
 			}
 
-			$pro    = Licence::is_pro();
 			$locale = determine_locale();
 			$rows   = array();
 
 			foreach ( DB::active_messages( $locale, get_locale() ) as $row ) {
-				if ( $this->targets( $row, $pro ) ) {
+				if ( self::targets( $row ) ) {
 					$rows[] = $row;
 				}
 			}
@@ -99,7 +88,7 @@ class Frontend {
 				return $this->prepared;
 			}
 
-			$renderer                   = new Renderer( $s, $pro );
+			$renderer                   = new Renderer( $s );
 			list( $groups, $need )      = $renderer->groups( $rows );
 			$this->prepared['groups']   = $groups;
 			$this->prepared['need']     = $need;
@@ -115,199 +104,25 @@ class Frontend {
 	}
 
 	/**
-	 * Visitor role, page and product / category rules of a message (Pro). Without a Pro licence a message that uses
-	 * them never shows.
+	 * Visitor role, page and product / category rules of a message. This plugin has none of these rules: a message that
+	 * uses them shows only when an add-on checks them (filter "abpro_message_targets"), never to more people than
+	 * intended.
 	 *
 	 * @param array $row Message row.
-	 * @param bool  $pro Pro licence.
 	 * @return bool
 	 */
-	private function targets( array $row, $pro ) {
-		$san        = new Sanitizer();
-		$roles      = json_decode( (string) $row['roles'], true );
-		$roles      = is_array( $roles ) ? array_filter( $roles, 'is_string' ) : array();
-		$categories = $san->id_list( $row['categories'] );
-		$products   = $san->id_list( $row['products'] );
-		$mode       = (string) $row['page_mode'];
+	public static function targets( array $row ) {
+		$plain = static function ( $value ) {
+			$list = json_decode( (string) $value, true );
 
-		if ( ! $roles && 'all' === $mode && ! $categories && ! $products ) {
+			return ! is_array( $list ) || ! $list;
+		};
+
+		if ( $plain( $row['roles'] ) && in_array( (string) $row['page_mode'], array( '', 'all' ), true ) && $plain( $row['categories'] ) && $plain( $row['products'] ) ) {
 			return true;
 		}
 
-		if ( ! $pro ) {
-			return false;
-		}
-
-		if ( $roles ) {
-			$user = wp_get_current_user();
-			$mine = $user->exists() ? (array) $user->roles : array( 'guest' );
-
-			if ( ! array_intersect( $roles, $mine ) ) {
-				return false;
-			}
-		}
-
-		if ( ! self::page_matches( $mode, (string) $row['page_rules'] ) ) {
-			return false;
-		}
-
-		if ( ( $categories || $products ) && ! $this->product_matches( $categories, $products ) ) {
-			return false;
-		}
-
-		return true;
-	}
-
-	/**
-	 * Page rules: home page only, or a list of page types / paths to include or exclude.
-	 *
-	 * @param string $mode  all | home | include | exclude.
-	 * @param string $rules One rule per line.
-	 * @return bool
-	 */
-	public static function page_matches( $mode, $rules ) {
-		if ( 'home' === $mode ) {
-			return is_front_page();
-		}
-
-		if ( 'include' !== $mode && 'exclude' !== $mode ) {
-			return true;
-		}
-
-		$match = false;
-		$path  = self::request_path();
-
-		foreach ( preg_split( '/\r?\n/', $rules ) as $rule ) {
-			$rule = strtolower( trim( $rule ) );
-
-			if ( '' === $rule ) {
-				continue;
-			}
-
-			if ( '/' === $rule[0] ? self::path_matches( $rule, $path ) : self::type_matches( $rule ) ) {
-				$match = true;
-				break;
-			}
-		}
-
-		return 'include' === $mode ? $match : ! $match;
-	}
-
-	/**
-	 * Path of this request relative to the site's home path, lower case, with a trailing slash ("/shop/").
-	 *
-	 * @return string
-	 */
-	public static function request_path() {
-		$uri  = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '/';
-		$path = (string) wp_parse_url( $uri, PHP_URL_PATH );
-		$home = (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH );
-
-		if ( '' !== $home && '/' !== $home && 0 === strpos( $path, rtrim( $home, '/' ) ) ) {
-			$path = substr( $path, strlen( rtrim( $home, '/' ) ) );
-		}
-
-		$path = '/' . trim( strtolower( rawurldecode( $path ) ), '/' );
-
-		return '/' === $path ? '/' : $path . '/';
-	}
-
-	/**
-	 * Path rule: "/sale/" exact, "/sale/*" the section and everything below it.
-	 *
-	 * @param string $rule Rule.
-	 * @param string $path Request path.
-	 * @return bool
-	 */
-	public static function path_matches( $rule, $path ) {
-		if ( '/*' === $rule ) {
-			return true;
-		}
-
-		if ( '*' === substr( $rule, -1 ) ) {
-			$base = rtrim( substr( $rule, 0, -1 ), '/' ) . '/';
-
-			return 0 === strpos( $path, $base );
-		}
-
-		return rtrim( $rule, '/' ) . '/' === $path || ( '/' === $rule && '/' === $path );
-	}
-
-	/**
-	 * Page-type rule (home, blog, shop, cart, checkout, account, product, category, page, post, search, 404).
-	 *
-	 * @param string $rule Rule.
-	 * @return bool
-	 */
-	public static function type_matches( $rule ) {
-		$wc = Commerce::active();
-
-		switch ( $rule ) {
-			case 'home':
-				return is_front_page();
-			case 'blog':
-				return is_home() || is_category() || is_tag() || ( is_single() && 'post' === get_post_type() );
-			case 'shop':
-				return $wc && is_shop();
-			case 'cart':
-				return $wc && is_cart();
-			case 'checkout':
-				return $wc && is_checkout();
-			case 'account':
-				return $wc && is_account_page();
-			case 'product':
-				return $wc && is_product();
-			case 'category':
-				return $wc && ( is_product_category() || is_product_tag() );
-			case 'page':
-				return is_page();
-			case 'post':
-				return is_single() && 'post' === get_post_type();
-			case 'search':
-				return is_search();
-			case '404':
-				return is_404();
-		}
-
-		return false;
-	}
-
-	/**
-	 * Product rules: product category pages of those categories, product pages of those products or of a product in
-	 * one of those categories.
-	 *
-	 * @param int[] $categories Category IDs.
-	 * @param int[] $products   Product IDs.
-	 * @return bool
-	 */
-	private function product_matches( array $categories, array $products ) {
-		if ( ! Commerce::active() ) {
-			return false;
-		}
-
-		if ( $categories && is_product_category() ) {
-			$term = get_queried_object();
-
-			if ( $term instanceof \WP_Term ) {
-				$ids = array_merge( array( (int) $term->term_id ), array_map( 'intval', get_ancestors( (int) $term->term_id, 'product_cat', 'taxonomy' ) ) );
-
-				return (bool) array_intersect( $categories, $ids );
-			}
-		}
-
-		if ( is_product() ) {
-			$id = (int) get_queried_object_id();
-
-			if ( in_array( $id, $products, true ) ) {
-				return true;
-			}
-
-			if ( $categories ) {
-				return (bool) array_intersect( $categories, Commerce::product_categories( $id ) );
-			}
-		}
-
-		return false;
+		return (bool) apply_filters( 'abpro_message_targets', false, $row );
 	}
 
 	/*
@@ -332,12 +147,7 @@ class Frontend {
 
 		self::register_assets();
 		wp_enqueue_style( 'announcement-bar-pro-wp' );
-
-		$css = Settings::effective()['custom_css'];
-		if ( '' !== $css ) {
-			wp_add_inline_style( 'announcement-bar-pro-wp', ( new Features() )->css( $css ) );
-		}
-
+		do_action( 'abpro_enqueue', $p );
 		wp_enqueue_script( 'announcement-bar-pro' );
 		wp_enqueue_script( 'announcement-bar-pro-wp' );
 	}
@@ -412,6 +222,7 @@ class Frontend {
 		}
 
 		foreach ( array( 'top', 'bottom' ) as $place ) {
+			// Boxes of other placements are printed where they belong (inline_html()).
 			if ( ! empty( $p['groups'][ $place ] ) ) {
 				$containers[] = $p['renderer']->container( $place, $p['groups'][ $place ], false );
 			}
@@ -443,19 +254,19 @@ class Frontend {
 
 	/*
 	 * ------------------------------------------------------------------
-	 * Inline boxes
+	 * Boxes of other placements (registered by an add-on)
 	 * ------------------------------------------------------------------
 	 */
 
 	/**
-	 * Inline box HTML of a placement ('' when there is none or it was printed already).
+	 * Box HTML of a placement ('' when there is none or it was printed already).
 	 *
-	 * @param string $placement cart | product | minicart.
+	 * @param string $placement Placement (see Renderer::placements()).
 	 * @param bool   $once      Print only once per request.
 	 * @return string
 	 */
 	public function inline_html( $placement, $once = true ) {
-		if ( ( $once && ! empty( $this->inline_done[ $placement ] ) ) || ! Licence::is_pro() ) {
+		if ( ( $once && ! empty( $this->inline_done[ $placement ] ) ) || ! Renderer::is_inline( $placement ) || ! $this->storefront() ) {
 			return '';
 		}
 
@@ -486,56 +297,5 @@ class Frontend {
 	 */
 	private static function is_wc_ajax() {
 		return isset( $_GET['wc-ajax'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- only checks which kind of request this is.
-	}
-
-	/**
-	 * Classic cart page: above the cart table.
-	 */
-	public function print_cart_box() {
-		echo $this->inline_html( 'cart' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts.
-	}
-
-	/**
-	 * Classic product page: right under the price.
-	 */
-	public function print_product_box() {
-		echo $this->inline_html( 'product' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts.
-	}
-
-	/**
-	 * Classic mini-cart (also inside the refreshed cart fragments).
-	 */
-	public function print_minicart_box() {
-		echo $this->inline_html( 'minicart', false ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts.
-	}
-
-	/**
-	 * Blocks: cart block (box above it) and the product price block of the main product (box under it).
-	 *
-	 * @param string         $content  Block HTML.
-	 * @param array          $block    Block.
-	 * @param \WP_Block|null $instance Block instance (context: postId).
-	 * @return string
-	 */
-	public function render_block( $content, $block, $instance = null ) {
-		if ( ! is_array( $block ) || empty( $block['blockName'] ) || ! $this->storefront() || ! Licence::is_pro() ) {
-			return $content;
-		}
-
-		if ( 'woocommerce/cart' === $block['blockName'] ) {
-			return $this->inline_html( 'cart' ) . $content;
-		}
-
-		if ( 'woocommerce/product-price' === $block['blockName'] && function_exists( 'is_product' ) && is_product() ) {
-			$post_id = $instance instanceof \WP_Block && isset( $instance->context['postId'] ) ? (int) $instance->context['postId'] : (int) get_the_ID();
-
-			if ( (int) get_queried_object_id() !== $post_id ) {
-				return $content;
-			}
-
-			return $content . $this->inline_html( 'product' );
-		}
-
-		return $content;
 	}
 }

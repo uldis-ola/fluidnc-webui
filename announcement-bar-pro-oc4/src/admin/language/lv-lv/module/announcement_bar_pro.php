@@ -472,3 +472,16 @@ $_['error_image']               = 'Izvēlies attēlu (JPG, PNG, GIF, WebP, AVIF)
 $_['error_overlay']             = 'Krāsa virs attēla: no 0 līdz 90 %!';
 $_['error_extra_length']        = 'Ne vairāk kā %s rakstzīmes!';
 $_['error_email']               = 'Ievadi derīgu e-pasta adresi!';
+// 2.4.1 Cloudflare Turnstile
+$_['entry_ts_site']               = 'Turnstile vietnes atslēga';
+$_['entry_ts_secret']             = 'Turnstile slepenā atslēga';
+$_['help_ts']                     = 'Pēc izvēles: pieteikšanās formas pretrobotu pārbaude ar Cloudflare Turnstile (bez maksas: izveido logrīku Cloudflare panelī → Turnstile un nokopē abas atslēgas). Ieslēgta tikai tad, ja norādītas abas atslēgas. Tad lapās ar pieteikšanās formu tiek ielādēts Cloudflare skripts, un Cloudflare pārbaudei apstrādā apmeklētāja IP adresi un pārlūka datus — norādi to privātuma politikā. Ar „Gaidīt sīkdatņu piekrišanu” skripts tiek ielādēts tikai pēc piekrišanas. Bez izturētas pārbaudes (arī tad, ja Cloudflare nav sasniedzams) pieteikšanās netiek pieņemta.';
+$_['text_ts_docs']                = 'Cloudflare Turnstile dokumentācija';
+$_['help_ts_secret_saved']        = 'Slepenā atslēga ir saglabāta — atstāj tukšu, lai to paturētu.';
+$_['help_ts_secret_new']          = 'Pēc saglabāšanas tā vairs netiek rādīta.';
+$_['text_ts_remove']              = 'Dzēst saglabāto slepeno atslēgu (izslēdz Turnstile)';
+$_['text_ts_on']                  = 'Turnstile ir ieslēgts.';
+$_['text_ts_off']                 = 'Turnstile ir izslēgts.';
+$_['error_ts_site']               = 'Vietnes atslēgai ir nepareizs formāts (10–100 rakstzīmes: burti, cipari, _ un -)!';
+$_['error_ts_secret']             = 'Slepenajai atslēgai ir nepareizs formāts (10–200 rakstzīmes: burti, cipari, _ . un -)!';
+$_['error_ts_secret_required']    = 'Ievadi arī slepeno atslēgu — Turnstile vajag abas atslēgas!';

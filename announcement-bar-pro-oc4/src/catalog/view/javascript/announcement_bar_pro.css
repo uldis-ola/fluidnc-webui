@@ -1,4 +1,4 @@
-/* Announcement Bar Pro v2.4.0 — shared by the OpenCart 3 and OpenCart 4 packages */
+/* Announcement Bar Pro v2.4.1 — shared by the OpenCart 3 and OpenCart 4 packages */
 .abp{position:relative;width:100%;box-sizing:border-box;line-height:1.45;z-index:1030;overflow:hidden;font-family:inherit;font-weight:500;letter-spacing:.005em;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;}
 .abp *,.abp *:before,.abp *:after{box-sizing:border-box;}
 .abp.abp-sticky{position:-webkit-sticky;position:sticky;top:0;}
@@ -179,6 +179,9 @@ li.abp-mc-li{list-style:none;padding:0;margin:0;}
 .abp .abp-consent input{flex:none;width:18px;height:18px;margin:.05em 0 0;accent-color:currentColor;cursor:pointer;}
 .abp-consent a{text-decoration:underline;text-underline-offset:.15em;}
 .abp-form-msg{flex-basis:100%;font-size:.82em;font-weight:600;}
+.abp-ts{display:block;flex-basis:100%;font-size:.78em;line-height:1.35;}
+.abp-ts:empty{display:none;}
+.abp-ts iframe{max-width:100%;}
 .abp-form-msg:empty{display:none;}
 .abp-form-error .abp-form-msg{text-decoration:underline;text-decoration-style:wavy;text-underline-offset:.25em;}
 .abp .abp-form [aria-invalid="true"]{outline:2px solid #b91c1c;outline-offset:1px;}

@@ -1,5 +1,7 @@
 /* Announcement Bar Pro — admin screens: language tabs, dependent fields, live preview (sandboxed frame with the real
-   storefront script and styles, rendered by the server), contrast check, media picker, confirmations. */
+   storefront script and styles, rendered by the server), contrast check, confirmations.
+   Add-ons: window.abpAdminApi (set below) — addDeps(fn) adds data-show states (fn(val) returns {key: bool}),
+   addParams(fn) adds preview parameters (fn(formData)), preview() re-renders, confirm(selector, text) adds a confirm. */
 (function () {
   'use strict';
 
@@ -8,11 +10,18 @@
   function $(sel, root) { return (root || document).querySelector(sel); }
   function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
 
-  /* ---------------- Confirmations (list, subscribers) ---------------- */
+  var deps = [], params = [], confirms = [['.abp-confirm-delete', function () { return t.confirmDelete; }]];
+  var api = window.abpAdminApi = {
+    addDeps: function (fn) { if (typeof fn === 'function') { deps.push(fn); } },
+    addParams: function (fn) { if (typeof fn === 'function') { params.push(fn); } },
+    confirm: function (selector, text) { confirms.push([selector, function () { return text; }]); },
+    preview: function () {}
+  };
+
+  /* ---------------- Confirmations (a button or a form that matches a selector) ---------------- */
   document.addEventListener('submit', function (e) {
-    var form = e.target;
-    var btn = form.querySelector('.abp-confirm-delete, .abp-confirm-useb');
-    var msg = btn ? (btn.classList.contains('abp-confirm-delete') ? t.confirmDelete : t.confirmUseB) : (form.classList.contains('abp-confirm-erase') ? t.confirmErase : '');
+    var form = e.target, msg = '';
+    confirms.forEach(function (c) { if (!msg && (form.matches(c[0]) || form.querySelector(c[0]))) { msg = c[1](); } });
     if (msg && !window.confirm(msg)) { e.preventDefault(); }
   });
 
@@ -58,16 +67,11 @@
     var state = {
       goal: type !== 'standard',
       fs: type === 'free_shipping',
-      'fs-own': type === 'free_shipping' && !val('opt[fs_wc]'),
-      tiers: type === 'tiers',
-      ab: !!val('ab_test'),
-      email: !!val('opt[email]'),
-      pages: val('page_mode') === 'include' || val('page_mode') === 'exclude',
-      countries: val('opt[countries_mode]') !== '' && val('opt[countries_mode]') !== 'all',
-      'trigger-value': val('opt[trigger]') === 'delay' || val('opt[trigger]') === 'scroll',
-      'recur-weekly': val('opt[recur]') === 'weekly',
-      'recur-daily': val('opt[recur]') === 'daily'
+      'fs-own': type === 'free_shipping' && !val('opt[fs_wc]')
     };
+    deps.forEach(function (fn) {
+      try { var more = fn(val, type) || {}; Object.keys(more).forEach(function (k) { state[k] = !!more[k]; }); } catch (e) { /* one add-on must not stop the form */ }
+    });
     $$('[data-show]').forEach(function (el) {
       var key = el.getAttribute('data-show');
       if (Object.prototype.hasOwnProperty.call(state, key)) { el.hidden = !state[key]; }
@@ -91,14 +95,14 @@
 
   /* ---------------- Live preview ---------------- */
   var frame = document.getElementById('abp-preview-frame'), note = document.getElementById('abp-pv-note'), wrap = document.getElementById('abp-preview-wrap');
-  var pv = { device: 'desktop', variant: 'a' }, timer = null, seq = 0, lastDoc = '';
+  var pv = { device: 'desktop' }, timer = null, seq = 0, lastDoc = '';
   function render() {
     if (!frame || !cfg.preview || !window.fetch || !window.FormData) { return; }
     var fd = new FormData(form), my = ++seq;
     fd.delete('_wpnonce');
     fd.delete('action');
     fd.append('pv_device', pv.device);
-    fd.append('pv_variant', pv.variant);
+    params.forEach(function (fn) { try { fn(fd); } catch (e) { /* ignore */ } });
     var loc = document.getElementById('abp-pv-locale');
     if (loc) { fd.append('pv_locale', loc.value); }
     var cart = document.getElementById('abp-pv-cart');
@@ -122,57 +126,15 @@
       render();
     });
   });
-  $$('[data-pv-variant]').forEach(function (b) {
-    b.addEventListener('click', function () {
-      pv.variant = b.getAttribute('data-pv-variant');
-      $$('[data-pv-variant]').forEach(function (x) { var on = x === b; x.classList.toggle('active', on); x.setAttribute('aria-pressed', on ? 'true' : 'false'); });
-      render();
-    });
-  });
   ['abp-pv-locale', 'abp-pv-cart'].forEach(function (id) { var el = document.getElementById(id); if (el) { el.addEventListener('input', preview); el.addEventListener('change', preview); } });
   form.addEventListener('input', preview);
   form.addEventListener('change', preview);
   // selectWoo (WooCommerce's enhanced selects) reports changes through jQuery only.
   if (window.jQuery) { window.jQuery(form).on('change', 'select', preview); }
 
-  /* ---------------- Background image (media library) ---------------- */
-  var pick = document.getElementById('abp-image-pick'), clear = document.getElementById('abp-image-clear');
-  var input = document.getElementById('abp-image'), thumb = document.getElementById('abp-image-thumb'), media = null;
-  if (pick && window.wp && window.wp.media) {
-    pick.addEventListener('click', function () {
-      if (!media) {
-        media = window.wp.media({ title: t.chooseImage, button: { text: t.useImage }, library: { type: 'image' }, multiple: false });
-        media.on('select', function () {
-          var a = media.state().get('selection').first().toJSON();
-          input.value = String(a.id);
-          thumb.src = (a.sizes && a.sizes.thumbnail ? a.sizes.thumbnail.url : a.url);
-          thumb.hidden = false;
-          clear.hidden = false;
-          preview();
-        });
-      }
-      media.open();
-    });
-  }
-  if (clear) {
-    clear.addEventListener('click', function () { input.value = '0'; thumb.hidden = true; thumb.removeAttribute('src'); clear.hidden = true; pick.focus(); preview(); });
-  }
-
-  /* ---------------- Free-shipping rows by country / state ---------------- */
-  var add = document.getElementById('abp-zone-add'), rows = document.getElementById('abp-zone-rows');
-  if (add && rows) {
-    add.addEventListener('click', function () {
-      var last = rows.querySelector('tr:last-child');
-      if (!last) { return; }
-      var copy = last.cloneNode(true), n = rows.querySelectorAll('tr').length;
-      $$('select, input', copy).forEach(function (el) {
-        el.name = el.name.replace(/\[fs_zones\]\[\d+\]/, '[fs_zones][' + n + ']');
-        el.value = '';
-      });
-      rows.appendChild(copy);
-      copy.querySelector('select').focus();
-    });
-  }
+  api.preview = preview;
+  api.render = render;
+  api.dependents = dependents;
 
   /* ---------------- Start ---------------- */
   var c = document.getElementById('abp-contrast');

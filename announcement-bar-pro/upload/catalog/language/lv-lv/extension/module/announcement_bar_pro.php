@@ -39,3 +39,8 @@ $_['abp_mail_body']               = 'lūdzu, apstiprini, ka vēlies saņemt %s j
 $_['abp_mail_ignore']             = 'Ja to neesi pieprasījis, vienkārši ignorē šo e-pastu — tu netiksi pieteikts. Saite derīga 7 dienas.';
 $_['abp_mail_unsubscribe']        = 'Atteikties var jebkurā brīdī:';
 $_['abp_text_continue']           = 'Turpināt iepirkties';
+// 2.4.1 Cloudflare Turnstile (optional anti-bot check of the sign-up form)
+$_['abp_text_ts_wait']              = 'Šī veidlapa izmanto Cloudflare pretrobotu pārbaudi. Lūdzu, pieņem sīkdatnes, lai to izmantotu.';
+$_['abp_error_ts_wait']             = 'Pretrobotu pārbaude vēl nav gatava — lūdzu, mazliet pagaidi vai pārlādē lapu.';
+$_['abp_error_ts_missing']          = 'Lūdzu, mazliet pagaidi, kamēr pretrobotu pārbaude beidzas, un tad sūti vēlreiz.';
+$_['abp_error_ts_failed']           = 'Pretrobotu pārbaude neizdevās. Lūdzu, pārlādē lapu un mēģini vēlreiz.';

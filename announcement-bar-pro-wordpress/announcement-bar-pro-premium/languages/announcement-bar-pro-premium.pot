@@ -1,0 +1,1302 @@
+# Copyright (C) 2026 3DP SIA
+# This file is distributed under the GPL-2.0-or-later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Announcement Bar Pro — Premium 1.0.0\n"
+"Report-Msgid-Bugs-To: extension@3dp.lv\n"
+"Last-Translator: 3DP SIA <extension@3dp.lv>\n"
+"Language-Team: 3DP SIA <extension@3dp.lv>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-11-07T22:48:37+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: announcement-bar-pro-premium\n"
+
+#. Plugin Name of the plugin
+#: announcement-bar-pro-premium.php
+msgid "Announcement Bar Pro — Premium"
+msgstr ""
+
+#. Description of the plugin
+#: announcement-bar-pro-premium.php
+msgid "Premium add-on for the free Announcement Bar Pro plugin: bottom bar and boxes in the cart, under the product price and in the mini-cart, targeting, reward tiers, coupons, A/B tests with statistics, a GDPR e-mail sign-up (optional Cloudflare Turnstile), templates and more."
+msgstr ""
+
+#. Author of the plugin
+#: announcement-bar-pro-premium.php
+msgid "3DP SIA"
+msgstr ""
+
+#: announcement-bar-pro-premium.php:58
+msgid "Announcement Bar Pro — Premium needs the free Announcement Bar Pro plugin with add-on support. Please update Announcement Bar Pro (Plugins → Add New) to its current version from WordPress.org."
+msgstr ""
+
+#: announcement-bar-pro-premium.php:59
+msgid "Announcement Bar Pro — Premium needs the free Announcement Bar Pro plugin. Please install and activate it (Plugins → Add New, search for \"Announcement Bar Pro\"); the premium features start as soon as it is active."
+msgstr ""
+
+#: includes/class-addon.php:131
+msgid "Licence"
+msgstr ""
+
+#: includes/class-addon.php:140
+msgid "Premium"
+msgstr ""
+
+#: includes/class-addon.php:140
+msgid "Premium: no licence key"
+msgstr ""
+
+#: includes/class-addon.php:153
+msgid "Premium features are unlocked. Thank you!"
+msgstr ""
+
+#: includes/class-addon.php:154
+#: includes/class-local-licence-provider.php:78
+msgid "This licence key is not valid. Please check it and try again."
+msgstr ""
+
+#: includes/class-addon.php:155
+msgid "The licence key was removed from this site."
+msgstr ""
+
+#: includes/class-addon.php:171
+msgid "Premium licence"
+msgstr ""
+
+#. translators: %s: masked licence key
+#: includes/class-addon.php:178
+msgid "Premium active"
+msgstr ""
+
+#. translators: %s: masked licence key
+#: includes/class-addon.php:178
+#, php-format
+msgid "Key %s"
+msgstr ""
+
+#: includes/class-addon.php:179
+msgid "Remove key from this site"
+msgstr ""
+
+#: includes/class-addon.php:181
+msgid "Enter the licence key from your order to switch on the premium features: more bars and boxes, targeting, coupons, A/B tests with statistics, the e-mail sign-up and templates."
+msgstr ""
+
+#: includes/class-addon.php:182
+msgid "Licence key"
+msgstr ""
+
+#: includes/class-addon.php:183
+msgid "The key is checked on this site only; no data is sent anywhere."
+msgstr ""
+
+#: includes/class-addon.php:184
+msgid "Activate"
+msgstr ""
+
+#: includes/class-addon.php:190
+msgid "A stored key is not valid any more."
+msgstr ""
+
+#: includes/class-local-licence-provider.php:84
+msgid "Pro features are unlocked. Thank you!"
+msgstr ""
+
+#: includes/class-pro-admin.php:79
+#: includes/class-pro-admin.php:93
+#: includes/class-pro-admin.php:1232
+msgid "Templates"
+msgstr ""
+
+#: includes/class-pro-admin.php:135
+msgid "Delete every entry of this address from the list? This cannot be undone."
+msgstr ""
+
+#: includes/class-pro-admin.php:136
+msgid "Make variant B the main text and end the A/B test?"
+msgstr ""
+
+#: includes/class-pro-admin.php:137
+msgid "Choose a background image"
+msgstr ""
+
+#: includes/class-pro-admin.php:138
+msgid "Use this image"
+msgstr ""
+
+#: includes/class-pro-admin.php:153
+msgid "Statistics reset."
+msgstr ""
+
+#: includes/class-pro-admin.php:154
+msgid "Variant B is now the main text; the A/B test has ended."
+msgstr ""
+
+#: includes/class-pro-admin.php:173
+msgid "Statistics"
+msgstr ""
+
+#: includes/class-pro-admin.php:211
+msgid "Views"
+msgstr ""
+
+#: includes/class-pro-admin.php:212
+msgid "Clicks"
+msgstr ""
+
+#: includes/class-pro-admin.php:213
+msgid "CTR"
+msgstr ""
+
+#: includes/class-pro-admin.php:218
+msgid "Code copies"
+msgstr ""
+
+#: includes/class-pro-admin.php:222
+msgid "Sign-ups"
+msgstr ""
+
+#: includes/class-pro-admin.php:237
+msgid "Use B"
+msgstr ""
+
+#: includes/class-pro-admin.php:240
+msgid "Reset statistics"
+msgstr ""
+
+#: includes/class-pro-admin.php:247
+msgid "Start from a template"
+msgstr ""
+
+#: includes/class-pro-admin.php:297
+msgid "Reward tiers"
+msgstr ""
+
+#: includes/class-pro-admin.php:301
+msgid "Recurring countdown"
+msgstr ""
+
+#: includes/class-pro-admin.php:305
+#: includes/class-pro-admin.php:910
+msgid "Coupon"
+msgstr ""
+
+#: includes/class-pro-admin.php:309
+#: includes/class-pro-admin.php:958
+msgid "A/B test"
+msgstr ""
+
+#: includes/class-pro-admin.php:313
+#: includes/class-pro-settings.php:231
+msgid "E-mail sign-up"
+msgstr ""
+
+#: includes/class-pro-admin.php:317
+msgid "Targeted"
+msgstr ""
+
+#: includes/class-pro-admin.php:321
+msgid "Trigger"
+msgstr ""
+
+#: includes/class-pro-admin.php:334
+msgid "Main bar (settings)"
+msgstr ""
+
+#: includes/class-pro-admin.php:335
+#: includes/class-pro-admin.php:676
+msgid "Top bar"
+msgstr ""
+
+#: includes/class-pro-admin.php:336
+#: includes/class-pro-admin.php:677
+msgid "Bottom bar"
+msgstr ""
+
+#: includes/class-pro-admin.php:337
+msgid "Cart page box"
+msgstr ""
+
+#: includes/class-pro-admin.php:338
+msgid "Product page box (under the price)"
+msgstr ""
+
+#: includes/class-pro-admin.php:339
+msgid "Mini-cart box"
+msgstr ""
+
+#: includes/class-pro-admin.php:425
+msgid "Reward tiers (several goals)"
+msgstr ""
+
+#: includes/class-pro-admin.php:439
+#: includes/class-pro-settings.php:76
+msgid "Gradient"
+msgstr ""
+
+#: includes/class-pro-admin.php:439
+msgid "Colour blend"
+msgstr ""
+
+#: includes/class-pro-admin.php:440
+#: includes/class-pro-settings.php:77
+msgid "Glass"
+msgstr ""
+
+#: includes/class-pro-admin.php:440
+msgid "See-through, blurred"
+msgstr ""
+
+#: includes/class-pro-admin.php:466
+msgid "Reward tiers — labels and own texts"
+msgstr ""
+
+#: includes/class-pro-admin.php:467
+msgid "Label of each tier (shown under the bar and for {goal}); optional own text while that tier is next."
+msgstr ""
+
+#. translators: %d: tier number
+#: includes/class-pro-admin.php:470
+#, php-format
+msgid "Tier %d label"
+msgstr ""
+
+#. translators: %d: tier number
+#: includes/class-pro-admin.php:472
+#, php-format
+msgid "Tier %d own text"
+msgstr ""
+
+#: includes/class-pro-admin.php:481
+msgid "Variant B (A/B test)"
+msgstr ""
+
+#: includes/class-pro-admin.php:482
+msgid "Text B"
+msgstr ""
+
+#: includes/class-pro-admin.php:485
+msgid "Shorter text B for phones (optional)"
+msgstr ""
+
+#: includes/class-pro-admin.php:492
+msgid "Button text B (optional)"
+msgstr ""
+
+#: includes/class-pro-admin.php:496
+msgid "E-mail sign-up texts (empty = default text)"
+msgstr ""
+
+#: includes/class-pro-admin.php:499
+msgid "Field placeholder"
+msgstr ""
+
+#: includes/class-pro-admin.php:500
+msgid "Button"
+msgstr ""
+
+#: includes/class-pro-admin.php:504
+msgid "Consent text (stored with each sign-up as proof)"
+msgstr ""
+
+#: includes/class-pro-admin.php:513
+msgid "Text after sending"
+msgstr ""
+
+#: includes/class-pro-admin.php:531
+msgid "Background image and font"
+msgstr ""
+
+#: includes/class-pro-admin.php:534
+msgid "Background image"
+msgstr ""
+
+#: includes/class-pro-admin.php:535
+msgid "Choose image"
+msgstr ""
+
+#: includes/class-pro-admin.php:535
+msgid "Remove image"
+msgstr ""
+
+#: includes/class-pro-admin.php:540
+msgid "Colour over the image (%)"
+msgstr ""
+
+#: includes/class-pro-admin.php:547
+msgid "Keeps the text readable: 55 % or more for most photos."
+msgstr ""
+
+#: includes/class-pro-admin.php:550
+msgid "Font"
+msgstr ""
+
+#: includes/class-pro-admin.php:561
+msgid "Theme font"
+msgstr ""
+
+#: includes/class-pro-admin.php:562
+msgid "System UI"
+msgstr ""
+
+#: includes/class-pro-admin.php:563
+msgid "Humanist sans"
+msgstr ""
+
+#: includes/class-pro-admin.php:564
+msgid "Geometric sans"
+msgstr ""
+
+#: includes/class-pro-admin.php:565
+msgid "Serif"
+msgstr ""
+
+#: includes/class-pro-admin.php:566
+msgid "Monospace"
+msgstr ""
+
+#: includes/class-pro-admin.php:567
+msgid "Rounded"
+msgstr ""
+
+#: includes/class-pro-admin.php:584
+msgid "Tier amounts"
+msgstr ""
+
+#: includes/class-pro-admin.php:585
+msgid "2 to 5 rising amounts; labels are set per language under Message."
+msgstr ""
+
+#. translators: %d: tier number
+#: includes/class-pro-admin.php:589
+#, php-format
+msgid "Tier %d"
+msgstr ""
+
+#: includes/class-pro-admin.php:594
+msgid "Amounts by country, state or currency"
+msgstr ""
+
+#: includes/class-pro-admin.php:595
+msgid "Optional. A state amount wins over a country amount, which wins over a currency amount; otherwise the amount above is used."
+msgstr ""
+
+#: includes/class-pro-admin.php:603
+#: includes/class-pro-admin.php:605
+msgid "Country"
+msgstr ""
+
+#: includes/class-pro-admin.php:603
+#: includes/class-pro-admin.php:609
+msgid "State code (optional)"
+msgstr ""
+
+#: includes/class-pro-admin.php:603
+#: includes/class-pro-admin.php:609
+msgid "Amount"
+msgstr ""
+
+#: includes/class-pro-admin.php:611
+msgid "Add row"
+msgstr ""
+
+#. translators: %s: currency code
+#: includes/class-pro-admin.php:618
+#, php-format
+msgid "Fixed amount in %s"
+msgstr ""
+
+#: includes/class-pro-admin.php:620
+msgid "Currency amounts are for multi-currency shops: the amount is used as it is, without conversion."
+msgstr ""
+
+#: includes/class-pro-admin.php:632
+msgid "Recurring countdown (daily / weekly cut-off)"
+msgstr ""
+
+#: includes/class-pro-admin.php:636
+msgid "Repeat"
+msgstr ""
+
+#: includes/class-pro-admin.php:639
+msgid "No — count down to the end date"
+msgstr ""
+
+#: includes/class-pro-admin.php:640
+msgid "Every day"
+msgstr ""
+
+#: includes/class-pro-admin.php:641
+msgid "Once a week"
+msgstr ""
+
+#: includes/class-pro-admin.php:647
+msgid "Cut-off time"
+msgstr ""
+
+#: includes/class-pro-admin.php:656
+msgid "Day"
+msgstr ""
+
+#: includes/class-pro-admin.php:657
+msgid "Skip these days"
+msgstr ""
+
+#: includes/class-pro-admin.php:675
+msgid "Main bar (position from the settings)"
+msgstr ""
+
+#: includes/class-pro-admin.php:680
+msgid "Box on the cart page"
+msgstr ""
+
+#: includes/class-pro-admin.php:681
+msgid "Box under the product price"
+msgstr ""
+
+#: includes/class-pro-admin.php:682
+msgid "Box in the mini-cart"
+msgstr ""
+
+#: includes/class-pro-admin.php:685
+msgid "Placement and priority"
+msgstr ""
+
+#: includes/class-pro-admin.php:687
+msgid "Placement"
+msgstr ""
+
+#: includes/class-pro-admin.php:687
+msgid "Boxes appear in the cart (classic page and cart block), under the price of the product page and in the classic mini-cart."
+msgstr ""
+
+#: includes/class-pro-admin.php:690
+msgid "Priority (0–100)"
+msgstr ""
+
+#: includes/class-pro-admin.php:696
+msgid "Higher priority comes first; with \"most messages at once\" set, lower ones are left out."
+msgstr ""
+
+#: includes/class-pro-admin.php:701
+msgid "Visitors and pages"
+msgstr ""
+
+#: includes/class-pro-admin.php:704
+msgid "Not logged in"
+msgstr ""
+
+#: includes/class-pro-admin.php:705
+msgid "Show to (none ticked = everyone)"
+msgstr ""
+
+#: includes/class-pro-admin.php:712
+msgid "Pages"
+msgstr ""
+
+#: includes/class-pro-admin.php:715
+msgid "Every page"
+msgstr ""
+
+#: includes/class-pro-admin.php:716
+msgid "Front page only"
+msgstr ""
+
+#: includes/class-pro-admin.php:717
+msgid "Only these pages"
+msgstr ""
+
+#: includes/class-pro-admin.php:718
+msgid "All pages except these"
+msgstr ""
+
+#: includes/class-pro-admin.php:724
+msgid "Page rules (one per line)"
+msgstr ""
+
+#. translators: %s: list of page types
+#: includes/class-pro-admin.php:729
+#, php-format
+msgid "Page types: %s — or paths such as /sale/ (exact) and /blog/* (everything below)."
+msgstr ""
+
+#: includes/class-pro-admin.php:735
+msgid "Visitors coming from (sites)"
+msgstr ""
+
+#: includes/class-pro-admin.php:739
+msgid "For example facebook.com, instagram.com — separated by commas."
+msgstr ""
+
+#: includes/class-pro-admin.php:743
+msgid "utm_source"
+msgstr ""
+
+#: includes/class-pro-admin.php:744
+msgid "utm_medium"
+msgstr ""
+
+#: includes/class-pro-admin.php:745
+msgid "utm_campaign"
+msgstr ""
+
+#: includes/class-pro-admin.php:746
+msgid "Campaign values of the landing page, kept for the visit (decided in the browser)."
+msgstr ""
+
+#: includes/class-pro-admin.php:749
+msgid "New or returning visitors"
+msgstr ""
+
+#: includes/class-pro-admin.php:752
+msgid "Everyone"
+msgstr ""
+
+#: includes/class-pro-admin.php:753
+msgid "First visit only"
+msgstr ""
+
+#: includes/class-pro-admin.php:754
+msgid "Returning visitors only"
+msgstr ""
+
+#: includes/class-pro-admin.php:761
+msgid "Show"
+msgstr ""
+
+#: includes/class-pro-admin.php:764
+msgid "At once"
+msgstr ""
+
+#: includes/class-pro-admin.php:765
+msgid "After a delay (seconds)"
+msgstr ""
+
+#: includes/class-pro-admin.php:766
+msgid "After scrolling (%)"
+msgstr ""
+
+#: includes/class-pro-admin.php:767
+msgid "When the visitor is about to leave (computers)"
+msgstr ""
+
+#: includes/class-pro-admin.php:774
+msgid "Seconds / scroll %"
+msgstr ""
+
+#: includes/class-pro-admin.php:798
+msgid "Products, countries and cart"
+msgstr ""
+
+#: includes/class-pro-admin.php:811
+msgid "With products or categories chosen, the message shows only on those product pages and category pages."
+msgstr ""
+
+#: includes/class-pro-admin.php:812
+msgid "Product pages"
+msgstr ""
+
+#: includes/class-pro-admin.php:813
+msgid "Category pages"
+msgstr ""
+
+#: includes/class-pro-admin.php:820
+msgid "Countries"
+msgstr ""
+
+#: includes/class-pro-admin.php:823
+msgid "Every country"
+msgstr ""
+
+#: includes/class-pro-admin.php:824
+msgid "Only these countries"
+msgstr ""
+
+#: includes/class-pro-admin.php:825
+msgid "All except these countries"
+msgstr ""
+
+#: includes/class-pro-admin.php:829
+msgid "Choose countries"
+msgstr ""
+
+#: includes/class-pro-admin.php:829
+msgid "Search a country…"
+msgstr ""
+
+#: includes/class-pro-admin.php:833
+msgid "The visitor's country comes from the WooCommerce customer address (or WooCommerce's own geolocation setting). No outside service is asked."
+msgstr ""
+
+#: includes/class-pro-admin.php:835
+msgid "Cart conditions (every set condition must hold)"
+msgstr ""
+
+#: includes/class-pro-admin.php:837
+msgid "Subtotal from"
+msgstr ""
+
+#: includes/class-pro-admin.php:838
+msgid "Subtotal up to"
+msgstr ""
+
+#: includes/class-pro-admin.php:839
+msgid "Items from"
+msgstr ""
+
+#: includes/class-pro-admin.php:840
+msgid "Items up to"
+msgstr ""
+
+#: includes/class-pro-admin.php:849
+msgid "Cart contains one of these products"
+msgstr ""
+
+#: includes/class-pro-admin.php:850
+msgid "Cart contains a product of these categories"
+msgstr ""
+
+#: includes/class-pro-admin.php:865
+msgid "Search a product…"
+msgstr ""
+
+#: includes/class-pro-admin.php:889
+msgid "Search a category…"
+msgstr ""
+
+#: includes/class-pro-admin.php:908
+msgid "Coupon, sign-up and A/B test"
+msgstr ""
+
+#: includes/class-pro-admin.php:923
+msgid "— none —"
+msgstr ""
+
+#: includes/class-pro-admin.php:932
+msgid "WooCommerce coupon"
+msgstr ""
+
+#: includes/class-pro-admin.php:937
+msgid "Shows the code with a copy button. The message hides itself when the coupon expires or is used up — the same rules WooCommerce uses."
+msgstr ""
+
+#: includes/class-pro-admin.php:944
+msgid "Or a fixed code"
+msgstr ""
+
+#: includes/class-pro-admin.php:948
+msgid "Shown as it is (not checked against the shop)."
+msgstr ""
+
+#: includes/class-pro-admin.php:954
+msgid "E-mail sign-up (GDPR, double opt-in)"
+msgstr ""
+
+#: includes/class-pro-admin.php:955
+msgid "Show an e-mail sign-up form in this message"
+msgstr ""
+
+#: includes/class-pro-admin.php:955
+msgid "With a consent box, a link to the privacy page and a confirmation e-mail. Texts per language are under Message."
+msgstr ""
+
+#: includes/class-pro-admin.php:959
+msgid "Test a second text (variant B)"
+msgstr ""
+
+#: includes/class-pro-admin.php:959
+msgid "Each browser keeps one variant. Views, clicks and CTR per variant appear in the message list."
+msgstr ""
+
+#: includes/class-pro-admin.php:972
+msgid "Variant"
+msgstr ""
+
+#: includes/class-pro-admin.php:1035
+msgid "A countdown needs an end date or a daily / weekly cut-off time."
+msgstr ""
+
+#. translators: %d: number of characters
+#: includes/class-pro-admin.php:1070
+#: includes/class-pro-admin.php:1076
+#: includes/class-pro-admin.php:1085
+#: includes/class-pro-settings.php:158
+#, php-format
+msgid "At most %d characters."
+msgstr ""
+
+#: includes/class-pro-admin.php:1094
+msgid "Every tier needs a label in each language that has a text."
+msgstr ""
+
+#: includes/class-pro-admin.php:1103
+msgid "An A/B test needs a text for variant B."
+msgstr ""
+
+#. translators: 1: smallest value, 2: largest value
+#: includes/class-pro-admin.php:1110
+#: includes/class-pro-settings.php:125
+#, php-format
+msgid "Please enter a whole number from %1$d to %2$d."
+msgstr ""
+
+#: includes/class-pro-admin.php:1119
+msgid "Use 1–32 letters, digits, \"-\" or \"_\"."
+msgstr ""
+
+#: includes/class-pro-admin.php:1134
+msgid "One rule per line: a page type from the list or a path that starts with \"/\" (a \"*\" at the end matches everything below it)."
+msgstr ""
+
+#: includes/class-pro-admin.php:1136
+msgid "Please add at least one page rule."
+msgstr ""
+
+#: includes/class-pro-admin.php:1150
+msgid "Some of the chosen items do not exist any more."
+msgstr ""
+
+#: includes/class-pro-admin.php:1194
+#: includes/class-pro-settings.php:114
+msgid "Please choose one of the offered values."
+msgstr ""
+
+#: includes/class-pro-admin.php:1195
+msgid "Please choose countries from the list."
+msgstr ""
+
+#: includes/class-pro-admin.php:1196
+msgid "Please choose at least one country."
+msgstr ""
+
+#: includes/class-pro-admin.php:1197
+msgid "Each row needs a country from the list, an optional state of that country and an amount above 0."
+msgstr ""
+
+#: includes/class-pro-admin.php:1198
+msgid "Each country / state may appear only once."
+msgstr ""
+
+#: includes/class-pro-admin.php:1199
+msgid "Amounts above 0, only for currencies of the shop."
+msgstr ""
+
+#: includes/class-pro-admin.php:1200
+msgid "Please choose an existing coupon."
+msgstr ""
+
+#: includes/class-pro-admin.php:1201
+msgid "Tier amounts must rise from row to row."
+msgstr ""
+
+#: includes/class-pro-admin.php:1202
+msgid "Reward tiers need 2 to 5 amounts."
+msgstr ""
+
+#: includes/class-pro-admin.php:1203
+msgid "Please enter an amount such as 49.99."
+msgstr ""
+
+#: includes/class-pro-admin.php:1204
+msgid "Please enter a whole number."
+msgstr ""
+
+#: includes/class-pro-admin.php:1205
+msgid "The maximum must not be smaller than the minimum."
+msgstr ""
+
+#: includes/class-pro-admin.php:1206
+msgid "Some of the chosen products do not exist any more."
+msgstr ""
+
+#: includes/class-pro-admin.php:1207
+msgid "Some of the chosen categories do not exist any more."
+msgstr ""
+
+#: includes/class-pro-admin.php:1208
+msgid "Use values such as newsletter, google or spring-sale, separated by commas (at most 20)."
+msgstr ""
+
+#: includes/class-pro-admin.php:1209
+msgid "Use site names such as facebook.com, separated by commas (at most 20)."
+msgstr ""
+
+#: includes/class-pro-admin.php:1210
+msgid "Delay: 1 to 600 seconds."
+msgstr ""
+
+#: includes/class-pro-admin.php:1211
+msgid "Scroll depth: 1 to 100 %."
+msgstr ""
+
+#: includes/class-pro-admin.php:1212
+msgid "Please enter the cut-off time as HH:MM."
+msgstr ""
+
+#: includes/class-pro-admin.php:1213
+msgid "At least one day must stay active."
+msgstr ""
+
+#: includes/class-pro-admin.php:1214
+msgid "Please choose an image from the media library."
+msgstr ""
+
+#: includes/class-pro-admin.php:1215
+msgid "Overlay: 0 to 90 %."
+msgstr ""
+
+#: includes/class-pro-admin.php:1246
+msgid "Needs WooCommerce."
+msgstr ""
+
+#. translators: %s: template name
+#: includes/class-pro-admin.php:1249
+#, php-format
+msgid "Use template: %s"
+msgstr ""
+
+#. translators: %s: template name
+#: includes/class-pro-admin.php:1249
+msgid "Use template"
+msgstr ""
+
+#: includes/class-pro-render.php:95
+msgid "Cart"
+msgstr ""
+
+#: includes/class-pro-render.php:96
+msgid "Product page — under the price"
+msgstr ""
+
+#: includes/class-pro-render.php:97
+msgid "Mini-cart"
+msgstr ""
+
+#. translators: %s: coupon code
+#: includes/class-pro-render.php:471
+#, php-format
+msgid "Copy code %s"
+msgstr ""
+
+#: includes/class-pro-render.php:561
+msgid "Show announcements"
+msgstr ""
+
+#: includes/class-pro-render.php:562
+msgid "Pause messages"
+msgstr ""
+
+#: includes/class-pro-render.php:563
+msgid "Play messages"
+msgstr ""
+
+#: includes/class-pro-render.php:564
+msgid "Copy"
+msgstr ""
+
+#: includes/class-pro-render.php:565
+msgid "Copied!"
+msgstr ""
+
+#: includes/class-pro-render.php:566
+msgid "Privacy policy"
+msgstr ""
+
+#: includes/class-pro-render.php:567
+msgid "Sending…"
+msgstr ""
+
+#: includes/class-pro-render.php:568
+#: includes/class-subscribers.php:157
+msgid "Please enter a valid e-mail address."
+msgstr ""
+
+#: includes/class-pro-render.php:569
+#: includes/class-subscribers.php:162
+msgid "Please tick the box to agree."
+msgstr ""
+
+#: includes/class-pro-render.php:570
+#: includes/class-subscribers.php:124
+#: includes/class-subscribers.php:262
+#: includes/class-subscribers.php:295
+msgid "Sorry, the sign-up did not work. Please try again later."
+msgstr ""
+
+#: includes/class-pro-render.php:571
+msgid "This form uses Cloudflare's anti-bot check. Please accept cookies to use it."
+msgstr ""
+
+#: includes/class-pro-render.php:572
+msgid "The anti-bot check is not ready yet — please wait a moment or reload the page."
+msgstr ""
+
+#: includes/class-pro-render.php:720
+msgid "Your e-mail address"
+msgstr ""
+
+#: includes/class-pro-render.php:721
+msgid "Subscribe"
+msgstr ""
+
+#: includes/class-pro-render.php:722
+msgid "I agree to receive news and offers by e-mail. I can unsubscribe at any time."
+msgstr ""
+
+#: includes/class-pro-render.php:723
+msgid "Almost done — please confirm with the link we sent to your inbox."
+msgstr ""
+
+#: includes/class-pro-settings.php:72
+msgid "Bottom of the screen"
+msgstr ""
+
+#: includes/class-pro-settings.php:74
+msgid "Scrolling ticker"
+msgstr ""
+
+#: includes/class-pro-settings.php:150
+msgid "Please choose a published page."
+msgstr ""
+
+#: includes/class-pro-settings.php:172
+msgid "This secret key does not look like a Turnstile key. Please copy it again from Cloudflare."
+msgstr ""
+
+#: includes/class-pro-settings.php:180
+msgid "This site key does not look like a Turnstile key. Please copy it again from Cloudflare."
+msgstr ""
+
+#: includes/class-pro-settings.php:183
+msgid "Please enter the secret key too — the check is on only with both keys."
+msgstr ""
+
+#: includes/class-pro-settings.php:198
+msgid "Ticker speed (px/s)"
+msgstr ""
+
+#: includes/class-pro-settings.php:207
+msgid "Behaviour"
+msgstr ""
+
+#: includes/class-pro-settings.php:209
+msgid "Most messages at once"
+msgstr ""
+
+#: includes/class-pro-settings.php:209
+msgid "0 = no limit; higher priority wins."
+msgstr ""
+
+#: includes/class-pro-settings.php:210
+msgid "Hide the bar after (seconds)"
+msgstr ""
+
+#: includes/class-pro-settings.php:210
+msgid "0 = never; a small tab brings it back."
+msgstr ""
+
+#: includes/class-pro-settings.php:212
+msgid "Pause button for moving messages"
+msgstr ""
+
+#: includes/class-pro-settings.php:213
+msgid "Font of all bars"
+msgstr ""
+
+#: includes/class-pro-settings.php:214
+msgid "Custom CSS"
+msgstr ""
+
+#: includes/class-pro-settings.php:214
+msgid "Cleaned on save: no @import, scripts or outside code."
+msgstr ""
+
+#: includes/class-pro-settings.php:217
+msgid "Privacy and analytics"
+msgstr ""
+
+#: includes/class-pro-settings.php:218
+msgid "Wait for cookie consent"
+msgstr ""
+
+#: includes/class-pro-settings.php:218
+msgid "A/B choice, visitor memory, statistics, GA4 events and the Cloudflare Turnstile check start only after the consent tool allows it (WP Consent API, or window.abpConsent = true)."
+msgstr ""
+
+#: includes/class-pro-settings.php:219
+msgid "Send GA4 events (view, click, copy, sign-up)"
+msgstr ""
+
+#: includes/class-pro-settings.php:219
+msgid "Only if the site already loads Google Analytics (gtag or Tag Manager). The plugin itself loads nothing."
+msgstr ""
+
+#: includes/class-pro-settings.php:220
+msgid "Use CloudFlare's country header"
+msgstr ""
+
+#: includes/class-pro-settings.php:220
+msgid "Only for requests that really come from CloudFlare's addresses."
+msgstr ""
+
+#: includes/class-pro-settings.php:223
+msgid "Unknown country"
+msgstr ""
+
+#: includes/class-pro-settings.php:225
+msgid "Treat as the shop's country"
+msgstr ""
+
+#: includes/class-pro-settings.php:226
+msgid "Treat as unknown"
+msgstr ""
+
+#: includes/class-pro-settings.php:232
+msgid "Confirm sign-ups by e-mail (double opt-in, recommended)"
+msgstr ""
+
+#: includes/class-pro-settings.php:238
+msgid "— WordPress privacy page —"
+msgstr ""
+
+#: includes/class-pro-settings.php:243
+msgid "Privacy page linked in the form"
+msgstr ""
+
+#: includes/class-pro-settings.php:245
+msgid "Sign-ups per visitor per hour"
+msgstr ""
+
+#: includes/class-pro-settings.php:246
+msgid "Sign-ups per hour in total"
+msgstr ""
+
+#: includes/class-pro-settings.php:250
+msgid "Cloudflare Turnstile (optional anti-bot check)"
+msgstr ""
+
+#: includes/class-pro-settings.php:251
+msgid "Off unless both keys are filled in. Create a free widget in your Cloudflare account (Turnstile), add this site's domain and copy its site key and secret key here. When it is on, Cloudflare's script is loaded only on pages with a sign-up form, and Cloudflare processes the visitor's IP address and browser data for the check. With \"Wait for cookie consent\" the script loads only after consent. Mention Cloudflare Turnstile in your privacy policy."
+msgstr ""
+
+#: includes/class-pro-settings.php:252
+msgid "Site key"
+msgstr ""
+
+#: includes/class-pro-settings.php:253
+msgid "Secret key"
+msgstr ""
+
+#: includes/class-pro-settings.php:255
+msgid "A secret key is saved — leave the field empty to keep it. It is never shown again."
+msgstr ""
+
+#: includes/class-pro-settings.php:255
+msgid "Kept on the server only; never shown on any page."
+msgstr ""
+
+#: includes/class-pro-settings.php:261
+msgid "Remove the saved secret key (switches the check off)"
+msgstr ""
+
+#: includes/class-pro-settings.php:269
+msgid "Status: on"
+msgstr ""
+
+#: includes/class-pro-settings.php:272
+msgid "Status: off"
+msgstr ""
+
+#: includes/class-subscribers.php:132
+msgid "This page is too old — please reload it and try again."
+msgstr ""
+
+#: includes/class-subscribers.php:136
+msgid "Too many attempts — please try again later."
+msgstr ""
+
+#: includes/class-subscribers.php:170
+msgid "Please wait a moment until the anti-bot check is done, then send again."
+msgstr ""
+
+#: includes/class-subscribers.php:175
+msgid "The anti-bot check failed. Please reload the page and try again."
+msgstr ""
+
+#: includes/class-subscribers.php:234
+msgid "Thank you — you are subscribed!"
+msgstr ""
+
+#. translators: %s: site name
+#: includes/class-subscribers.php:320
+#, php-format
+msgid "Please confirm your subscription — %s"
+msgstr ""
+
+#. translators: %s: site name
+#: includes/class-subscribers.php:322
+#, php-format
+msgid "please confirm that you want to receive news and offers from %s at this address. Open this link and press the button:"
+msgstr ""
+
+#: includes/class-subscribers.php:325
+msgid "Hello,"
+msgstr ""
+
+#: includes/class-subscribers.php:326
+#: includes/class-subscribers.php:420
+msgid "Confirm subscription"
+msgstr ""
+
+#: includes/class-subscribers.php:327
+msgid "If you did not ask for this, simply ignore this e-mail — you will not be subscribed. The link is valid for 7 days."
+msgstr ""
+
+#: includes/class-subscribers.php:328
+msgid "Unsubscribe at any time:"
+msgstr ""
+
+#: includes/class-subscribers.php:371
+msgid "Confirm your subscription"
+msgstr ""
+
+#: includes/class-subscribers.php:371
+#: includes/class-subscribers.php:420
+msgid "Unsubscribe"
+msgstr ""
+
+#: includes/class-subscribers.php:390
+#: includes/class-subscribers.php:402
+msgid "You have been unsubscribed. You will not receive any more e-mails from us."
+msgstr ""
+
+#: includes/class-subscribers.php:390
+msgid "This link is invalid or has expired."
+msgstr ""
+
+#: includes/class-subscribers.php:395
+#: includes/class-subscribers.php:399
+msgid "Thank you — your subscription is confirmed."
+msgstr ""
+
+#. translators: 1: site name, 2: e-mail address
+#: includes/class-subscribers.php:409
+#, php-format
+msgid "Please confirm that %1$s may send news and offers to %2$s."
+msgstr ""
+
+#. translators: 1: site name, 2: e-mail address
+#: includes/class-subscribers.php:411
+#, php-format
+msgid "Stop e-mails from %1$s to %2$s?"
+msgstr ""
+
+#: includes/class-subscribers.php:429
+msgid "Continue to the site"
+msgstr ""
+
+#: includes/class-subscribers.php:450
+#: includes/class-subscribers.php:465
+msgid "Announcement Bar Pro sign-ups"
+msgstr ""
+
+#: includes/class-subscribers.php:484
+#: includes/class-subscribers.php:622
+msgid "Waiting for confirmation"
+msgstr ""
+
+#: includes/class-subscribers.php:485
+#: includes/class-subscribers.php:621
+msgid "Subscribed"
+msgstr ""
+
+#: includes/class-subscribers.php:486
+#: includes/class-subscribers.php:623
+msgid "Unsubscribed"
+msgstr ""
+
+#: includes/class-subscribers.php:490
+msgid "Newsletter sign-up (Announcement Bar Pro)"
+msgstr ""
+
+#: includes/class-subscribers.php:494
+#: includes/class-subscribers.php:631
+msgid "E-mail address"
+msgstr ""
+
+#: includes/class-subscribers.php:498
+msgid "Status"
+msgstr ""
+
+#: includes/class-subscribers.php:502
+msgid "Consent text shown"
+msgstr ""
+
+#: includes/class-subscribers.php:506
+msgid "Signed up (UTC)"
+msgstr ""
+
+#: includes/class-subscribers.php:510
+msgid "Confirmed (UTC)"
+msgstr ""
+
+#: includes/class-subscribers.php:548
+msgid "Announcement bars on this site remember in your browser (local storage) which announcements you closed, so they stay closed. Nothing is sent to us for this."
+msgstr ""
+
+#: includes/class-subscribers.php:549
+msgid "If you sign up for our news through an announcement bar, we store your e-mail address, your language, the consent text you agreed to and the dates of your sign-up and confirmation. We send you one e-mail to confirm the sign-up; without confirmation the entry is deleted after 30 days. Every e-mail has an unsubscribe link."
+msgstr ""
+
+#: includes/class-subscribers.php:550
+msgid "View, click and code-copy counts of announcements are stored as totals only, without any personal data. Your IP address is never stored; a keyed hash of it is kept for at most two days to limit abuse of the forms."
+msgstr ""
+
+#: includes/class-subscribers.php:551
+msgid "If the anti-bot check Cloudflare Turnstile is switched on, pages with a sign-up form load a script from Cloudflare, Inc., which processes your IP address and technical data of your browser to tell people from bots, and our server sends the result token and your IP address to Cloudflare to check it. If the site waits for cookie consent, the script is loaded only after your consent. See Cloudflare's privacy policy."
+msgstr ""
+
+#: includes/class-subscribers.php:566
+#: includes/class-subscribers.php:580
+#: includes/class-subscribers.php:613
+msgid "Subscribers"
+msgstr ""
+
+#: includes/class-subscribers.php:598
+msgid "The address was deleted from the list."
+msgstr ""
+
+#: includes/class-subscribers.php:599
+msgid "That address is not on the list."
+msgstr ""
+
+#: includes/class-subscribers.php:616
+msgid "The sign-up form needs an active licence key. Existing entries stay here and can still be exported or erased."
+msgstr ""
+
+#: includes/class-subscribers.php:620
+msgid "List"
+msgstr ""
+
+#: includes/class-subscribers.php:624
+msgid "Sign-ups are confirmed by e-mail (double opt-in) unless switched off in the settings. Unconfirmed entries are deleted after 30 days. The plugin does not send newsletters: export the confirmed addresses into your mailing tool."
+msgstr ""
+
+#: includes/class-subscribers.php:627
+msgid "Export CSV"
+msgstr ""
+
+#: includes/class-subscribers.php:629
+msgid "Erase an address"
+msgstr ""
+
+#: includes/class-subscribers.php:632
+msgid "Deletes the entry completely (right to erasure). Requests made through Tools → Erase Personal Data are handled automatically as well."
+msgstr ""
+
+#: includes/class-subscribers.php:632
+msgid "Erase"
+msgstr ""

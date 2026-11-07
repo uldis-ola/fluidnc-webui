@@ -3,7 +3,7 @@
  * Announcement Bar Pro — 2.4.0 feature helpers: message options (targeting, goals, triggers, countdown, look),
  * free-shipping overrides, cart conditions, recurring cut-off times, custom CSS, templates and form tokens.
  * Pure PHP without database access, shared by admin and catalog.
- * @version 2.4.0
+ * @version 2.4.1
  */
 namespace Announcementbarpro;
 
@@ -837,6 +837,191 @@ class Features {
 		$ip = trim((string)$ip);
 
 		return stripos($ip, '::ffff:') === 0 && strpos($ip, '.') !== false ? substr($ip, 7) : $ip;
+	}
+
+	/* ------------------------------------------------------------------ *
+	 * Cloudflare Turnstile (2.4.1): optional anti-bot check of the sign-up form, on only when both keys are set
+	 * ------------------------------------------------------------------ */
+	const TS_VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+	const TS_ACTION     = 'abp-signup';
+
+	/** Turnstile site key (public, printed into the form) in Cloudflare's format, else ''. */
+	public function tsSiteKey($value) {
+		$value = trim((string)$value);
+
+		return preg_match('/^[0-9A-Za-z_-]{10,100}$/', $value) ? $value : '';
+	}
+
+	/** Turnstile secret key (never printed anywhere) in Cloudflare's format, else ''. */
+	public function tsSecretKey($value) {
+		$value = trim((string)$value);
+
+		return preg_match('/^[0-9A-Za-z_.-]{10,200}$/', $value) ? $value : '';
+	}
+
+	/** Turnstile is on only with both keys. */
+	public function tsOn($site_key, $secret) {
+		return $this->tsSiteKey($site_key) !== '' && $this->tsSecretKey($secret) !== '';
+	}
+
+	/**
+	 * Server-side check of a Turnstile token with Cloudflare's siteverify. Fails closed: 'ok' only when Cloudflare
+	 * answered "success": true (and, if it names an action, ours); 'missing' without a token; 'failed' for everything
+	 * else (refused or used token, network error, bad JSON, another action, unusable secret).
+	 * $transport($url, array $fields) returns the response body or false (injectable, so tests need no network);
+	 * $codes receives Cloudflare's error codes or the local reason (http-error, bad-json, not-success, wrong-action).
+	 */
+	public function tsVerify($secret, $response, $ip, $transport, &$codes = null) {
+		$codes = array();
+
+		if (!is_string($response) || trim($response) === '') {
+			return 'missing';
+		}
+
+		if (strlen($response) > 2048 || preg_match('/[^\x21-\x7E]/', $response)) {
+			$codes = array('invalid-input-response');
+			return 'failed';
+		}
+
+		$secret = $this->tsSecretKey($secret);
+
+		if ($secret === '' || !is_callable($transport)) {
+			$codes = array('missing-input-secret');
+			return 'failed';
+		}
+
+		$fields = array('secret' => $secret, 'response' => $response);
+		$ip     = $this->plainIp($ip);
+
+		if ($ip !== '' && filter_var($ip, FILTER_VALIDATE_IP)) {
+			$fields['remoteip'] = $ip;
+		}
+
+		try {
+			$body = call_user_func($transport, self::TS_VERIFY_URL, $fields);
+		} catch (\Throwable $e) {
+			$body = false;
+		}
+
+		if (!is_string($body) || $body === '') {
+			$codes = array('http-error');
+			return 'failed';
+		}
+
+		$json = json_decode($body, true);
+
+		if (!is_array($json)) {
+			$codes = array('bad-json');
+			return 'failed';
+		}
+
+		if (isset($json['error-codes']) && is_array($json['error-codes'])) {
+			foreach (array_slice($json['error-codes'], 0, 5) as $code) {
+				if (is_string($code) && preg_match('/^[a-z0-9_-]{1,40}$/i', $code)) {
+					$codes[] = $code;
+				}
+			}
+		}
+
+		if (!isset($json['success']) || $json['success'] !== true) {
+			$codes = $codes ? $codes : array('not-success');
+			return 'failed';
+		}
+
+		if (isset($json['action']) && $json['action'] !== '' && $json['action'] !== self::TS_ACTION) {
+			$codes = array('wrong-action');
+			return 'failed';
+		}
+
+		return 'ok';
+	}
+
+	/**
+	 * POST form fields to an https URL (the real transport of tsVerify()); the body, or false. curl with TLS
+	 * verification, else PHP's https stream with peer verification; short timeout, no redirects.
+	 */
+	public function httpPost($url, array $fields, $timeout = 8) {
+		if (strpos((string)$url, 'https://') !== 0) {
+			return false;
+		}
+
+		$body    = http_build_query($fields, '', '&');
+		$timeout = max(1, (int)$timeout);
+
+		if (function_exists('curl_init')) {
+			$ch = curl_init((string)$url);
+
+			if ($ch === false) {
+				return false;
+			}
+
+			curl_setopt_array($ch, array(
+				CURLOPT_POST           => true,
+				CURLOPT_POSTFIELDS     => $body,
+				CURLOPT_RETURNTRANSFER => true,
+				CURLOPT_HEADER         => false,
+				CURLOPT_FOLLOWLOCATION => false,
+				CURLOPT_TIMEOUT        => $timeout,
+				CURLOPT_CONNECTTIMEOUT => min(5, $timeout),
+				CURLOPT_SSL_VERIFYPEER => true,
+				CURLOPT_SSL_VERIFYHOST => 2,
+				CURLOPT_HTTPHEADER     => array('Content-Type: application/x-www-form-urlencoded', 'Accept: application/json')
+			));
+
+			$out = curl_exec($ch);
+
+			// No CA bundle configured for PHP (seen on Windows): try once more with the system's certificate store —
+			// still with full TLS verification (60 = peer certificate, 77 = CA file).
+			if ($out === false && in_array(curl_errno($ch), array(60, 77), true) && defined('CURLSSLOPT_NATIVE_CA')) {
+				curl_setopt($ch, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
+				$out = curl_exec($ch);
+			}
+
+			if (PHP_VERSION_ID < 80000) {
+				curl_close($ch);
+			}
+
+			return is_string($out) ? $out : false;
+		}
+
+		$context = stream_context_create(array(
+			'http' => array('method' => 'POST', 'header' => "Content-Type: application/x-www-form-urlencoded\r\nAccept: application/json\r\n", 'content' => $body, 'timeout' => $timeout, 'ignore_errors' => true, 'follow_location' => 0),
+			'ssl'  => array('verify_peer' => true, 'verify_peer_name' => true)
+		));
+
+		$out = @file_get_contents((string)$url, false, $context);
+
+		return is_string($out) ? $out : false;
+	}
+
+	/* ------------------------------------------------------------------ *
+	 * Double opt-in tokens (2.4.1)
+	 * ------------------------------------------------------------------ */
+
+	/**
+	 * Confirmation token: 8 hex digits of its creation time + 56 random hex digits (64 hex). Only the sha256 of the
+	 * whole token is stored and looked up, so the time cannot be changed without making the token unknown.
+	 */
+	public function optinToken($now = null) {
+		return sprintf('%08x', $now === null ? time() : (int)$now) . bin2hex(random_bytes(28));
+	}
+
+	/** Creation time inside such a token; 0 when the value is not a 64-hex token. */
+	public function tokenTime($token) {
+		return is_string($token) && preg_match('/^[0-9a-f]{64}$/', $token) ? (int)hexdec(substr($token, 0, 8)) : 0;
+	}
+
+	/** Token created at most $max_age seconds ago (default 7 days) and not more than $skew seconds in the future. */
+	public function tokenFresh($token, $now = null, $max_age = 604800, $skew = 300) {
+		$now  = $now === null ? time() : (int)$now;
+		$time = $this->tokenTime($token);
+
+		return $time > 0 && $time <= $now + $skew && $now - $time <= $max_age;
+	}
+
+	/** Unsubscribe token of a re-subscription mail, derived from its confirmation token (nothing extra is stored). */
+	public function unsubToken($token, $secret) {
+		return hash_hmac('sha256', 'unsub|' . (string)$token, (string)$secret);
 	}
 
 	/* ------------------------------------------------------------------ *

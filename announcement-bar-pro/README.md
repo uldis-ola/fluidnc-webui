@@ -3,13 +3,15 @@
 Paziņojumu josla veikala augšā vai apakšā: akcijas, piegādes nosacījumi, svarīgas ziņas.
 *An announcement bar for the top or bottom of every store page: promotions, shipping terms, notices.*
 
-- **Versija / Version:** 2.4.0
+- **Versija / Version:** 2.4.1
 - **Saderība / Compatibility:** OpenCart 3.0.0.0–3.0.5.1 (tested on 3.0.5.1), PHP 7.3+ (tested: PHP 8.3). OpenCart 4.0.x / 4.1.x: separate package in `announcement-bar-pro-oc4`.
 - **Valodas / Languages:** English, Latviešu, Русский
 - **Licence / License:** GPL-3.0 (see `LICENSE.txt`)
 
 ---
 
+> **2.4.1:** optional Cloudflare Turnstile anti-bot check of the e-mail sign-up form (site key + secret key in Settings → E-mail sign-ups; the secret is never shown; when on, Cloudflare processes the visitor's IP address and browser data on pages with a sign-up form, and with "Wait for cookie consent" its script loads only after consent), an unsubscribed address can no longer be re-subscribed by someone else (only its owner, through a new confirmation e-mail), and a cart-refresh fix in the storefront script, which is now byte-identical to the WordPress edition.
+>
 > **2.4.0:** several bars and inline boxes (cart page, under the price, mini-cart) with priority, country / cart / campaign / visitor targeting, tiered goals, OpenCart coupons, triggers, recurring countdown, e-mail sign-up (double opt-in), templates, GA4 events. Features, privacy notes and upgrade steps: README of the universal package.
 
 ## LV

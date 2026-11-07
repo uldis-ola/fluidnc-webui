@@ -1,6 +1,7 @@
 <?php
 /**
- * Uninstall: removes the plugin's data only when "Delete all data when the plugin is deleted" is on (per site).
+ * Uninstall: removes the plugin's data only when "Delete all messages and settings when the plugin is deleted" is on
+ * (per site). Add-ons remove their own data (tables, options) with their own uninstall.
  *
  * @package AnnouncementBarPro
  */
@@ -21,11 +22,11 @@ function abpro_uninstall_site() {
 		return; // Default: keep everything, so a reinstall keeps the messages.
 	}
 
-	foreach ( array( 'abpro_messages', 'abpro_message_texts', 'abpro_subscribers', 'abpro_rate' ) as $table ) {
-		$wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . $table ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange -- fixed table names.
+	foreach ( array( 'abpro_messages', 'abpro_message_texts', 'abpro_rate' ) as $table ) {
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $wpdb->prefix . $table ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange -- fixed table names.
 	}
 
-	foreach ( array( 'abpro_settings', 'abpro_secret', 'abpro_schema', 'abpro_licence' ) as $option ) {
+	foreach ( array( 'abpro_settings', 'abpro_secret', 'abpro_schema' ) as $option ) {
 		delete_option( $option );
 	}
 

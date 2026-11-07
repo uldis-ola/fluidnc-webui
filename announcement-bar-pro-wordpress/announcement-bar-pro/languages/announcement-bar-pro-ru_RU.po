@@ -1,1935 +1,734 @@
 # Copyright (C) 2026 3DP SIA
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
-msgstr ""
-"Project-Id-Version: Announcement Bar Pro 1.0.0\n"
-"Report-Msgid-Bugs-To: extension@3dp.lv\n"
-"Last-Translator: 3DP SIA <extension@3dp.lv>\n"
-"Language-Team: 3DP SIA <extension@3dp.lv>\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
-"Language: ru_RU\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-"POT-Creation-Date: 2026-11-07T19:35:55+00:00\n"
-"PO-Revision-Date: 2026-11-07 12:00+0000\n"
-"X-Generator: WP-CLI 2.12.0\n"
-"X-Domain: announcement-bar-pro\n"
+msgstr "Project-Id-Version: Announcement Bar Pro 1.0.0\nReport-Msgid-Bugs-To: extension@3dp.lv\nLast-Translator: 3DP SIA <extension@3dp.lv>\nLanguage-Team: 3DP SIA <extension@3dp.lv>\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: ru_RU\nPlural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\nPOT-Creation-Date: 2026-11-07T19:35:55+00:00\nPO-Revision-Date: 2026-11-07 12:00+0000\nX-Generator: WP-CLI 2.12.0\nX-Domain: announcement-bar-pro\n"
 
 #. Plugin Name of the plugin
 #: announcement-bar-pro.php
-#: includes/class-admin.php:56
-#: includes/class-admin.php:253
+#: includes/class-admin.php:48
+#: includes/class-admin.php:235
 msgid "Announcement Bar Pro"
 msgstr "Announcement Bar Pro"
 
 #. Description of the plugin
 #: announcement-bar-pro.php
-msgid "Announcement bars with rotating messages, schedules, countdowns and a WooCommerce free-shipping progress bar. Pro adds more bars, inline boxes, targeting, A/B tests, coupons and a GDPR e-mail sign-up."
-msgstr "Полосы объявлений со сменой сообщений, расписанием, обратным отсчётом и индикатором бесплатной доставки WooCommerce. Pro добавляет больше полос, встроенные блоки, таргетинг, A/B-тесты, купоны и подписку по e-mail в соответствии с GDPR."
+msgid "Announcement bars with rotating messages, schedules, countdowns and a WooCommerce free-shipping progress bar. Fast, accessible, privacy-friendly."
+msgstr "Панели объявлений со сменяющимися сообщениями, расписанием, обратным отсчётом и индикатором бесплатной доставки WooCommerce. Быстрые, доступные, бережные к приватности."
 
 #. Author of the plugin
 #: announcement-bar-pro.php
 msgid "3DP SIA"
 msgstr "3DP SIA"
 
-#: includes/class-admin-form.php:230
-#: includes/class-admin-form.php:464
-#: includes/class-admin-settings-page.php:153
-#: includes/class-admin.php:205
-#: includes/class-admin.php:224
-#: includes/class-admin.php:1107
-msgid "Pro"
-msgstr "Pro"
-
-#: includes/class-admin-form.php:236
-#: includes/class-admin.php:1102
+#: includes/class-admin-form.php:282
 msgid "Needs WooCommerce."
 msgstr "Требуется WooCommerce."
 
-#: includes/class-admin-form.php:238
+#: includes/class-admin-form.php:284
 msgid "Only users who may manage WooCommerce can change these settings."
 msgstr "Изменять эти настройки могут только пользователи, имеющие право управлять WooCommerce."
 
-#: includes/class-admin-form.php:254
+#: includes/class-admin-form.php:300
 msgid "Edit message"
 msgstr "Редактировать объявление"
 
-#: includes/class-admin-form.php:254
-#: includes/class-admin.php:58
-#: includes/class-admin.php:250
-#: includes/class-admin.php:260
+#: includes/class-admin-form.php:300
+#: includes/class-admin.php:50
+#: includes/class-admin.php:230
+#: includes/class-admin.php:242
 msgid "Add message"
 msgstr "Добавить объявление"
 
-#: includes/class-admin-form.php:257
+#: includes/class-admin-form.php:303
 msgid "Back to messages"
 msgstr "Назад к объявлениям"
 
-#: includes/class-admin-form.php:261
-#: includes/class-admin-settings-page.php:194
-#: includes/class-admin.php:179
+#: includes/class-admin-form.php:307
+#: includes/class-admin.php:156
 msgid "Saved."
 msgstr "Сохранено."
 
-#: includes/class-admin-form.php:263
-#: includes/class-admin-settings-page.php:195
-#: includes/class-admin.php:190
+#: includes/class-admin-form.php:309
+#: includes/class-admin.php:160
 msgid "Please correct the marked fields."
 msgstr "Пожалуйста, исправьте отмеченные поля."
 
-#: includes/class-admin-form.php:278
+#: includes/class-admin-form.php:324
 msgid "Save message"
 msgstr "Сохранить объявление"
 
-#: includes/class-admin-form.php:291
-#: includes/class-admin.php:265
+#: includes/class-admin-form.php:337
+#: includes/class-admin.php:249
 msgid "Message"
 msgstr "Объявление"
 
-#: includes/class-admin-form.php:291
+#: includes/class-admin-form.php:337
 msgid "Simple HTML allowed: b, i, u, s, br, a"
 msgstr "Разрешён простой HTML: b, i, u, s, br, a"
 
-#: includes/class-admin-form.php:291
+#: includes/class-admin-form.php:337
 msgid "Plain text"
 msgstr "Обычный текст"
 
-#: includes/class-admin-form.php:294
-#: includes/class-admin-form.php:1067
+#: includes/class-admin-form.php:340
+#: includes/class-admin-form.php:663
 msgid "Language"
 msgstr "Язык"
 
-#: includes/class-admin-form.php:322
+#: includes/class-admin-form.php:367
 msgid "Text"
 msgstr "Текст"
 
-#: includes/class-admin-form.php:326
-msgid "Placeholders: {countdown} (timer), {remaining} (amount still missing for free shipping / the next tier), {goal} (name of the next tier)."
-msgstr "Подстановки: {countdown} (таймер), {remaining} (сумма, которой не хватает до бесплатной доставки / следующего уровня), {goal} (название следующего уровня)."
+#: includes/class-admin-form.php:371
+msgid "Placeholders: {countdown} (timer), {remaining} (amount still missing for free shipping)."
+msgstr "Подстановки: {countdown} (таймер), {remaining} (сумма, которой не хватает до бесплатной доставки)."
 
-#: includes/class-admin-form.php:331
+#: includes/class-admin-form.php:376
 msgid "Shorter text for phones (optional)"
 msgstr "Более короткий текст для телефонов (необязательно)"
 
-#: includes/class-admin-form.php:338
+#: includes/class-admin-form.php:383
 msgid "Button text (optional)"
 msgstr "Текст кнопки (необязательно)"
 
-#: includes/class-admin-form.php:343
+#: includes/class-admin-form.php:388
 msgid "Text once the goal is reached"
 msgstr "Текст после достижения цели"
 
-#: includes/class-admin-form.php:353
-msgid "Reward tiers — labels and own texts"
-msgstr "Уровни наград — названия и собственные тексты"
-
-#: includes/class-admin-form.php:354
-msgid "Label of each tier (shown under the bar and for {goal}); optional own text while that tier is next."
-msgstr "Название каждого уровня (показывается под полосой и вместо {goal}); необязательный собственный текст, пока этот уровень является следующим."
-
-#. translators: %d: tier number
-#: includes/class-admin-form.php:357
-#, php-format
-msgid "Tier %d label"
-msgstr "Название уровня %d"
-
-#. translators: %d: tier number
-#: includes/class-admin-form.php:359
-#, php-format
-msgid "Tier %d own text"
-msgstr "Собственный текст уровня %d"
-
-#: includes/class-admin-form.php:368
-msgid "Variant B (A/B test)"
-msgstr "Вариант B (A/B-тест)"
-
-#: includes/class-admin-form.php:369
-msgid "Text B"
-msgstr "Текст B"
-
-#: includes/class-admin-form.php:372
-msgid "Shorter text B for phones (optional)"
-msgstr "Более короткий текст B для телефонов (необязательно)"
-
-#: includes/class-admin-form.php:379
-msgid "Button text B (optional)"
-msgstr "Текст кнопки B (необязательно)"
-
-#: includes/class-admin-form.php:383
-msgid "E-mail sign-up texts (empty = default text)"
-msgstr "Тексты подписки по e-mail (пусто = текст по умолчанию)"
-
-#: includes/class-admin-form.php:386
-msgid "Field placeholder"
-msgstr "Подсказка в поле"
-
-#: includes/class-admin-form.php:387
-msgid "Button"
-msgstr "Кнопка"
-
-#: includes/class-admin-form.php:391
-msgid "Consent text (stored with each sign-up as proof)"
-msgstr "Текст согласия (сохраняется с каждой подпиской как доказательство)"
-
-#: includes/class-admin-form.php:400
-msgid "Text after sending"
-msgstr "Текст после отправки"
-
-#: includes/class-admin-form.php:421
+#: includes/class-admin-form.php:411
 msgid "Look and link"
 msgstr "Внешний вид и ссылка"
 
-#: includes/class-admin-form.php:423
+#: includes/class-admin-form.php:413
 msgid "Icon"
 msgstr "Иконка"
 
-#: includes/class-admin-form.php:424
+#: includes/class-admin-form.php:414
 msgid "None"
 msgstr "Нет"
 
-#: includes/class-admin-form.php:435
+#: includes/class-admin-form.php:425
 msgid "Background colour"
 msgstr "Цвет фона"
 
-#: includes/class-admin-form.php:444
+#: includes/class-admin-form.php:434
 msgid "Text colour"
 msgstr "Цвет текста"
 
-#: includes/class-admin-form.php:454
+#: includes/class-admin-form.php:444
 msgid "As in the settings"
 msgstr "Как в настройках"
 
-#: includes/class-admin-form.php:454
+#: includes/class-admin-form.php:444
 msgid "Use the main style"
 msgstr "Использовать основной стиль"
 
-#: includes/class-admin-form.php:455
-#: includes/class-admin-settings-page.php:249
+#: includes/class-admin-form.php:445
+#: includes/class-settings.php:71
 msgid "Solid"
 msgstr "Сплошной"
 
-#: includes/class-admin-form.php:455
+#: includes/class-admin-form.php:445
 msgid "One clear colour"
 msgstr "Один чистый цвет"
 
-#: includes/class-admin-form.php:456
-#: includes/class-admin-settings-page.php:250
+#: includes/class-admin-form.php:446
+#: includes/class-settings.php:72
 msgid "Soft"
 msgstr "Мягкий"
 
-#: includes/class-admin-form.php:456
+#: includes/class-admin-form.php:446
 msgid "Light tint, dark text"
 msgstr "Светлый оттенок, тёмный текст"
 
-#: includes/class-admin-form.php:457
-#: includes/class-admin-settings-page.php:251
+#: includes/class-admin-form.php:447
+#: includes/class-settings.php:73
 msgid "Minimal"
 msgstr "Минимальный"
 
-#: includes/class-admin-form.php:457
+#: includes/class-admin-form.php:447
 msgid "Light with an accent line"
 msgstr "Светлый с акцентной линией"
 
-#: includes/class-admin-form.php:458
-#: includes/class-admin-settings-page.php:254
-msgid "Gradient"
-msgstr "Градиент"
-
-#: includes/class-admin-form.php:458
-msgid "Colour blend"
-msgstr "Плавный переход цветов"
-
-#: includes/class-admin-form.php:459
-#: includes/class-admin-settings-page.php:255
-msgid "Glass"
-msgstr "Стекло"
-
-#: includes/class-admin-form.php:459
-msgid "See-through, blurred"
-msgstr "Прозрачный, размытый"
-
-#: includes/class-admin-form.php:461
-#: includes/class-admin-settings-page.php:257
+#: includes/class-admin-form.php:450
+#: includes/class-admin-settings-page.php:209
 msgid "Style"
 msgstr "Стиль"
 
-#: includes/class-admin-form.php:471
+#: includes/class-admin-form.php:459
 msgid "Link (optional)"
 msgstr "Ссылка (необязательно)"
 
-#: includes/class-admin-form.php:474
+#: includes/class-admin-form.php:462
 msgid "https://… or a path on this site such as /shop/"
 msgstr "https://… или путь на этом сайте, например /shop/"
 
-#: includes/class-admin-form.php:480
+#: includes/class-admin-form.php:468
 msgid "Button style"
 msgstr "Стиль кнопки"
 
-#: includes/class-admin-form.php:483
+#: includes/class-admin-form.php:471
 msgid "Filled"
 msgstr "Заливка"
 
-#: includes/class-admin-form.php:484
+#: includes/class-admin-form.php:472
 msgid "Outline"
 msgstr "Контур"
 
-#: includes/class-admin-form.php:485
+#: includes/class-admin-form.php:473
 msgid "Text link"
 msgstr "Текстовая ссылка"
 
-#: includes/class-admin-form.php:487
+#: includes/class-admin-form.php:475
 msgid "Shown when the message has a button text."
 msgstr "Показывается, если у объявления задан текст кнопки."
 
-#: includes/class-admin-form.php:490
+#: includes/class-admin-form.php:478
 msgid "Open the link in a new tab"
 msgstr "Открывать ссылку в новой вкладке"
 
-#: includes/class-admin-form.php:492
-msgid "Background image and font"
-msgstr "Фоновое изображение и шрифт"
-
-#: includes/class-admin-form.php:495
-msgid "Background image"
-msgstr "Фоновое изображение"
-
-#: includes/class-admin-form.php:496
-msgid "Choose image"
-msgstr "Выбрать изображение"
-
-#: includes/class-admin-form.php:496
-msgid "Remove image"
-msgstr "Удалить изображение"
-
-#: includes/class-admin-form.php:501
-msgid "Colour over the image (%)"
-msgstr "Цветной слой поверх изображения (%)"
-
-#: includes/class-admin-form.php:508
-msgid "Keeps the text readable: 55 % or more for most photos."
-msgstr "Сохраняет читаемость текста: для большинства фотографий 55 % и больше."
-
-#: includes/class-admin-form.php:511
-msgid "Font"
-msgstr "Шрифт"
-
-#: includes/class-admin-form.php:524
-msgid "Theme font"
-msgstr "Шрифт темы"
-
-#: includes/class-admin-form.php:525
-msgid "System UI"
-msgstr "Системный шрифт"
-
-#: includes/class-admin-form.php:526
-msgid "Humanist sans"
-msgstr "Гуманистический гротеск"
-
-#: includes/class-admin-form.php:527
-msgid "Geometric sans"
-msgstr "Геометрический гротеск"
-
-#: includes/class-admin-form.php:528
-msgid "Serif"
-msgstr "С засечками"
-
-#: includes/class-admin-form.php:529
-msgid "Monospace"
-msgstr "Моноширинный"
-
-#: includes/class-admin-form.php:530
-msgid "Rounded"
-msgstr "Скруглённый"
-
-#: includes/class-admin-form.php:542
+#: includes/class-admin-form.php:493
 msgid "Type and goal"
 msgstr "Тип и цель"
 
-#: includes/class-admin-form.php:542
+#: includes/class-admin-form.php:493
 msgid "Free shipping and goals need WooCommerce"
 msgstr "Для бесплатной доставки и целей требуется WooCommerce"
 
-#: includes/class-admin-form.php:544
-#: includes/class-renderer.php:662
-msgid "Announcement"
-msgstr "Объявление"
-
-#: includes/class-admin-form.php:546
-msgid "Free-shipping progress"
-msgstr "Прогресс бесплатной доставки"
-
-#: includes/class-admin-form.php:547
-msgid "Reward tiers (several goals)"
-msgstr "Уровни наград (несколько целей)"
-
-#: includes/class-admin-form.php:552
+#: includes/class-admin-form.php:499
 msgid "Type"
 msgstr "Тип"
 
-#: includes/class-admin-form.php:557
-msgid "Free-shipping progress and reward tiers show how much is still missing in the cart and update when the cart changes."
-msgstr "Прогресс бесплатной доставки и уровни наград показывают, сколько ещё не хватает в корзине, и обновляются при изменении корзины."
+#: includes/class-admin-form.php:504
+msgid "Free-shipping progress shows how much is still missing in the cart and updates when the cart changes."
+msgstr "Индикатор бесплатной доставки показывает, сколько ещё не хватает в корзине, и обновляется при изменении корзины."
 
-#: includes/class-admin-form.php:567
+#: includes/class-admin-form.php:514
 msgid "Use the minimum amount of WooCommerce's \"Free shipping\" method"
 msgstr "Использовать минимальную сумму метода «Бесплатная доставка» WooCommerce"
 
-#: includes/class-admin-form.php:567
+#: includes/class-admin-form.php:514
 msgid "Taken from the shipping zone of the visitor. The message hides itself when that zone has no free shipping with a minimum amount."
 msgstr "Берётся из зоны доставки посетителя. Объявление скрывается, если в этой зоне нет бесплатной доставки с минимальной суммой."
 
-#: includes/class-admin-form.php:571
+#: includes/class-admin-form.php:518
 msgid "Free shipping from (order amount)"
 msgstr "Бесплатная доставка от (сумма заказа)"
 
-#: includes/class-admin-form.php:581
+#: includes/class-admin-form.php:528
 msgid "Show a progress bar"
 msgstr "Показывать индикатор прогресса"
 
-#: includes/class-admin-form.php:585
-msgid "Tier amounts"
-msgstr "Суммы уровней"
-
-#: includes/class-admin-form.php:586
-msgid "2 to 5 rising amounts; labels are set per language under Message."
-msgstr "От 2 до 5 возрастающих сумм; названия для каждого языка задаются в разделе «Объявление»."
-
-#. translators: %d: tier number
-#: includes/class-admin-form.php:590
-#, php-format
-msgid "Tier %d"
-msgstr "Уровень %d"
-
-#: includes/class-admin-form.php:595
-msgid "Amounts by country, state or currency"
-msgstr "Суммы по стране, региону или валюте"
-
-#: includes/class-admin-form.php:596
-msgid "Optional. A state amount wins over a country amount, which wins over a currency amount; otherwise the amount above is used."
-msgstr "Необязательно. Сумма для региона важнее суммы для страны, а та — важнее суммы для валюты; иначе используется сумма выше."
-
-#: includes/class-admin-form.php:604
-#: includes/class-admin-form.php:606
-msgid "Country"
-msgstr "Страна"
-
-#: includes/class-admin-form.php:604
-#: includes/class-admin-form.php:610
-msgid "State code (optional)"
-msgstr "Код региона (необязательно)"
-
-#: includes/class-admin-form.php:604
-#: includes/class-admin-form.php:610
-msgid "Amount"
-msgstr "Сумма"
-
-#: includes/class-admin-form.php:612
-msgid "Add row"
-msgstr "Добавить строку"
-
-#. translators: %s: currency code
-#: includes/class-admin-form.php:619
-#, php-format
-msgid "Fixed amount in %s"
-msgstr "Фиксированная сумма в %s"
-
-#: includes/class-admin-form.php:621
-msgid "Currency amounts are for multi-currency shops: the amount is used as it is, without conversion."
-msgstr "Суммы для валют предназначены для магазинов с несколькими валютами: сумма используется как есть, без конвертации."
-
-#: includes/class-admin-form.php:633
+#: includes/class-admin-form.php:542
 msgid "Schedule"
 msgstr "Расписание"
 
-#: includes/class-admin-form.php:635
+#: includes/class-admin-form.php:544
 msgid "Message is on"
 msgstr "Объявление включено"
 
 #. translators: %s: time zone name such as Europe/Riga
-#: includes/class-admin-form.php:642
+#: includes/class-admin-form.php:551
 #, php-format
 msgid "Site time (%s)."
 msgstr "Время сайта (%s)."
 
-#: includes/class-admin-form.php:646
+#: includes/class-admin-form.php:555
 msgid "Start (optional)"
 msgstr "Начало (необязательно)"
 
-#: includes/class-admin-form.php:656
+#: includes/class-admin-form.php:565
 msgid "End (optional)"
 msgstr "Окончание (необязательно)"
 
-#: includes/class-admin-form.php:664
+#: includes/class-admin-form.php:573
 msgid "Show a countdown to the end"
 msgstr "Показывать обратный отсчёт до окончания"
 
-#: includes/class-admin-form.php:664
+#: includes/class-admin-form.php:573
 msgid "Put {countdown} in the text where the timer should be; without it the timer follows the text."
 msgstr "Вставьте {countdown} в текст там, где должен быть таймер; без него таймер показывается после текста."
 
-#: includes/class-admin-form.php:667
+#: includes/class-admin-form.php:576
 msgid "Mon"
 msgstr "Пн"
 
-#: includes/class-admin-form.php:668
+#: includes/class-admin-form.php:577
 msgid "Tue"
 msgstr "Вт"
 
-#: includes/class-admin-form.php:669
+#: includes/class-admin-form.php:578
 msgid "Wed"
 msgstr "Ср"
 
-#: includes/class-admin-form.php:670
+#: includes/class-admin-form.php:579
 msgid "Thu"
 msgstr "Чт"
 
-#: includes/class-admin-form.php:671
+#: includes/class-admin-form.php:580
 msgid "Fri"
 msgstr "Пт"
 
-#: includes/class-admin-form.php:672
+#: includes/class-admin-form.php:581
 msgid "Sat"
 msgstr "Сб"
 
-#: includes/class-admin-form.php:673
+#: includes/class-admin-form.php:582
 msgid "Sun"
 msgstr "Вс"
 
-#: includes/class-admin-form.php:675
+#: includes/class-admin-form.php:584
 msgid "Days of the week (none = every day)"
 msgstr "Дни недели (ничего не отмечено = каждый день)"
 
-#: includes/class-admin-form.php:682
+#: includes/class-admin-form.php:591
 msgid "Daily from (optional)"
 msgstr "Ежедневно с (необязательно)"
 
-#: includes/class-admin-form.php:687
+#: includes/class-admin-form.php:596
 msgid "A window such as 22:00–02:00 belongs to the day it starts on."
 msgstr "Интервал вроде 22:00–02:00 относится ко дню, в который он начинается."
 
-#: includes/class-admin-form.php:692
+#: includes/class-admin-form.php:601
 msgid "Daily until"
 msgstr "Ежедневно до"
 
-#: includes/class-admin-form.php:702
-msgid "Recurring countdown (daily / weekly cut-off)"
-msgstr "Повторяющийся обратный отсчёт (ежедневный / еженедельный срок)"
-
-#: includes/class-admin-form.php:706
-msgid "Repeat"
-msgstr "Повтор"
-
-#: includes/class-admin-form.php:709
-msgid "No — count down to the end date"
-msgstr "Нет — отсчёт до даты окончания"
-
-#: includes/class-admin-form.php:710
-msgid "Every day"
-msgstr "Каждый день"
-
-#: includes/class-admin-form.php:711
-msgid "Once a week"
-msgstr "Раз в неделю"
-
-#: includes/class-admin-form.php:717
-msgid "Cut-off time"
-msgstr "Время окончания"
-
-#: includes/class-admin-form.php:726
-msgid "Day"
-msgstr "День"
-
-#: includes/class-admin-form.php:727
-msgid "Skip these days"
-msgstr "Пропускать эти дни"
-
-#: includes/class-admin-form.php:744
+#: includes/class-admin-form.php:622
 msgid "Where and for whom"
 msgstr "Где и для кого"
 
-#: includes/class-admin-form.php:749
+#: includes/class-admin-form.php:627
 msgid "Devices"
 msgstr "Устройства"
 
-#: includes/class-admin-form.php:752
+#: includes/class-admin-form.php:630
 msgid "All devices"
 msgstr "Все устройства"
 
-#: includes/class-admin-form.php:753
+#: includes/class-admin-form.php:631
 msgid "Computers and tablets only"
 msgstr "Только компьютеры и планшеты"
 
-#: includes/class-admin-form.php:754
+#: includes/class-admin-form.php:632
 msgid "Phones only (below 768 px)"
 msgstr "Только телефоны (меньше 768 px)"
 
-#: includes/class-admin-form.php:759
+#: includes/class-admin-form.php:637
 msgid "Sort order"
 msgstr "Порядок сортировки"
 
-#: includes/class-admin-form.php:764
+#: includes/class-admin-form.php:642
 msgid "Smaller numbers come first."
 msgstr "Меньшие числа идут первыми."
 
-#: includes/class-admin-form.php:770
-msgid "Main bar (position from the settings)"
-msgstr "Основная полоса (расположение из настроек)"
-
-#: includes/class-admin-form.php:771
-#: includes/class-admin.php:464
-msgid "Top bar"
-msgstr "Верхняя полоса"
-
-#: includes/class-admin-form.php:772
-#: includes/class-admin.php:465
-msgid "Bottom bar"
-msgstr "Нижняя полоса"
-
-#: includes/class-admin-form.php:775
-msgid "Box on the cart page"
-msgstr "Блок на странице корзины"
-
-#: includes/class-admin-form.php:776
-msgid "Box under the product price"
-msgstr "Блок под ценой товара"
-
-#: includes/class-admin-form.php:777
-msgid "Box in the mini-cart"
-msgstr "Блок в мини-корзине"
-
-#: includes/class-admin-form.php:780
-msgid "Placement and priority"
-msgstr "Размещение и приоритет"
-
-#: includes/class-admin-form.php:782
-msgid "Placement"
-msgstr "Размещение"
-
-#: includes/class-admin-form.php:782
-msgid "Boxes appear in the cart (classic page and cart block), under the price of the product page and in the classic mini-cart."
-msgstr "Блоки показываются в корзине (на классической странице и в блоке корзины), на странице товара под ценой и в классической мини-корзине."
-
-#: includes/class-admin-form.php:785
-msgid "Priority (0–100)"
-msgstr "Приоритет (0–100)"
-
-#: includes/class-admin-form.php:791
-msgid "Higher priority comes first; with \"most messages at once\" set, lower ones are left out."
-msgstr "Более высокий приоритет идёт первым; если задано «Не больше объявлений одновременно», остальные не показываются."
-
-#: includes/class-admin-form.php:796
-msgid "Visitors and pages"
-msgstr "Посетители и страницы"
-
-#: includes/class-admin-form.php:799
-msgid "Not logged in"
-msgstr "Не авторизован"
-
-#: includes/class-admin-form.php:800
-msgid "Show to (none ticked = everyone)"
-msgstr "Показывать (ничего не отмечено = всем)"
-
-#: includes/class-admin-form.php:807
-msgid "Pages"
-msgstr "Страницы"
-
-#: includes/class-admin-form.php:810
-msgid "Every page"
-msgstr "Каждая страница"
-
-#: includes/class-admin-form.php:811
-msgid "Front page only"
-msgstr "Только главная страница"
-
-#: includes/class-admin-form.php:812
-msgid "Only these pages"
-msgstr "Только эти страницы"
-
-#: includes/class-admin-form.php:813
-msgid "All pages except these"
-msgstr "Все страницы, кроме этих"
-
-#: includes/class-admin-form.php:819
-msgid "Page rules (one per line)"
-msgstr "Правила для страниц (по одному в строке)"
-
-#. translators: %s: list of page types
-#: includes/class-admin-form.php:824
-#, php-format
-msgid "Page types: %s — or paths such as /sale/ (exact) and /blog/* (everything below)."
-msgstr "Типы страниц: %s — или пути вроде /sale/ (точное совпадение) и /blog/* (всё внутри)."
-
-#: includes/class-admin-form.php:830
-msgid "Visitors coming from (sites)"
-msgstr "Посетители, пришедшие с (сайтов)"
-
-#: includes/class-admin-form.php:834
-msgid "For example facebook.com, instagram.com — separated by commas."
-msgstr "Например, facebook.com, instagram.com — через запятую."
-
-#: includes/class-admin-form.php:838
-msgid "utm_source"
-msgstr "utm_source"
-
-#: includes/class-admin-form.php:839
-msgid "utm_medium"
-msgstr "utm_medium"
-
-#: includes/class-admin-form.php:840
-msgid "utm_campaign"
-msgstr "utm_campaign"
-
-#: includes/class-admin-form.php:841
-msgid "Campaign values of the landing page, kept for the visit (decided in the browser)."
-msgstr "Значения кампании со страницы входа, сохраняемые на время визита (определяется в браузере)."
-
-#: includes/class-admin-form.php:844
-msgid "New or returning visitors"
-msgstr "Новые или вернувшиеся посетители"
-
-#: includes/class-admin-form.php:847
-msgid "Everyone"
-msgstr "Все"
-
-#: includes/class-admin-form.php:848
-msgid "First visit only"
-msgstr "Только первое посещение"
-
-#: includes/class-admin-form.php:849
-msgid "Returning visitors only"
-msgstr "Только вернувшиеся посетители"
-
-#: includes/class-admin-form.php:856
-msgid "Show"
-msgstr "Показывать"
-
-#: includes/class-admin-form.php:859
-msgid "At once"
-msgstr "Сразу"
-
-#: includes/class-admin-form.php:860
-msgid "After a delay (seconds)"
-msgstr "С задержкой (секунды)"
-
-#: includes/class-admin-form.php:861
-msgid "After scrolling (%)"
-msgstr "После прокрутки (%)"
-
-#: includes/class-admin-form.php:862
-msgid "When the visitor is about to leave (computers)"
-msgstr "Когда посетитель собирается уйти (на компьютерах)"
-
-#: includes/class-admin-form.php:869
-msgid "Seconds / scroll %"
-msgstr "Секунды / прокрутка %"
-
-#: includes/class-admin-form.php:893
-msgid "Products, countries and cart"
-msgstr "Товары, страны и корзина"
-
-#: includes/class-admin-form.php:906
-msgid "With products or categories chosen, the message shows only on those product pages and category pages."
-msgstr "Если выбраны товары или категории, объявление показывается только на страницах этих товаров и категорий."
-
-#: includes/class-admin-form.php:907
-msgid "Product pages"
-msgstr "Страницы товаров"
-
-#: includes/class-admin-form.php:908
-msgid "Category pages"
-msgstr "Страницы категорий"
-
-#: includes/class-admin-form.php:915
-msgid "Countries"
-msgstr "Страны"
-
-#: includes/class-admin-form.php:918
-msgid "Every country"
-msgstr "Каждая страна"
-
-#: includes/class-admin-form.php:919
-msgid "Only these countries"
-msgstr "Только эти страны"
-
-#: includes/class-admin-form.php:920
-msgid "All except these countries"
-msgstr "Все страны, кроме этих"
-
-#: includes/class-admin-form.php:924
-msgid "Choose countries"
-msgstr "Выбрать страны"
-
-#: includes/class-admin-form.php:924
-msgid "Search a country…"
-msgstr "Поиск страны…"
-
-#: includes/class-admin-form.php:928
-msgid "The visitor's country comes from the WooCommerce customer address (or WooCommerce's own geolocation setting). No outside service is asked."
-msgstr "Страна посетителя определяется по адресу клиента WooCommerce (или по собственной настройке геолокации WooCommerce). Внешние сервисы не используются."
-
-#: includes/class-admin-form.php:930
-msgid "Cart conditions (every set condition must hold)"
-msgstr "Условия корзины (должно выполняться каждое заданное условие)"
-
-#: includes/class-admin-form.php:932
-msgid "Subtotal from"
-msgstr "Промежуточная сумма от"
-
-#: includes/class-admin-form.php:933
-msgid "Subtotal up to"
-msgstr "Промежуточная сумма до"
-
-#: includes/class-admin-form.php:934
-msgid "Items from"
-msgstr "Количество товаров от"
-
-#: includes/class-admin-form.php:935
-msgid "Items up to"
-msgstr "Количество товаров до"
-
-#: includes/class-admin-form.php:944
-msgid "Cart contains one of these products"
-msgstr "В корзине есть один из этих товаров"
-
-#: includes/class-admin-form.php:945
-msgid "Cart contains a product of these categories"
-msgstr "В корзине есть товар из этих категорий"
-
-#: includes/class-admin-form.php:959
-msgid "Search a product…"
-msgstr "Поиск товара…"
-
-#: includes/class-admin-form.php:982
-msgid "Search a category…"
-msgstr "Поиск категории…"
-
-#: includes/class-admin-form.php:999
-msgid "Coupon, sign-up and A/B test"
-msgstr "Купон, подписка и A/B-тест"
-
-#: includes/class-admin-form.php:1001
-#: includes/class-admin.php:434
-msgid "Coupon"
-msgstr "Купон"
-
-#: includes/class-admin-form.php:1014
-msgid "— none —"
-msgstr "— нет —"
-
-#: includes/class-admin-form.php:1023
-msgid "WooCommerce coupon"
-msgstr "Купон WooCommerce"
-
-#: includes/class-admin-form.php:1028
-msgid "Shows the code with a copy button. The message hides itself when the coupon expires or is used up — the same rules WooCommerce uses."
-msgstr "Показывает код с кнопкой копирования. Объявление скрывается, когда срок купона истёк или он исчерпан — по тем же правилам, что и в WooCommerce."
-
-#: includes/class-admin-form.php:1035
-msgid "Or a fixed code"
-msgstr "Или фиксированный код"
-
-#: includes/class-admin-form.php:1039
-msgid "Shown as it is (not checked against the shop)."
-msgstr "Показывается как есть (в магазине не проверяется)."
-
-#: includes/class-admin-form.php:1045
-msgid "E-mail sign-up (GDPR, double opt-in)"
-msgstr "Подписка по e-mail (GDPR, двойное подтверждение)"
-
-#: includes/class-admin-form.php:1046
-msgid "Show an e-mail sign-up form in this message"
-msgstr "Показывать форму подписки по e-mail в этом объявлении"
-
-#: includes/class-admin-form.php:1046
-msgid "With a consent box, a link to the privacy page and a confirmation e-mail. Texts per language are under Message."
-msgstr "С флажком согласия, ссылкой на страницу конфиденциальности и письмом с подтверждением. Тексты для каждого языка находятся в разделе «Объявление»."
-
-#: includes/class-admin-form.php:1049
-#: includes/class-admin.php:438
-msgid "A/B test"
-msgstr "A/B-тест"
-
-#: includes/class-admin-form.php:1050
-msgid "Test a second text (variant B)"
-msgstr "Проверить второй текст (вариант B)"
-
-#: includes/class-admin-form.php:1050
-msgid "Each browser keeps one variant. Views, clicks and CTR per variant appear in the message list."
-msgstr "Каждый браузер запоминает один вариант. Просмотры, клики и CTR по каждому варианту видны в списке объявлений."
-
-#: includes/class-admin-form.php:1062
+#: includes/class-admin-form.php:658
 msgid "Live preview"
 msgstr "Предпросмотр"
 
-#: includes/class-admin-form.php:1063
+#: includes/class-admin-form.php:659
 msgid "Screen"
 msgstr "Экран"
 
-#: includes/class-admin-form.php:1063
+#: includes/class-admin-form.php:659
 msgid "Computer"
 msgstr "Компьютер"
 
-#: includes/class-admin-form.php:1063
+#: includes/class-admin-form.php:659
 msgid "Phone"
 msgstr "Телефон"
 
-#: includes/class-admin-form.php:1064
-msgid "Variant"
-msgstr "Вариант"
-
-#: includes/class-admin-form.php:1074
+#: includes/class-admin-form.php:670
 msgid "Cart in the preview"
 msgstr "Корзина в предпросмотре"
 
-#: includes/class-admin-form.php:1075
+#: includes/class-admin-form.php:671
 msgid "Preview of the message"
 msgstr "Предпросмотр объявления"
 
-#: includes/class-admin-form.php:1077
-msgid "The preview uses the real bar script and styles. Triggers, campaign rules and statistics are not applied here."
-msgstr "Предпросмотр использует настоящий скрипт и стили полосы. Триггеры, правила кампаний и статистика здесь не применяются."
+#: includes/class-admin-form.php:673
+msgid "The preview uses the real bar script and styles."
+msgstr "Предпросмотр использует настоящий скрипт и стили панели."
 
-#: includes/class-admin-settings-page.php:180
-#: includes/class-admin-settings-page.php:186
-#: includes/class-admin.php:61
-#: includes/class-admin.php:220
+#: includes/class-admin-settings-page.php:178
+#: includes/class-admin.php:51
+#: includes/class-admin.php:180
 msgid "Settings"
 msgstr "Настройки"
 
-#: includes/class-admin-settings-page.php:181
-#: includes/class-admin.php:225
-msgid "Announcement Bar Pro sections"
-msgstr "Разделы Announcement Bar Pro"
-
-#: includes/class-admin-settings-page.php:183
-#: includes/class-admin.php:57
-#: includes/class-admin.php:217
-#: includes/class-admin.php:264
-#: includes/class-plugin.php:149
-msgid "Messages"
-msgstr "Объявления"
-
-#: includes/class-admin-settings-page.php:184
-#: includes/class-admin.php:59
-#: includes/class-admin.php:218
-#: includes/class-admin.php:1084
-msgid "Templates"
-msgstr "Шаблоны"
-
-#: includes/class-admin-settings-page.php:185
-#: includes/class-admin.php:60
-#: includes/class-admin.php:219
-#: includes/class-admin.php:1190
-msgid "Subscribers"
-msgstr "Подписчики"
-
-#: includes/class-admin-settings-page.php:196
-#: includes/class-admin.php:185
-#: includes/class-local-licence-provider.php:84
-msgid "Pro features are unlocked. Thank you!"
-msgstr "Функции Pro разблокированы. Спасибо!"
-
-#: includes/class-admin-settings-page.php:197
-#: includes/class-admin.php:186
-#: includes/class-local-licence-provider.php:78
-msgid "This licence key is not valid. Please check it and try again."
-msgstr "Этот лицензионный ключ недействителен. Проверьте его и попробуйте ещё раз."
-
-#: includes/class-admin-settings-page.php:198
-#: includes/class-admin.php:187
-msgid "The licence key was removed from this site."
-msgstr "Лицензионный ключ удалён с этого сайта."
-
-#: includes/class-admin-settings-page.php:210
+#: includes/class-admin-settings-page.php:186
 msgid "Bar"
 msgstr "Полоса"
 
-#: includes/class-admin-settings-page.php:211
+#: includes/class-admin-settings-page.php:187
 msgid "Show announcements on the site"
 msgstr "Показывать объявления на сайте"
 
-#: includes/class-admin-settings-page.php:214
+#: includes/class-admin-settings-page.php:189
 msgid "Position of the main bar"
 msgstr "Расположение основной полосы"
 
-#: includes/class-admin-settings-page.php:216
-msgid "Top of the page"
-msgstr "Вверху страницы"
-
-#: includes/class-admin-settings-page.php:217
-msgid "Bottom of the screen"
-msgstr "Внизу экрана"
-
-#: includes/class-admin-settings-page.php:220
+#: includes/class-admin-settings-page.php:191
 msgid "Keep the top bar visible while scrolling"
 msgstr "Держать верхнюю полосу на виду при прокрутке"
 
-#: includes/class-admin-settings-page.php:223
+#: includes/class-admin-settings-page.php:192
 msgid "Several messages"
 msgstr "Несколько объявлений"
 
-#: includes/class-admin-settings-page.php:225
-msgid "Rotate one at a time"
-msgstr "Менять по одному"
-
-#: includes/class-admin-settings-page.php:226
-msgid "Show all, one under another"
-msgstr "Показывать все, друг под другом"
-
-#: includes/class-admin-settings-page.php:227
-msgid "Scrolling ticker"
-msgstr "Бегущая строка"
-
-#: includes/class-admin-settings-page.php:232
+#: includes/class-admin-settings-page.php:195
 msgid "Change effect"
 msgstr "Эффект смены"
 
-#: includes/class-admin-settings-page.php:234
+#: includes/class-admin-settings-page.php:197
 msgid "Fade"
 msgstr "Затухание"
 
-#: includes/class-admin-settings-page.php:235
+#: includes/class-admin-settings-page.php:198
 msgid "Slide"
 msgstr "Сдвиг"
 
-#: includes/class-admin-settings-page.php:239
+#: includes/class-admin-settings-page.php:201
 msgid "Seconds per message"
 msgstr "Секунд на объявление"
 
-#: includes/class-admin-settings-page.php:240
-msgid "Ticker speed (px/s)"
-msgstr "Скорость бегущей строки (px/с)"
-
-#: includes/class-admin-settings-page.php:242
+#: includes/class-admin-settings-page.php:203
 msgid "Arrows to switch messages"
 msgstr "Стрелки для переключения объявлений"
 
-#: includes/class-admin-settings-page.php:243
+#: includes/class-admin-settings-page.php:204
 msgid "Visitors may close the bar"
 msgstr "Посетители могут закрыть полосу"
 
-#: includes/class-admin-settings-page.php:244
+#: includes/class-admin-settings-page.php:205
 msgid "Closed messages stay hidden for (days)"
 msgstr "Закрытые объявления остаются скрытыми (дней)"
 
-#: includes/class-admin-settings-page.php:244
+#: includes/class-admin-settings-page.php:205
 msgid "0 = until the browser tab is closed."
 msgstr "0 = до закрытия вкладки браузера."
 
-#: includes/class-admin-settings-page.php:247
+#: includes/class-admin-settings-page.php:208
 msgid "Look"
 msgstr "Внешний вид"
 
-#: includes/class-admin-settings-page.php:257
-msgid "Gradient and glass styles are part of Pro."
-msgstr "Стили «Градиент» и «Стекло» входят в Pro."
-
-#: includes/class-admin-settings-page.php:260
+#: includes/class-admin-settings-page.php:212
 msgid "Colours"
 msgstr "Цвета"
 
-#: includes/class-admin-settings-page.php:262
+#: includes/class-admin-settings-page.php:214
 msgid "Colours of each message"
 msgstr "Цвета каждого объявления"
 
-#: includes/class-admin-settings-page.php:263
+#: includes/class-admin-settings-page.php:215
 msgid "Match the theme automatically"
 msgstr "Автоматически подбирать под тему"
 
-#: includes/class-admin-settings-page.php:267
+#: includes/class-admin-settings-page.php:219
 msgid "Default background (new messages)"
 msgstr "Цвет фона по умолчанию (для новых объявлений)"
 
-#: includes/class-admin-settings-page.php:268
+#: includes/class-admin-settings-page.php:220
 msgid "Default text colour"
 msgstr "Цвет текста по умолчанию"
 
-#: includes/class-admin-settings-page.php:270
+#: includes/class-admin-settings-page.php:222
 msgid "Font size (px)"
 msgstr "Размер шрифта (px)"
 
-#: includes/class-admin-settings-page.php:271
+#: includes/class-admin-settings-page.php:223
 msgid "Height padding (px)"
 msgstr "Отступ по высоте (px)"
 
-#: includes/class-admin-settings-page.php:273
+#: includes/class-admin-settings-page.php:225
 msgid "Allow simple HTML in texts (bold, italic, links)"
 msgstr "Разрешить простой HTML в текстах (жирный, курсив, ссылки)"
 
-#: includes/class-admin-settings-page.php:273
+#: includes/class-admin-settings-page.php:225
 msgid "Everything else is removed when saving."
 msgstr "Всё остальное удаляется при сохранении."
 
-#: includes/class-admin-settings-page.php:274
+#: includes/class-admin-settings-page.php:226
 msgid "More languages for message texts"
 msgstr "Дополнительные языки для текстов объявлений"
 
-#: includes/class-admin-settings-page.php:274
+#: includes/class-admin-settings-page.php:226
 msgid "WordPress language codes such as lv, ru_RU, de_DE. Visitors see the text of their language (with a multilingual plugin), else the site language."
 msgstr "Коды языков WordPress, например lv, ru_RU, de_DE. Посетители видят текст на своём языке (при наличии мультиязычного плагина), иначе — на языке сайта."
 
-#: includes/class-admin-settings-page.php:277
-msgid "Behaviour"
-msgstr "Поведение"
-
-#: includes/class-admin-settings-page.php:279
-msgid "Most messages at once"
-msgstr "Не больше объявлений одновременно"
-
-#: includes/class-admin-settings-page.php:279
-msgid "0 = no limit; higher priority wins."
-msgstr "0 = без ограничения; побеждает более высокий приоритет."
-
-#: includes/class-admin-settings-page.php:280
-msgid "Hide the bar after (seconds)"
-msgstr "Скрыть полосу через (секунд)"
-
-#: includes/class-admin-settings-page.php:280
-msgid "0 = never; a small tab brings it back."
-msgstr "0 = никогда; небольшая вкладка возвращает её."
-
-#: includes/class-admin-settings-page.php:282
-msgid "Pause button for moving messages"
-msgstr "Кнопка паузы для движущихся объявлений"
-
-#: includes/class-admin-settings-page.php:283
-msgid "Font of all bars"
-msgstr "Шрифт всех полос"
-
-#: includes/class-admin-settings-page.php:284
-msgid "Custom CSS"
-msgstr "Свой CSS"
-
-#: includes/class-admin-settings-page.php:284
-msgid "Cleaned on save: no @import, scripts or outside code."
-msgstr "Очищается при сохранении: без @import, скриптов и внешнего кода."
-
-#: includes/class-admin-settings-page.php:287
-msgid "Privacy and analytics"
-msgstr "Конфиденциальность и аналитика"
-
-#: includes/class-admin-settings-page.php:288
-msgid "Wait for cookie consent"
-msgstr "Ждать согласия на cookie"
-
-#: includes/class-admin-settings-page.php:288
-msgid "A/B choice, visitor memory, statistics and GA4 events start only after the consent tool allows it (WP Consent API, or window.abpConsent = true)."
-msgstr "Выбор A/B, запоминание посетителя, статистика и события GA4 запускаются только после разрешения инструмента согласия (WP Consent API или window.abpConsent = true)."
-
-#: includes/class-admin-settings-page.php:289
-msgid "Send GA4 events (view, click, copy, sign-up)"
-msgstr "Отправлять события GA4 (просмотр, клик, копирование, подписка)"
-
-#: includes/class-admin-settings-page.php:289
-msgid "Only if the site already loads Google Analytics (gtag or Tag Manager). The plugin itself loads nothing."
-msgstr "Только если сайт уже загружает Google Analytics (gtag или Tag Manager). Сам плагин ничего не загружает."
-
-#: includes/class-admin-settings-page.php:290
-msgid "Use CloudFlare's country header"
-msgstr "Использовать заголовок страны CloudFlare"
-
-#: includes/class-admin-settings-page.php:290
-msgid "Only for requests that really come from CloudFlare's addresses."
-msgstr "Только для запросов, которые действительно приходят с адресов CloudFlare."
-
-#: includes/class-admin-settings-page.php:293
-msgid "Unknown country"
-msgstr "Неизвестная страна"
-
-#: includes/class-admin-settings-page.php:295
-msgid "Treat as the shop's country"
-msgstr "Считать страной магазина"
-
-#: includes/class-admin-settings-page.php:296
-msgid "Treat as unknown"
-msgstr "Считать неизвестной"
-
-#: includes/class-admin-settings-page.php:301
-#: includes/class-admin.php:442
-msgid "E-mail sign-up"
-msgstr "Подписка по e-mail"
-
-#: includes/class-admin-settings-page.php:302
-msgid "Confirm sign-ups by e-mail (double opt-in, recommended)"
-msgstr "Подтверждать подписку по e-mail (двойное подтверждение, рекомендуется)"
-
-#: includes/class-admin-settings-page.php:308
-msgid "— WordPress privacy page —"
-msgstr "— страница конфиденциальности WordPress —"
-
-#: includes/class-admin-settings-page.php:313
-msgid "Privacy page linked in the form"
-msgstr "Страница конфиденциальности, на которую ведёт ссылка в форме"
-
-#: includes/class-admin-settings-page.php:315
-msgid "Sign-ups per visitor per hour"
-msgstr "Подписок на посетителя в час"
-
-#: includes/class-admin-settings-page.php:316
-msgid "Sign-ups per hour in total"
-msgstr "Подписок в час всего"
-
-#: includes/class-admin-settings-page.php:320
+#: includes/class-admin-settings-page.php:231
 msgid "Data"
 msgstr "Данные"
 
-#: includes/class-admin-settings-page.php:321
-msgid "Delete all messages, statistics, subscribers and settings when the plugin is deleted"
-msgstr "Удалять все объявления, статистику, подписчиков и настройки при удалении плагина"
+#: includes/class-admin-settings-page.php:232
+msgid "Delete all messages and settings when the plugin is deleted"
+msgstr "Удалить все сообщения и настройки при удалении плагина"
 
-#: includes/class-admin-settings-page.php:321
-msgid "Off: everything stays in the database, so a reinstall keeps your work."
-msgstr "Выключено: всё остаётся в базе данных, поэтому после переустановки ваша работа сохраняется."
+#: includes/class-admin-settings-page.php:232
+msgid "Off: everything stays in the database, so a reinstall keeps your work. Add-ons delete their own data when they are deleted."
+msgstr "Выключено: всё остаётся в базе данных, и после повторной установки работа сохранится. Дополнения удаляют свои данные при собственном удалении."
 
-#: includes/class-admin-settings-page.php:324
+#: includes/class-admin-settings-page.php:235
 msgid "Save settings"
 msgstr "Сохранить настройки"
 
-#: includes/class-admin-settings-page.php:333
-msgid "Licence"
-msgstr "Лицензия"
-
-#. translators: %s: masked licence key
-#: includes/class-admin-settings-page.php:340
-msgid "Pro active"
-msgstr "Pro активен"
-
-#. translators: %s: masked licence key
-#: includes/class-admin-settings-page.php:340
-#, php-format
-msgid "Key %s"
-msgstr "Ключ %s"
-
-#: includes/class-admin-settings-page.php:341
-msgid "Remove key from this site"
-msgstr "Удалить ключ с этого сайта"
-
-#: includes/class-admin-settings-page.php:343
-msgid "The free edition has the top bar, rotating messages, schedules, countdowns, the free-shipping progress bar, buttons, device targeting and three styles. A Pro key unlocks everything else: more bars and boxes, targeting, coupons, A/B tests with statistics, the e-mail sign-up and templates."
-msgstr "В бесплатной версии есть верхняя полоса, смена объявлений, расписание, обратный отсчёт, индикатор бесплатной доставки, кнопки, таргетинг по устройствам и три стиля. Ключ Pro открывает всё остальное: больше полос и блоков, таргетинг, купоны, A/B-тесты со статистикой, подписку по e-mail и шаблоны."
-
-#: includes/class-admin-settings-page.php:344
-msgid "Licence key"
-msgstr "Лицензионный ключ"
-
-#: includes/class-admin-settings-page.php:345
-msgid "The key is checked on this site only; no data is sent anywhere."
-msgstr "Ключ проверяется только на этом сайте; данные никуда не отправляются."
-
-#: includes/class-admin-settings-page.php:346
-msgid "Activate"
-msgstr "Активировать"
-
-#: includes/class-admin-settings-page.php:352
-msgid "A stored key is not valid any more."
-msgstr "Сохранённый ключ больше не действителен."
-
-#: includes/class-admin.php:56
+#: includes/class-admin.php:48
 msgid "Announcement Bar"
 msgstr "Полоса объявлений"
 
-#: includes/class-admin.php:106
+#: includes/class-admin.php:49
+#: includes/class-admin.php:179
+#: includes/class-admin.php:248
+#: includes/class-plugin.php:148
+msgid "Messages"
+msgstr "Объявления"
+
+#: includes/class-admin.php:84
 msgid "Delete this message? This cannot be undone."
 msgstr "Удалить это объявление? Это действие нельзя отменить."
 
-#: includes/class-admin.php:107
-msgid "Delete every entry of this address from the list? This cannot be undone."
-msgstr "Удалить все записи этого адреса из списка? Это действие нельзя отменить."
+#: includes/class-admin.php:85
+msgid "This message would not be shown with the current settings (no text yet, or rules that this site cannot apply)."
+msgstr "При текущих настройках это сообщение не показывалось бы (ещё нет текста или есть правила, которые этот сайт не может применить)."
 
-#: includes/class-admin.php:108
-msgid "Make variant B the main text and end the A/B test?"
-msgstr "Сделать вариант B основным текстом и завершить A/B-тест?"
-
-#: includes/class-admin.php:109
-msgid "Choose a background image"
-msgstr "Выберите фоновое изображение"
-
-#: includes/class-admin.php:110
-msgid "Use this image"
-msgstr "Использовать это изображение"
-
-#: includes/class-admin.php:111
-msgid "This message would not be shown with the current settings (no text yet, a Pro feature without a licence, or a coupon that cannot be used)."
-msgstr "С текущими настройками это объявление не будет показано (текста ещё нет, используется функция Pro без лицензии или купон, который нельзя применить)."
-
-#: includes/class-admin.php:112
+#: includes/class-admin.php:86
 msgid "The preview could not be loaded."
 msgstr "Не удалось загрузить предпросмотр."
 
-#: includes/class-admin.php:113
-msgid "Remove"
-msgstr "Удалить"
-
-#: includes/class-admin.php:114
-msgid "Whole country"
-msgstr "Вся страна"
-
-#: includes/class-admin.php:115
+#: includes/class-admin.php:87
 msgid "Contrast"
 msgstr "Контраст"
 
-#: includes/class-admin.php:116
+#: includes/class-admin.php:88
 msgid "readable (WCAG AA)"
 msgstr "читаемо (WCAG AA)"
 
-#: includes/class-admin.php:117
+#: includes/class-admin.php:89
 msgid "too low for small text — choose stronger colours (at least 4.5:1)"
 msgstr "слишком низкий для мелкого текста — выберите более контрастные цвета (не менее 4,5:1)"
 
-#: includes/class-admin.php:134
+#: includes/class-admin.php:109
 msgid "Sorry, you are not allowed to manage announcements."
 msgstr "У вас нет прав на управление объявлениями."
 
-#: includes/class-admin.php:180
+#: includes/class-admin.php:157
 msgid "Message deleted."
 msgstr "Объявление удалено."
 
-#: includes/class-admin.php:181
+#: includes/class-admin.php:158
 msgid "Copy created. It is switched off until you turn it on."
 msgstr "Копия создана. Она выключена, пока вы её не включите."
 
-#: includes/class-admin.php:182
+#: includes/class-admin.php:159
 msgid "Status changed."
 msgstr "Статус изменён."
 
-#: includes/class-admin.php:183
-msgid "Statistics reset."
-msgstr "Статистика сброшена."
-
-#: includes/class-admin.php:184
-msgid "Variant B is now the main text; the A/B test has ended."
-msgstr "Вариант B теперь является основным текстом; A/B-тест завершён."
-
-#: includes/class-admin.php:188
-msgid "The address was deleted from the list."
-msgstr "Адрес удалён из списка."
-
-#: includes/class-admin.php:189
-msgid "That address is not on the list."
-msgstr "Этого адреса нет в списке."
-
-#: includes/class-admin.php:191
+#: includes/class-admin.php:161
 msgid "That did not work. Please try again."
 msgstr "Не получилось. Пожалуйста, попробуйте ещё раз."
 
-#: includes/class-admin.php:224
-msgid "Free edition"
-msgstr "Бесплатная версия"
+#: includes/class-admin.php:197
+msgid "Announcement Bar sections"
+msgstr "Разделы Announcement Bar"
 
-#: includes/class-admin.php:256
+#: includes/class-admin.php:238
 msgid "The bar is switched off in the settings — no message is shown on the site."
 msgstr "Полоса выключена в настройках — на сайте не показывается ни одно объявление."
 
-#: includes/class-admin.php:256
+#: includes/class-admin.php:238
 msgid "Open settings"
 msgstr "Открыть настройки"
 
-#: includes/class-admin.php:260
+#: includes/class-admin.php:242
 msgid "No messages yet"
 msgstr "Объявлений пока нет"
 
-#: includes/class-admin.php:260
+#: includes/class-admin.php:242
 msgid "Write your first announcement — a delivery note, a sale with a countdown or a free-shipping progress bar."
 msgstr "Напишите своё первое объявление — информацию о доставке, акцию с обратным отсчётом или индикатор бесплатной доставки."
 
-#: includes/class-admin.php:260
-msgid "Start from a template"
-msgstr "Начать с шаблона"
-
-#: includes/class-admin.php:266
-#: includes/class-subscribers.php:349
+#: includes/class-admin.php:250
 msgid "Status"
 msgstr "Статус"
 
-#: includes/class-admin.php:267
-msgid "Statistics"
-msgstr "Статистика"
-
-#: includes/class-admin.php:268
+#: includes/class-admin.php:254
 msgid "Actions"
 msgstr "Действия"
 
-#: includes/class-admin.php:275
+#: includes/class-admin.php:262
 msgid "(no text)"
 msgstr "(нет текста)"
 
-#: includes/class-admin.php:285
+#: includes/class-admin.php:270
+msgid "Not shown: uses rules this site cannot apply"
+msgstr "Не показывается: использует правила, которые этот сайт не может применить"
+
+#: includes/class-admin.php:278
 msgid "On"
 msgstr "Вкл."
 
-#: includes/class-admin.php:285
+#: includes/class-admin.php:278
 msgid "Off"
 msgstr "Выкл."
 
-#: includes/class-admin.php:296
-msgid "Statistics are part of Pro."
-msgstr "Статистика входит в Pro."
-
-#: includes/class-admin.php:300
+#: includes/class-admin.php:289
 msgid "Edit"
 msgstr "Изменить"
 
-#: includes/class-admin.php:301
+#: includes/class-admin.php:290
 msgid "Turn off"
 msgstr "Выключить"
 
-#: includes/class-admin.php:301
+#: includes/class-admin.php:290
 msgid "Turn on"
 msgstr "Включить"
 
-#: includes/class-admin.php:302
+#: includes/class-admin.php:291
 msgid "Duplicate"
 msgstr "Дублировать"
 
-#: includes/class-admin.php:305
-msgid "Use B"
-msgstr "Использовать B"
-
-#: includes/class-admin.php:309
-msgid "Reset statistics"
-msgstr "Сбросить статистику"
-
-#: includes/class-admin.php:312
+#: includes/class-admin.php:293
 msgid "Delete"
 msgstr "Удалить"
 
-#: includes/class-admin.php:317
-msgid "Order: priority (highest first), then sort order. Statistics count each message once per browser tab session; nothing personal is stored."
-msgstr "Порядок: приоритет (сначала самый высокий), затем порядок сортировки. Статистика учитывает каждое объявление один раз за сеанс вкладки браузера; ничего личного не хранится."
-
-#: includes/class-admin.php:350
-msgid "Views"
-msgstr "Просмотры"
-
-#: includes/class-admin.php:351
-msgid "Clicks"
-msgstr "Клики"
-
-#: includes/class-admin.php:352
-msgid "CTR"
-msgstr "CTR"
-
-#: includes/class-admin.php:357
-msgid "Code copies"
-msgstr "Копирований кода"
-
-#: includes/class-admin.php:361
-msgid "Sign-ups"
-msgstr "Подписки"
+#: includes/class-admin.php:298
+msgid "Order: priority (highest first), then sort order."
+msgstr "Порядок: приоритет (сначала высший), затем порядковый номер."
 
 #. translators: %s: date and time
-#: includes/class-admin.php:389
+#: includes/class-admin.php:329
 #, php-format
 msgid "from %s"
 msgstr "с %s"
 
 #. translators: %s: date and time
-#: includes/class-admin.php:394
+#: includes/class-admin.php:334
 #, php-format
 msgid "until %s"
 msgstr "до %s"
 
-#: includes/class-admin.php:416
+#: includes/class-admin.php:350
 msgid "Free shipping"
 msgstr "Бесплатная доставка"
 
-#: includes/class-admin.php:418
-msgid "Reward tiers"
-msgstr "Уровни наград"
-
-#: includes/class-admin.php:422
-msgid "Recurring countdown"
-msgstr "Повторяющийся обратный отсчёт"
-
-#: includes/class-admin.php:422
+#: includes/class-admin.php:354
 msgid "Countdown"
 msgstr "Обратный отсчёт"
 
-#: includes/class-admin.php:426
+#: includes/class-admin.php:358
 msgid "Weekly schedule"
 msgstr "Недельное расписание"
 
-#: includes/class-admin.php:430
+#: includes/class-admin.php:362
 msgid "Phones only"
 msgstr "Только телефоны"
 
-#: includes/class-admin.php:430
+#: includes/class-admin.php:362
 msgid "Computers only"
 msgstr "Только компьютеры"
 
-#: includes/class-admin.php:446
-msgid "Targeted"
-msgstr "Таргетинг"
-
-#: includes/class-admin.php:450
-msgid "Trigger"
-msgstr "Триггер"
-
-#: includes/class-admin.php:463
-msgid "Main bar (settings)"
-msgstr "Основная полоса (настройки)"
-
-#: includes/class-admin.php:466
-msgid "Cart page box"
-msgstr "Блок на странице корзины"
-
 #: includes/class-admin.php:467
-msgid "Product page box (under the price)"
-msgstr "Блок на странице товара (под ценой)"
-
-#: includes/class-admin.php:468
-msgid "Mini-cart box"
-msgstr "Блок в мини-корзине"
-
-#: includes/class-admin.php:631
 msgid "This message does not exist (any more)."
 msgstr "Такого объявления нет (больше)."
 
-#: includes/class-admin.php:706
-#: includes/class-admin.php:885
-#: includes/class-admin.php:1039
-#: includes/class-settings.php:177
+#: includes/class-admin.php:528
+#: includes/class-renderer.php:499
+msgid "Announcement"
+msgstr "Объявление"
+
+#: includes/class-admin.php:531
+msgid "Free-shipping progress"
+msgstr "Прогресс бесплатной доставки"
+
+#: includes/class-admin.php:559
+#: includes/class-admin.php:696
+#: includes/class-settings.php:181
 msgid "Please choose one of the offered values."
 msgstr "Пожалуйста, выберите одно из предложенных значений."
 
 #. translators: %d: number of characters
-#: includes/class-admin.php:777
-#: includes/class-admin.php:784
-#: includes/class-admin.php:793
-#: includes/class-settings.php:268
+#: includes/class-admin.php:611
+#: includes/class-admin.php:617
 #, php-format
 msgid "At most %d characters."
 msgstr "Не более %d символов."
 
-#: includes/class-admin.php:813
+#: includes/class-admin.php:638
 msgid "Please write the text shown once the goal is reached."
 msgstr "Пожалуйста, напишите текст, который показывается после достижения цели."
 
-#: includes/class-admin.php:817
-msgid "Every tier needs a label in each language that has a text."
-msgstr "Каждому уровню нужно название на каждом языке, для которого задан текст."
-
-#: includes/class-admin.php:829
+#: includes/class-admin.php:644
 msgid "Please write the message text in at least one language."
 msgstr "Пожалуйста, напишите текст объявления хотя бы на одном языке."
 
-#: includes/class-admin.php:833
-msgid "An A/B test needs a text for variant B."
-msgstr "Для A/B-теста нужен текст варианта B."
-
-#: includes/class-admin.php:862
-#: includes/class-settings.php:221
+#: includes/class-admin.php:673
+#: includes/class-settings.php:225
 msgid "Please enter a colour such as #1f2937."
 msgstr "Пожалуйста, введите цвет, например #1f2937."
 
-#: includes/class-admin.php:871
-#: includes/class-admin.php:1049
+#: includes/class-admin.php:682
 msgid "Please enter a whole number."
 msgstr "Пожалуйста, введите целое число."
 
-#: includes/class-admin.php:879
+#: includes/class-admin.php:690
 msgid "Please enter a full address (https://…) or a path on this site (/shop/)."
 msgstr "Пожалуйста, введите полный адрес (https://…) или путь на этом сайте (/shop/)."
 
-#: includes/class-admin.php:898
+#: includes/class-admin.php:709
 msgid "Please enter a valid date and time."
 msgstr "Пожалуйста, введите корректные дату и время."
 
-#: includes/class-admin.php:906
+#: includes/class-admin.php:717
 msgid "The end must be after the start."
 msgstr "Окончание должно быть позже начала."
 
-#: includes/class-admin.php:910
-msgid "A countdown needs an end date (or, in Pro, a daily / weekly cut-off time)."
-msgstr "Для обратного отсчёта нужна дата окончания (или, в Pro, время ежедневного / еженедельного срока)."
+#: includes/class-admin.php:721
+msgid "A countdown needs an end date."
+msgstr "Для обратного отсчёта нужна дата окончания."
 
-#: includes/class-admin.php:917
+#: includes/class-admin.php:728
 msgid "Please enter two different times (HH:MM), or leave both empty."
 msgstr "Пожалуйста, введите два разных времени (ЧЧ:ММ) или оставьте оба поля пустыми."
 
-#: includes/class-admin.php:928
+#: includes/class-admin.php:739
 msgid "Please enter the order amount for free shipping, for example 50."
 msgstr "Пожалуйста, введите сумму заказа для бесплатной доставки, например 50."
 
-#. translators: 1: smallest value, 2: largest value
-#: includes/class-admin.php:947
-#: includes/class-settings.php:188
-#, php-format
-msgid "Please enter a whole number from %1$d to %2$d."
-msgstr "Пожалуйста, введите целое число от %1$d до %2$d."
-
-#: includes/class-admin.php:956
-msgid "Use 1–32 letters, digits, \"-\" or \"_\"."
-msgstr "Используйте от 1 до 32 букв, цифр, \"-\" или \"_\"."
-
-#: includes/class-admin.php:971
-msgid "One rule per line: a page type from the list or a path that starts with \"/\" (a \"*\" at the end matches everything below it)."
-msgstr "Одно правило в строке: тип страницы из списка или путь, начинающийся с \"/\" (\"*\" в конце охватывает всё внутри)."
-
-#: includes/class-admin.php:973
-msgid "Please add at least one page rule."
-msgstr "Пожалуйста, добавьте хотя бы одно правило для страниц."
-
-#: includes/class-admin.php:986
-msgid "Some of the chosen items do not exist any more."
-msgstr "Некоторых из выбранных элементов больше не существует."
-
-#: includes/class-admin.php:1040
-msgid "Please choose countries from the list."
-msgstr "Пожалуйста, выберите страны из списка."
-
-#: includes/class-admin.php:1041
-msgid "Please choose at least one country."
-msgstr "Пожалуйста, выберите хотя бы одну страну."
-
-#: includes/class-admin.php:1042
-msgid "Each row needs a country from the list, an optional state of that country and an amount above 0."
-msgstr "В каждой строке нужны страна из списка, необязательный регион этой страны и сумма больше 0."
-
-#: includes/class-admin.php:1043
-msgid "Each country / state may appear only once."
-msgstr "Каждая страна / регион может встречаться только один раз."
-
-#: includes/class-admin.php:1044
-msgid "Amounts above 0, only for currencies of the shop."
-msgstr "Суммы больше 0, только для валют магазина."
-
-#: includes/class-admin.php:1045
-msgid "Please choose an existing coupon."
-msgstr "Пожалуйста, выберите существующий купон."
-
-#: includes/class-admin.php:1046
-msgid "Tier amounts must rise from row to row."
-msgstr "Суммы уровней должны возрастать от строки к строке."
-
-#: includes/class-admin.php:1047
-msgid "Reward tiers need 2 to 5 amounts."
-msgstr "Для уровней наград нужно от 2 до 5 сумм."
-
-#: includes/class-admin.php:1048
-msgid "Please enter an amount such as 49.99."
-msgstr "Пожалуйста, введите сумму, например 49.99."
-
-#: includes/class-admin.php:1050
-msgid "The maximum must not be smaller than the minimum."
-msgstr "Максимум не должен быть меньше минимума."
-
-#: includes/class-admin.php:1051
-msgid "Some of the chosen products do not exist any more."
-msgstr "Некоторых из выбранных товаров больше не существует."
-
-#: includes/class-admin.php:1052
-msgid "Some of the chosen categories do not exist any more."
-msgstr "Некоторых из выбранных категорий больше не существует."
-
-#: includes/class-admin.php:1053
-msgid "Use values such as newsletter, google or spring-sale, separated by commas (at most 20)."
-msgstr "Используйте значения вроде newsletter, google или spring-sale через запятую (не более 20)."
-
-#: includes/class-admin.php:1054
-msgid "Use site names such as facebook.com, separated by commas (at most 20)."
-msgstr "Используйте названия сайтов, например facebook.com, через запятую (не более 20)."
-
-#: includes/class-admin.php:1055
-msgid "Delay: 1 to 600 seconds."
-msgstr "Задержка: от 1 до 600 секунд."
-
-#: includes/class-admin.php:1056
-msgid "Scroll depth: 1 to 100 %."
-msgstr "Глубина прокрутки: от 1 до 100 %."
-
-#: includes/class-admin.php:1057
-msgid "Please enter the cut-off time as HH:MM."
-msgstr "Пожалуйста, введите время окончания в формате ЧЧ:ММ."
-
-#: includes/class-admin.php:1058
-msgid "At least one day must stay active."
-msgstr "Хотя бы один день должен оставаться активным."
-
-#: includes/class-admin.php:1059
-msgid "Please choose an image from the media library."
-msgstr "Пожалуйста, выберите изображение из медиатеки."
-
-#: includes/class-admin.php:1060
-msgid "Overlay: 0 to 90 %."
-msgstr "Наложение: от 0 до 90 %."
-
-#: includes/class-admin.php:1087
-msgid "Templates are part of Pro. You can still write every free message yourself under Messages."
-msgstr "Шаблоны входят в Pro. Любое бесплатное объявление по-прежнему можно написать самостоятельно в разделе «Объявления»."
-
-#. translators: %s: template name
-#: includes/class-admin.php:1105
-#, php-format
-msgid "Use template: %s"
-msgstr "Использовать шаблон: %s"
-
-#. translators: %s: template name
-#: includes/class-admin.php:1105
-msgid "Use template"
-msgstr "Использовать шаблон"
-
-#: includes/class-admin.php:1193
-msgid "The e-mail sign-up form is part of Pro. Existing entries stay here and can still be exported or erased."
-msgstr "Форма подписки по e-mail входит в Pro. Существующие записи остаются здесь, их по-прежнему можно экспортировать или удалить."
-
-#: includes/class-admin.php:1197
-msgid "List"
-msgstr "Список"
-
-#: includes/class-admin.php:1198
-#: includes/class-subscribers.php:336
-msgid "Subscribed"
-msgstr "Подписан"
-
-#: includes/class-admin.php:1199
-#: includes/class-subscribers.php:335
-msgid "Waiting for confirmation"
-msgstr "Ожидает подтверждения"
-
-#: includes/class-admin.php:1200
-#: includes/class-subscribers.php:337
-msgid "Unsubscribed"
-msgstr "Отписан"
-
-#: includes/class-admin.php:1201
-msgid "Sign-ups are confirmed by e-mail (double opt-in) unless switched off in the settings. Unconfirmed entries are deleted after 30 days. The plugin does not send newsletters: export the confirmed addresses into your mailing tool."
-msgstr "Подписки подтверждаются по e-mail (двойное подтверждение), если это не отключено в настройках. Неподтверждённые записи удаляются через 30 дней. Плагин не рассылает новости: экспортируйте подтверждённые адреса в свой инструмент рассылки."
-
-#: includes/class-admin.php:1204
-msgid "Export CSV"
-msgstr "Экспорт CSV"
-
-#: includes/class-admin.php:1206
-msgid "Erase an address"
-msgstr "Удалить адрес"
-
-#: includes/class-admin.php:1208
-#: includes/class-subscribers.php:345
-msgid "E-mail address"
-msgstr "Адрес e-mail"
-
-#: includes/class-admin.php:1209
-msgid "Deletes the entry completely (right to erasure). Requests made through Tools → Erase Personal Data are handled automatically as well."
-msgstr "Полностью удаляет запись (право на удаление). Запросы, сделанные в разделе «Инструменты → Удаление персональных данных», также обрабатываются автоматически."
-
-#: includes/class-admin.php:1209
-msgid "Erase"
-msgstr "Удалить"
-
-#: includes/class-endpoints.php:275
-msgid "Cart"
-msgstr "Корзина"
-
-#: includes/class-endpoints.php:276
-msgid "Product page — under the price"
-msgstr "Страница товара — под ценой"
-
-#: includes/class-endpoints.php:277
-msgid "Mini-cart"
-msgstr "Мини-корзина"
-
-#. translators: %s: coupon code
-#: includes/class-renderer.php:311
-#, php-format
-msgid "Copy code %s"
-msgstr "Скопировать код %s"
-
-#: includes/class-renderer.php:547
-msgid "Your e-mail address"
-msgstr "Ваш адрес e-mail"
-
-#: includes/class-renderer.php:548
-msgid "Subscribe"
-msgstr "Подписаться"
-
-#: includes/class-renderer.php:549
-msgid "I agree to receive news and offers by e-mail. I can unsubscribe at any time."
-msgstr "Я согласен(-на) получать новости и предложения по e-mail. Отписаться можно в любой момент."
-
-#: includes/class-renderer.php:550
-msgid "Almost done — please confirm with the link we sent to your inbox."
-msgstr "Почти готово — подтвердите подписку по ссылке, которую мы отправили вам на почту."
-
-#: includes/class-renderer.php:663
+#: includes/class-renderer.php:500
 msgid "Close"
 msgstr "Закрыть"
 
 #. translators: abbreviation of "days" in a countdown such as "2d 04:10:00"
-#: includes/class-renderer.php:665
+#: includes/class-renderer.php:502
 msgctxt "countdown days"
 msgid "d"
 msgstr "д"
 
-#: includes/class-renderer.php:666
-msgid "Copy"
-msgstr "Копировать"
-
-#: includes/class-renderer.php:667
-msgid "Copied!"
-msgstr "Скопировано!"
-
-#: includes/class-renderer.php:668
+#: includes/class-renderer.php:503
 msgid "Previous message"
 msgstr "Предыдущее сообщение"
 
-#: includes/class-renderer.php:669
+#: includes/class-renderer.php:504
 msgid "Next message"
 msgstr "Следующее сообщение"
 
-#: includes/class-renderer.php:670
-msgid "Show announcements"
-msgstr "Показать объявления"
+#: includes/class-settings.php:65
+msgid "Top of the page"
+msgstr "Вверху страницы"
 
-#: includes/class-renderer.php:671
-msgid "Pause messages"
-msgstr "Остановить сообщения"
+#: includes/class-settings.php:67
+msgid "Rotate one at a time"
+msgstr "Менять по одному"
 
-#: includes/class-renderer.php:672
-msgid "Play messages"
-msgstr "Продолжить сообщения"
+#: includes/class-settings.php:68
+msgid "Show all, one under another"
+msgstr "Показывать все, друг под другом"
 
-#: includes/class-renderer.php:673
-msgid "Privacy policy"
-msgstr "Политика конфиденциальности"
+#. translators: 1: smallest value, 2: largest value
+#: includes/class-settings.php:192
+#, php-format
+msgid "Please enter a whole number from %1$d to %2$d."
+msgstr "Пожалуйста, введите целое число от %1$d до %2$d."
 
-#: includes/class-renderer.php:674
-msgid "Sending…"
-msgstr "Отправка…"
-
-#: includes/class-renderer.php:675
-#: includes/class-subscribers.php:72
-msgid "Please enter a valid e-mail address."
-msgstr "Пожалуйста, введите правильный адрес e-mail."
-
-#: includes/class-renderer.php:676
-#: includes/class-subscribers.php:77
-msgid "Please tick the box to agree."
-msgstr "Пожалуйста, отметьте флажок согласия."
-
-#: includes/class-renderer.php:677
-#: includes/class-subscribers.php:39
-#: includes/class-subscribers.php:155
-msgid "Sorry, the sign-up did not work. Please try again later."
-msgstr "К сожалению, подписаться не удалось. Попробуйте позже."
-
-#: includes/class-settings.php:235
+#: includes/class-settings.php:239
 msgid "Use WordPress language codes such as lv, ru_RU or de_DE, separated by commas."
 msgstr "Используйте коды языков WordPress, например lv, ru_RU или de_DE, через запятую."
-
-#: includes/class-settings.php:260
-msgid "Please choose a published page."
-msgstr "Пожалуйста, выберите опубликованную страницу."
-
-#: includes/class-subscribers.php:47
-msgid "This page is too old — please reload it and try again."
-msgstr "Страница устарела — перезагрузите её и попробуйте снова."
-
-#: includes/class-subscribers.php:51
-msgid "Too many attempts — please try again later."
-msgstr "Слишком много попыток — попробуйте позже."
-
-#: includes/class-subscribers.php:109
-msgid "Thank you — you are subscribed!"
-msgstr "Спасибо — вы подписаны!"
-
-#. translators: %s: site name
-#: includes/class-subscribers.php:180
-#, php-format
-msgid "Please confirm your subscription — %s"
-msgstr "Подтвердите подписку — %s"
-
-#. translators: %s: site name
-#: includes/class-subscribers.php:182
-#, php-format
-msgid "please confirm that you want to receive news and offers from %s at this address. Open this link and press the button:"
-msgstr "подтвердите, пожалуйста, что хотите получать новости и предложения %s на этот адрес. Откройте ссылку и нажмите кнопку:"
-
-#: includes/class-subscribers.php:185
-msgid "Hello,"
-msgstr "Здравствуйте,"
-
-#: includes/class-subscribers.php:186
-#: includes/class-subscribers.php:271
-msgid "Confirm subscription"
-msgstr "Подтвердить подписку"
-
-#: includes/class-subscribers.php:187
-msgid "If you did not ask for this, simply ignore this e-mail — you will not be subscribed. The link is valid for 7 days."
-msgstr "Если вы не запрашивали подписку, просто проигнорируйте это письмо — подписки не будет. Ссылка действует 7 дней."
-
-#: includes/class-subscribers.php:188
-msgid "Unsubscribe at any time:"
-msgstr "Отписаться можно в любой момент:"
-
-#: includes/class-subscribers.php:231
-msgid "Confirm your subscription"
-msgstr "Подтвердите подписку"
-
-#: includes/class-subscribers.php:231
-#: includes/class-subscribers.php:271
-msgid "Unsubscribe"
-msgstr "Отписаться"
-
-#: includes/class-subscribers.php:245
-#: includes/class-subscribers.php:253
-msgid "You have been unsubscribed. You will not receive any more e-mails from us."
-msgstr "Вы отписаны. Больше писем от нас не будет."
-
-#: includes/class-subscribers.php:245
-msgid "This link is invalid or has expired."
-msgstr "Эта ссылка недействительна или её срок истёк."
-
-#: includes/class-subscribers.php:250
-msgid "Thank you — your subscription is confirmed."
-msgstr "Спасибо — ваша подписка подтверждена."
-
-#. translators: 1: site name, 2: e-mail address
-#: includes/class-subscribers.php:260
-#, php-format
-msgid "Please confirm that %1$s may send news and offers to %2$s."
-msgstr "Подтвердите, что %1$s может отправлять новости и предложения на адрес %2$s."
-
-#. translators: 1: site name, 2: e-mail address
-#: includes/class-subscribers.php:262
-#, php-format
-msgid "Stop e-mails from %1$s to %2$s?"
-msgstr "Прекратить письма от %1$s на адрес %2$s?"
-
-#: includes/class-subscribers.php:280
-msgid "Continue to the site"
-msgstr "Перейти на сайт"
-
-#: includes/class-subscribers.php:301
-#: includes/class-subscribers.php:316
-msgid "Announcement Bar Pro sign-ups"
-msgstr "Подписки Announcement Bar Pro"
-
-#: includes/class-subscribers.php:341
-msgid "Newsletter sign-up (Announcement Bar Pro)"
-msgstr "Подписка на новости (Announcement Bar Pro)"
-
-#: includes/class-subscribers.php:353
-msgid "Consent text shown"
-msgstr "Показанный текст согласия"
-
-#: includes/class-subscribers.php:357
-msgid "Signed up (UTC)"
-msgstr "Подписался (UTC)"
-
-#: includes/class-subscribers.php:361
-msgid "Confirmed (UTC)"
-msgstr "Подтверждено (UTC)"
-
-#: includes/class-subscribers.php:399
-msgid "Announcement bars on this site remember in your browser (local storage) which announcements you closed, so they stay closed. Nothing is sent to us for this."
-msgstr "Полосы объявлений на этом сайте запоминают в вашем браузере (локальное хранилище), какие объявления вы закрыли, чтобы они оставались закрытыми. Для этого нам ничего не отправляется."
-
-#: includes/class-subscribers.php:400
-msgid "If you sign up for our news through an announcement bar, we store your e-mail address, your language, the consent text you agreed to and the dates of your sign-up and confirmation. We send you one e-mail to confirm the sign-up; without confirmation the entry is deleted after 30 days. Every e-mail has an unsubscribe link."
-msgstr "Если вы подписываетесь на наши новости через полосу объявлений, мы храним ваш адрес e-mail, язык, текст согласия, с которым вы согласились, а также даты подписки и подтверждения. Мы отправляем вам одно письмо для подтверждения подписки; без подтверждения запись удаляется через 30 дней. В каждом письме есть ссылка для отказа от рассылки."
-
-#: includes/class-subscribers.php:401
-msgid "View, click and code-copy counts of announcements are stored as totals only, without any personal data. Your IP address is never stored; a keyed hash of it is kept for at most two days to limit abuse of the forms."
-msgstr "Количество просмотров, кликов и копирований кода объявлений хранится только в виде итоговых сумм, без каких-либо персональных данных. Ваш IP-адрес не сохраняется никогда; его хеш с ключом хранится не более двух дней, чтобы ограничить злоупотребления формами."

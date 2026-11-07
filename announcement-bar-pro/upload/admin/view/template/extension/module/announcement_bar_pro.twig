@@ -383,6 +383,23 @@
                   {% if error_settings.signup_limit_total %}<div class="text-danger">{{ error_settings.signup_limit_total|e }}</div>{% endif %}
                 </div>
               </div>
+              <div class="form-group" id="abp-turnstile">
+                <label class="col-sm-3 control-label" for="input-ts-site">{{ entry_ts_site }}</label>
+                <div class="col-sm-9">
+                  <input type="text" name="module_announcement_bar_pro_ts_site" id="input-ts-site" value="{{ setting.ts_site|e }}" class="form-control" style="max-width:420px;" maxlength="100" autocomplete="off" spellcheck="false" />
+                  <span class="abp-help"><span class="abp-state {{ ts_on ? 'abp-state-active' : 'abp-state-disabled' }}">{{ ts_on ? text_ts_on : text_ts_off }}</span> {{ help_ts }} <a href="https://developers.cloudflare.com/turnstile/" target="_blank" rel="noopener noreferrer">{{ text_ts_docs }}</a></span>
+                  {% if error_settings.ts_site %}<div class="text-danger">{{ error_settings.ts_site|e }}</div>{% endif %}
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label" for="input-ts-secret">{{ entry_ts_secret }}</label>
+                <div class="col-sm-9">
+                  <input type="password" name="module_announcement_bar_pro_ts_secret" id="input-ts-secret" value="" class="form-control" style="max-width:420px;" maxlength="200" autocomplete="new-password" spellcheck="false" />
+                  <span class="abp-help">{{ ts_secret_saved ? help_ts_secret_saved : help_ts_secret_new }}</span>
+                  {% if ts_secret_saved %}<div class="checkbox"><label><input type="checkbox" name="module_announcement_bar_pro_ts_secret_remove" id="input-ts-secret-remove" value="1" /> {{ text_ts_remove }}</label></div>{% endif %}
+                  {% if error_settings.ts_secret %}<div class="text-danger">{{ error_settings.ts_secret|e }}</div>{% endif %}
+                </div>
+              </div>
               <div class="form-group">
                 <label class="col-sm-3 control-label">{{ entry_subscribers }}</label>
                 <div class="col-sm-9">

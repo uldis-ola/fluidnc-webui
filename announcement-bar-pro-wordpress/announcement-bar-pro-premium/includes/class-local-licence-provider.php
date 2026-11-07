@@ -2,10 +2,10 @@
 /**
  * Offline licence provider of version 1.0.0: key format and checksum only, no network.
  *
- * @package AnnouncementBarPro
+ * @package AnnouncementBarProPremium
  */
 
-namespace AnnouncementBarPro;
+namespace AnnouncementBarPro\Premium;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -75,13 +75,13 @@ class Local_Licence_Provider implements Licence_Provider {
 		if ( ! self::well_formed( $key ) ) {
 			return array(
 				'status'  => 'invalid',
-				'message' => __( 'This licence key is not valid. Please check it and try again.', 'announcement-bar-pro' ),
+				'message' => __( 'This licence key is not valid. Please check it and try again.', 'announcement-bar-pro-premium' ),
 			);
 		}
 
 		return array(
 			'status'  => 'valid',
-			'message' => __( 'Pro features are unlocked. Thank you!', 'announcement-bar-pro' ),
+			'message' => __( 'Pro features are unlocked. Thank you!', 'announcement-bar-pro-premium' ),
 		);
 	}
 

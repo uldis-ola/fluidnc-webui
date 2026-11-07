@@ -1,6 +1,7 @@
 <?php
 /**
- * Database: own tables (per site on multisite), created and updated with dbDelta(); every query is prepared.
+ * Database: own tables (per site on multisite), created and updated with dbDelta(); every query is prepared, table
+ * names go through the %i identifier placeholder (WordPress 6.2+).
  *
  * @package AnnouncementBarPro
  */
@@ -18,7 +19,7 @@ class DB {
 	/** Message fields that hold texts (one row per message and language). */
 	const TEXT_FIELDS = array( 'text', 'link_text', 'mobile_text', 'success_text', 'text_b', 'mobile_text_b', 'link_text_b', 'extra' );
 
-	/** Counters, never written by the message form. */
+	/** Counters (written by an add-on), never written by the message form. */
 	const COUNTERS = array( 'views', 'clicks', 'copies', 'views_b', 'clicks_b', 'copies_b', 'subscribes' );
 
 	/**
@@ -31,24 +32,24 @@ class DB {
 	/**
 	 * Table name with the site prefix.
 	 *
-	 * @param string $name messages | texts | subscribers | rate.
+	 * @param string $name messages | texts | rate.
 	 * @return string
 	 */
 	public static function table( $name ) {
 		global $wpdb;
 
 		$names = array(
-			'messages'    => 'abpro_messages',
-			'texts'       => 'abpro_message_texts',
-			'subscribers' => 'abpro_subscribers',
-			'rate'        => 'abpro_rate',
+			'messages' => 'abpro_messages',
+			'texts'    => 'abpro_message_texts',
+			'rate'     => 'abpro_rate',
 		);
 
 		return $wpdb->prefix . $names[ $name ];
 	}
 
 	/**
-	 * Creates or updates the tables of the current site.
+	 * Creates or updates the tables of the current site. The message table keeps the columns of add-on features
+	 * (placement, targeting, counters …) so their data survives when an add-on is switched off.
 	 */
 	public static function install() {
 		global $wpdb;
@@ -58,7 +59,6 @@ class DB {
 		$charset = $wpdb->get_charset_collate();
 		$m       = self::table( 'messages' );
 		$t       = self::table( 'texts' );
-		$s       = self::table( 'subscribers' );
 		$r       = self::table( 'rate' );
 
 		dbDelta(
@@ -118,22 +118,6 @@ CREATE TABLE $t (
   extra text NOT NULL,
   PRIMARY KEY  (message_id,locale)
 ) $charset;
-CREATE TABLE $s (
-  subscriber_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  email varchar(100) NOT NULL,
-  locale varchar(20) NOT NULL DEFAULT '',
-  message_id bigint(20) unsigned NOT NULL DEFAULT 0,
-  status tinyint(1) NOT NULL DEFAULT 0,
-  token char(64) NOT NULL DEFAULT '',
-  unsubscribe char(64) NOT NULL DEFAULT '',
-  consent varchar(400) NOT NULL DEFAULT '',
-  date_added datetime NOT NULL,
-  date_confirmed datetime NULL DEFAULT NULL,
-  PRIMARY KEY  (subscriber_id),
-  UNIQUE KEY email (email),
-  KEY token (token),
-  KEY unsubscribe (unsubscribe)
-) $charset;
 CREATE TABLE $r (
   bucket char(40) NOT NULL,
   hits int(10) unsigned NOT NULL DEFAULT 0,
@@ -144,17 +128,6 @@ CREATE TABLE $r (
 		);
 
 		update_option( 'abpro_schema', ABPRO_SCHEMA, false );
-	}
-
-	/**
-	 * Drops the tables of the current site (uninstall with "delete data" on).
-	 */
-	public static function drop() {
-		global $wpdb;
-
-		foreach ( array( 'messages', 'texts', 'subscribers', 'rate' ) as $name ) {
-			$wpdb->query( 'DROP TABLE IF EXISTS ' . self::table( $name ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.SchemaChange -- table name from self::table().
-		}
 	}
 
 	/*
@@ -183,7 +156,8 @@ CREATE TABLE $r (
 		$now  = current_time( 'mysql' );
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				'SELECT * FROM ' . self::table( 'messages' ) . ' WHERE status = 1 AND (date_start IS NULL OR date_start <= %s) AND (date_end IS NULL OR date_end > %s) ORDER BY priority DESC, sort_order ASC, message_id ASC LIMIT 100', // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- table name.
+				'SELECT * FROM %i WHERE status = 1 AND (date_start IS NULL OR date_start <= %s) AND (date_end IS NULL OR date_end > %s) ORDER BY priority DESC, sort_order ASC, message_id ASC LIMIT 100',
+				self::table( 'messages' ),
 				$now,
 				$now
 			),
@@ -213,8 +187,8 @@ CREATE TABLE $r (
 		$ids   = array_map( 'intval', array_column( $rows, 'message_id' ) );
 		$texts = $wpdb->get_results(
 			$wpdb->prepare(
-				'SELECT * FROM ' . self::table( 'texts' ) . ' WHERE message_id IN (' . implode( ',', array_fill( 0, count( $ids ), '%d' ) ) . ')', // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- placeholders built from the ID count.
-				$ids
+				'SELECT * FROM %i WHERE message_id IN (' . implode( ',', array_fill( 0, count( $ids ), '%d' ) ) . ')', // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- placeholders built from the ID count.
+				array_merge( array( self::table( 'texts' ) ), $ids )
 			),
 			ARRAY_A
 		);
@@ -270,14 +244,14 @@ CREATE TABLE $r (
 	public static function message( $id ) {
 		global $wpdb;
 
-		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . self::table( 'messages' ) . ' WHERE message_id = %d', (int) $id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- table name.
+		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE message_id = %d', self::table( 'messages' ), (int) $id ), ARRAY_A );
 
 		if ( ! $row ) {
 			return null;
 		}
 
 		$row['texts'] = array();
-		$texts        = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . self::table( 'texts' ) . ' WHERE message_id = %d', (int) $id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- table name.
+		$texts        = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE message_id = %d', self::table( 'texts' ), (int) $id ), ARRAY_A );
 
 		foreach ( (array) $texts as $t ) {
 			$row['texts'][ $t['locale'] ] = $t;
@@ -295,7 +269,7 @@ CREATE TABLE $r (
 	public static function all_messages( $locale ) {
 		global $wpdb;
 
-		$rows = $wpdb->get_results( 'SELECT * FROM ' . self::table( 'messages' ) . ' ORDER BY priority DESC, sort_order ASC, message_id ASC', ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- no input.
+		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i ORDER BY priority DESC, sort_order ASC, message_id ASC', self::table( 'messages' ) ), ARRAY_A );
 
 		return self::with_texts( is_array( $rows ) ? $rows : array(), $locale, get_locale() );
 	}
@@ -395,120 +369,6 @@ CREATE TABLE $r (
 		self::flush();
 	}
 
-	/**
-	 * Sets every counter of a message to 0.
-	 *
-	 * @param int $id Message ID.
-	 */
-	public static function reset_stats( $id ) {
-		global $wpdb;
-
-		$wpdb->update( self::table( 'messages' ), array_fill_keys( self::COUNTERS, 0 ), array( 'message_id' => (int) $id ) );
-	}
-
-	/**
-	 * A/B test winner B: B texts become the main texts (where B has a text), the test ends, B counters become the
-	 * main counters. False when the message has no A/B test.
-	 *
-	 * @param int $id Message ID.
-	 * @return bool
-	 */
-	public static function use_variant_b( $id ) {
-		global $wpdb;
-
-		$row = self::message( $id );
-
-		if ( ! $row || ! (int) $row['ab_test'] ) {
-			return false;
-		}
-
-		foreach ( $row['texts'] as $locale => $t ) {
-			if ( '' === trim( $t['text_b'] ) ) {
-				continue;
-			}
-
-			$wpdb->update(
-				self::table( 'texts' ),
-				array(
-					'text'          => $t['text_b'],
-					'mobile_text'   => $t['mobile_text_b'],
-					'link_text'     => '' !== $t['link_text_b'] ? $t['link_text_b'] : $t['link_text'],
-					'text_b'        => '',
-					'mobile_text_b' => '',
-					'link_text_b'   => '',
-				),
-				array(
-					'message_id' => (int) $id,
-					'locale'     => $locale,
-				)
-			);
-		}
-
-		$wpdb->update(
-			self::table( 'messages' ),
-			array(
-				'ab_test'  => 0,
-				'views'    => (int) $row['views_b'],
-				'clicks'   => (int) $row['clicks_b'],
-				'copies'   => (int) $row['copies_b'],
-				'views_b'  => 0,
-				'clicks_b' => 0,
-				'copies_b' => 0,
-			),
-			array( 'message_id' => (int) $id )
-		);
-		self::flush();
-
-		return true;
-	}
-
-	/**
-	 * Counts a view, click or code copy (only messages that are on; B only while the A/B test runs; capped).
-	 *
-	 * @param int    $id      Message ID.
-	 * @param string $type    view | click | copy.
-	 * @param string $variant a | b.
-	 */
-	public static function track( $id, $type, $variant ) {
-		global $wpdb;
-
-		$columns = array(
-			'view'  => array(
-				'a' => 'views',
-				'b' => 'views_b',
-			),
-			'click' => array(
-				'a' => 'clicks',
-				'b' => 'clicks_b',
-			),
-			'copy'  => array(
-				'a' => 'copies',
-				'b' => 'copies_b',
-			),
-		);
-
-		if ( ! isset( $columns[ $type ] ) ) {
-			return;
-		}
-
-		$col = $columns[ $type ][ 'b' === $variant ? 'b' : 'a' ];
-		$ab  = 'b' === $variant ? ' AND ab_test = 1' : '';
-
-		// $col and $ab come from the whitelist above.
-		$wpdb->query( $wpdb->prepare( 'UPDATE ' . self::table( 'messages' ) . " SET $col = $col + 1 WHERE message_id = %d AND status = 1 AND $col < 4294967295$ab", (int) $id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- whitelisted column.
-	}
-
-	/**
-	 * Counts a confirmed sign-up of a message.
-	 *
-	 * @param int $id Message ID.
-	 */
-	public static function count_subscribe( $id ) {
-		global $wpdb;
-
-		$wpdb->query( $wpdb->prepare( 'UPDATE ' . self::table( 'messages' ) . ' SET subscribes = subscribes + 1 WHERE message_id = %d AND subscribes < 4294967295', (int) $id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- table name.
-	}
-
 	/*
 	 * ------------------------------------------------------------------
 	 * Rate limits
@@ -529,163 +389,17 @@ CREATE TABLE $r (
 		$t   = self::table( 'rate' );
 
 		// A new window starts at 1; an expired one is reset in the same statement (atomic).
-		$wpdb->query( $wpdb->prepare( "INSERT INTO $t (bucket, hits, expires) VALUES (%s, 1, %d) ON DUPLICATE KEY UPDATE hits = IF(expires < %d, 1, hits + 1), expires = IF(expires < %d, %d, expires)", $bucket, $now + $window, $now, $now, $now + $window ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- table name.
+		$wpdb->query( $wpdb->prepare( 'INSERT INTO %i (bucket, hits, expires) VALUES (%s, 1, %d) ON DUPLICATE KEY UPDATE hits = IF(expires < %d, 1, hits + 1), expires = IF(expires < %d, %d, expires)', $t, $bucket, $now + $window, $now, $now, $now + $window ) );
 
-		return (int) $wpdb->get_var( $wpdb->prepare( "SELECT hits FROM $t WHERE bucket = %s", $bucket ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- table name.
+		return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT hits FROM %i WHERE bucket = %s', $t, $bucket ) );
 	}
 
 	/**
-	 * Daily clean-up: expired rate-limit rows, unconfirmed sign-ups older than 30 days.
+	 * Daily clean-up: expired rate-limit rows (add-ons hook the same event for their own data).
 	 */
 	public static function cleanup() {
 		global $wpdb;
 
-		$wpdb->query( $wpdb->prepare( 'DELETE FROM ' . self::table( 'rate' ) . ' WHERE expires < %d', time() ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- table name.
-		$wpdb->query( $wpdb->prepare( 'DELETE FROM ' . self::table( 'subscribers' ) . ' WHERE status = 0 AND date_added < %s', gmdate( 'Y-m-d H:i:s', time() - 30 * DAY_IN_SECONDS ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- table name.
-	}
-
-	/*
-	 * ------------------------------------------------------------------
-	 * Subscribers (dates in UTC)
-	 * ------------------------------------------------------------------
-	 */
-
-	/**
-	 * Subscriber by address, or null.
-	 *
-	 * @param string $email Address.
-	 * @return array|null
-	 */
-	public static function subscriber( $email ) {
-		global $wpdb;
-
-		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . self::table( 'subscribers' ) . ' WHERE email = %s', strtolower( $email ) ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- table name.
-
-		return $row ? $row : null;
-	}
-
-	/**
-	 * Subscriber by the hash of a confirmation or unsubscribe token.
-	 *
-	 * @param string $column token | unsubscribe.
-	 * @param string $hash   SHA-256 hex.
-	 * @return array|null
-	 */
-	public static function subscriber_by_token( $column, $hash ) {
-		global $wpdb;
-
-		$column = 'token' === $column ? 'token' : 'unsubscribe';
-		$row    = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . self::table( 'subscribers' ) . " WHERE $column = %s AND $column <> ''", $hash ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- whitelisted column.
-
-		return $row ? $row : null;
-	}
-
-	/**
-	 * Stores a sign-up (new or again).
-	 *
-	 * @param array $data email, locale, message_id, status, token, unsubscribe, consent.
-	 */
-	public static function save_subscriber( array $data ) {
-		global $wpdb;
-
-		$t = self::table( 'subscribers' );
-
-		$wpdb->query(
-			$wpdb->prepare(
-				"INSERT INTO $t (email, locale, message_id, status, token, unsubscribe, consent, date_added) VALUES (%s, %s, %d, %d, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE locale = VALUES(locale), message_id = VALUES(message_id), status = VALUES(status), token = VALUES(token), unsubscribe = VALUES(unsubscribe), consent = VALUES(consent), date_added = VALUES(date_added), date_confirmed = NULL", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- table name.
-				strtolower( $data['email'] ),
-				$data['locale'],
-				(int) $data['message_id'],
-				(int) $data['status'],
-				$data['token'],
-				$data['unsubscribe'],
-				$data['consent'],
-				gmdate( 'Y-m-d H:i:s' )
-			)
-		);
-	}
-
-	/**
-	 * Confirms a sign-up.
-	 *
-	 * @param int $id Subscriber ID.
-	 */
-	public static function confirm_subscriber( $id ) {
-		global $wpdb;
-
-		$wpdb->update(
-			self::table( 'subscribers' ),
-			array(
-				'status'         => 1,
-				'token'          => '',
-				'date_confirmed' => gmdate( 'Y-m-d H:i:s' ),
-			),
-			array( 'subscriber_id' => (int) $id )
-		);
-	}
-
-	/**
-	 * Unsubscribes (status 2; the row stays as proof of the opt-out).
-	 *
-	 * @param int $id Subscriber ID.
-	 */
-	public static function unsubscribe( $id ) {
-		global $wpdb;
-
-		$wpdb->update(
-			self::table( 'subscribers' ),
-			array(
-				'status' => 2,
-				'token'  => '',
-			),
-			array( 'subscriber_id' => (int) $id )
-		);
-	}
-
-	/**
-	 * Deletes every row of an address (erasure request). Returns the number of rows.
-	 *
-	 * @param string $email Address.
-	 * @return int
-	 */
-	public static function erase_subscriber( $email ) {
-		global $wpdb;
-
-		return (int) $wpdb->delete( self::table( 'subscribers' ), array( 'email' => strtolower( $email ) ), array( '%s' ) );
-	}
-
-	/**
-	 * Number of subscribers by status (0 pending, 1 confirmed, 2 unsubscribed).
-	 *
-	 * @return int[]
-	 */
-	public static function subscriber_counts() {
-		global $wpdb;
-
-		$out  = array(
-			0 => 0,
-			1 => 0,
-			2 => 0,
-		);
-		$rows = $wpdb->get_results( 'SELECT status, COUNT(*) AS total FROM ' . self::table( 'subscribers' ) . ' GROUP BY status', ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- no input.
-
-		foreach ( (array) $rows as $row ) {
-			$out[ (int) $row['status'] ] = (int) $row['total'];
-		}
-
-		return $out;
-	}
-
-	/**
-	 * Subscribers for the CSV export, a page at a time.
-	 *
-	 * @param int $offset First row.
-	 * @param int $limit  Rows.
-	 * @return array
-	 */
-	public static function subscribers( $offset, $limit ) {
-		global $wpdb;
-
-		return (array) $wpdb->get_results( $wpdb->prepare( 'SELECT email, status, locale, message_id, consent, date_added, date_confirmed FROM ' . self::table( 'subscribers' ) . ' ORDER BY subscriber_id ASC LIMIT %d, %d', (int) $offset, (int) $limit ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- table name.
+		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE expires < %d', self::table( 'rate' ), time() ) );
 	}
 }

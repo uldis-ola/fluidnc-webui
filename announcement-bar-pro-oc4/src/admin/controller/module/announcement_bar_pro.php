@@ -4,10 +4,10 @@ namespace Opencart\Admin\Controller\Extension\AnnouncementBarPro\Module;
 /**
  * Announcement Bar Pro — admin controller (OpenCart 4.0.x / 4.1.x)
  *
- * @version 2.4.0
+ * @version 2.4.1
  */
 class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
-	public const VERSION       = '2.4.0';
+	public const VERSION       = '2.4.1';
 	public const CODE          = 'module_announcement_bar_pro';
 	public const EVENT_CODE    = 'announcement_bar_pro';
 	public const ROUTE         = 'extension/announcement_bar_pro/module/announcement_bar_pro';
@@ -155,6 +155,10 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 				$json['error']['custom_css'] = sprintf($this->language->get('error_text_length'), self::MAX_CSS);
 			}
 
+			foreach ($this->tsErrors() as $key => $message) {
+				$json['error'][$key] = $message;
+			}
+
 			if (isset($json['error'])) {
 				$json['error']['warning'] = $this->language->get('error_form');
 			}
@@ -178,6 +182,12 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 			$out['default_bg_color']   = $this->abp->color($this->postValue('default_bg_color'));
 			$out['default_text_color'] = $this->abp->color($this->postValue('default_text_color'));
 			$out['custom_css']         = $this->fx->css(html_entity_decode($this->postValue('custom_css'), ENT_QUOTES, 'UTF-8'));
+			// 2.4.1 Cloudflare Turnstile (the secret only when it changes; see tsSecretToSave())
+			$out['ts_site']            = $this->fx->tsSiteKey($this->postValue('ts_site'));
+
+			if (($secret = $this->tsSecretToSave()) !== null) {
+				$out['ts_secret'] = $secret;
+			}
 
 			$data = [];
 			foreach ($out as $key => $value) {
@@ -1380,7 +1390,7 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 	private function settingKeys() {
 		return array('status', 'position', 'sticky', 'mode', 'interval', 'speed', 'font_size', 'padding', 'dismissible', 'dismiss_days', 'allow_html', 'default_bg_color', 'default_text_color', 'delete_data', 'color_mode', 'style', 'transition', 'arrows',
 			'max_messages', 'autohide', 'pause_button', 'font', 'custom_css', 'ga4', 'geo_cf', 'geo_fallback', 'privacy_id', 'double_optin',
-			'signup_limit_ip', 'signup_limit_total', 'consent_wait');
+			'signup_limit_ip', 'signup_limit_total', 'consent_wait', 'ts_site'); // never the Turnstile secret
 	}
 
 	private function styleList() {
@@ -1780,6 +1790,39 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 	}
 
 	/** Settings tab: privacy pages, sign-up counts, mail check, fonts. */
+	/**
+	 * Turnstile secret key to store (2.4.1): a new valid key replaces the saved one, "remove" clears it, an empty field
+	 * keeps the saved key (null = leave it out of the saved settings). The key is never sent back to any page.
+	 */
+	private function tsSecretToSave() {
+		$posted = $this->fx->tsSecretKey($this->postValue('ts_secret'));
+
+		if ($posted !== '') {
+			return $posted;
+		}
+
+		return $this->postValue('ts_secret_remove') === '1' ? '' : null;
+	}
+
+	/** Turnstile key errors of a settings POST: array(field => message). */
+	private function tsErrors() {
+		$errors = array();
+		$site   = $this->postValue('ts_site');
+		$secret = $this->postValue('ts_secret');
+
+		if ($site !== '' && $this->fx->tsSiteKey($site) === '') {
+			$errors['ts_site'] = $this->language->get('error_ts_site');
+		}
+
+		if ($secret !== '' && $this->fx->tsSecretKey($secret) === '') {
+			$errors['ts_secret'] = $this->language->get('error_ts_secret');
+		} elseif ($site !== '' && $secret === '' && ($this->postValue('ts_secret_remove') === '1' || $this->fx->tsSecretKey($this->config->get(self::CODE . '_ts_secret')) === '')) {
+			$errors['ts_secret'] = $this->language->get('error_ts_secret_required');
+		}
+
+		return $errors;
+	}
+
 	private function settingsExtra() {
 		$this->load->model('catalog/information');
 
@@ -1792,7 +1835,9 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 			'information_pages' => $pages,
 			'subscriber_counts' => $this->model_extension_announcement_bar_pro_module_announcement_bar_pro->countSubscribers(),
 			'mail_ready'        => (string)$this->config->get('config_mail_engine') !== '' && (string)$this->config->get('config_email') !== '',
-			'font_list'         => $this->fontStacks()
+			'font_list'         => $this->fontStacks(),
+			'ts_secret_saved'   => $this->fx->tsSecretKey($this->config->get(self::CODE . '_ts_secret')) !== '',
+			'ts_on'             => $this->fx->tsOn($this->config->get(self::CODE . '_ts_site'), $this->config->get(self::CODE . '_ts_secret'))
 		);
 	}
 

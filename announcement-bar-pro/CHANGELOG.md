@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.4.1 — 2026-11-07
+Optional **Cloudflare Turnstile** anti-bot check of the e-mail sign-up form (site key + secret key in the settings; on only with both; the secret is never printed into any page, the storefront or an export; server-side `siteverify` check, fail closed). **Re-subscribe rule:** a new sign-up of an unsubscribed address no longer overwrites the unsubscribe record — with double opt-in only a new confirmation token is stored and mailed, and only the owner's confirmation subscribes the address again. Storefront script: a cart change during a running cart refresh is no longer lost (`cartAgain`); the storefront JS / CSS is byte-identical to the WordPress edition. Schema stays 8. Full list: `CHANGELOG.md` of the universal package.
+
 ## 2.4.0 — 2026-11-07
 Several bars + inline boxes with priority, country / cart / campaign / new-or-returning targeting, per-country and per-currency free-shipping amounts, OpenCart coupons, tiered goals, triggers, recurring countdown, e-mail sign-up with double opt-in, background image, system fonts, custom CSS, auto-hide, pause button, 13 templates, GA4 events; DB schema 8. Pre-release review fixes: e-mail header injection through quoted addresses closed, CloudFlare headers trusted only from CloudFlare IP ranges, no account newsletter changes or re-subscriptions without double opt-in, 3 confirmation mails per address per day, sign-up limits in Settings, coupon hidden on its end date (as OpenCart), Wait for cookie consent setting, cheaper cart endpoint. Full list: `CHANGELOG.md` of the universal package (`announcement-bar-pro-universal`).
 - Fixed: the privacy-policy link in the e-mail sign-up form was HTML-escaped twice (`&amp;amp;`), so it could open the wrong page.

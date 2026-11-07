@@ -39,3 +39,8 @@ $_['abp_mail_body']               = 'please confirm that you want to receive new
 $_['abp_mail_ignore']             = 'If you did not ask for this, simply ignore this e-mail — you will not be subscribed. The link is valid for 7 days.';
 $_['abp_mail_unsubscribe']        = 'Unsubscribe at any time:';
 $_['abp_text_continue']           = 'Continue shopping';
+// 2.4.1 Cloudflare Turnstile (optional anti-bot check of the sign-up form)
+$_['abp_text_ts_wait']              = 'This form uses Cloudflare\'s anti-bot check. Please accept cookies to use it.';
+$_['abp_error_ts_wait']             = 'The anti-bot check is not ready yet — please wait a moment or reload the page.';
+$_['abp_error_ts_missing']          = 'Please wait a moment until the anti-bot check is done, then send again.';
+$_['abp_error_ts_failed']           = 'The anti-bot check failed. Please reload the page and try again.';

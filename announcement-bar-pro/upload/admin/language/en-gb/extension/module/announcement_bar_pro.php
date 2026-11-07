@@ -463,3 +463,16 @@ $_['error_image']               = 'Choose an image (JPG, PNG, GIF, WebP, AVIF) f
 $_['error_overlay']             = 'Overlay: 0 to 90 %!';
 $_['error_extra_length']        = 'Must not exceed %s characters!';
 $_['error_email']               = 'Enter a valid e-mail address!';
+// 2.4.1 Cloudflare Turnstile
+$_['entry_ts_site']               = 'Turnstile site key';
+$_['entry_ts_secret']             = 'Turnstile secret key';
+$_['help_ts']                     = 'Optional anti-bot check of the sign-up form with Cloudflare Turnstile (free: create a widget in the Cloudflare dashboard → Turnstile and copy both keys). On only when both keys are set. Cloudflare\'s script is then loaded on pages with a sign-up form, and Cloudflare processes the visitor\'s IP address and browser data for the check — mention this in your privacy policy. With "Wait for cookie consent" the script loads only after consent. Without a passed check (also when Cloudflare cannot be reached) no sign-up is accepted.';
+$_['text_ts_docs']                = 'Cloudflare Turnstile documentation';
+$_['help_ts_secret_saved']        = 'A secret key is saved — leave empty to keep it.';
+$_['help_ts_secret_new']          = 'Never shown again after saving.';
+$_['text_ts_remove']              = 'Remove the saved secret key (turns Turnstile off)';
+$_['text_ts_on']                  = 'Turnstile is on.';
+$_['text_ts_off']                 = 'Turnstile is off.';
+$_['error_ts_site']               = 'The site key has the wrong format (10–100 characters: letters, digits, _ and -)!';
+$_['error_ts_secret']             = 'The secret key has the wrong format (10–200 characters: letters, digits, _ . and -)!';
+$_['error_ts_secret_required']    = 'Enter the secret key too — Turnstile needs both keys!';

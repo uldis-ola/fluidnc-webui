@@ -1,8 +1,7 @@
 <?php
 /**
- * Public endpoints: statistics (REST, POST), e-mail sign-up (REST, POST), cart refresh (WooCommerce AJAX, GET,
- * read-only) — and the admin-only preview / search routes. None of them writes a session; every public one is
- * same-origin only and rate limited.
+ * Endpoints: cart refresh (WooCommerce AJAX, GET, read-only, same-origin, rate limited, no session write) and the
+ * admin-only preview route. same_origin() and limited() are shared with add-ons for their own public endpoints.
  *
  * @package AnnouncementBarPro
  */
@@ -29,24 +28,6 @@ class Endpoints {
 	 * REST routes.
 	 */
 	public function routes() {
-		register_rest_route(
-			self::NS,
-			'/track',
-			array(
-				'methods'             => 'POST',
-				'callback'            => array( $this, 'track' ),
-				'permission_callback' => '__return_true', // Public: anonymous counters, checked inside (same origin, rate limit).
-			)
-		);
-		register_rest_route(
-			self::NS,
-			'/subscribe',
-			array(
-				'methods'             => 'POST',
-				'callback'            => array( new Subscribers(), 'subscribe' ),
-				'permission_callback' => '__return_true', // Public form: form token, honeypot, same origin and rate limits inside.
-			)
-		);
 		register_rest_route(
 			self::NS,
 			'/preview',
@@ -97,8 +78,7 @@ class Endpoints {
 	 * @return bool
 	 */
 	public static function limited( $action, $max, $window, $per = true ) {
-		$fx  = new Features();
-		$who = is_string( $per ) ? 'k:' . $per : ( $per ? $fx->client_ip( Commerce::server(), (bool) Settings::effective()['geo_cf'] ) : '*' );
+		$who = is_string( $per ) ? 'k:' . $per : ( $per ? self::client_ip() : '*' );
 
 		// IPv6: one visitor usually holds a whole /64, so the limit counts the /64 prefix.
 		$bin = false !== strpos( $who, ':' ) && 0 !== strpos( $who, 'k:' ) ? @inet_pton( $who ) : false; // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- invalid input gives false.
@@ -110,29 +90,17 @@ class Endpoints {
 	}
 
 	/**
-	 * Statistics (POST id, type, v). Counters only; nothing personal is read or stored. Always 204.
+	 * Visitor IP for rate limits: REMOTE_ADDR (filter "abpro_client_ip": an add-on may use a trusted proxy header).
+	 * Never stored — only a keyed hash of it.
 	 *
-	 * @param \WP_REST_Request $request Request.
-	 * @return \WP_REST_Response
+	 * @return string
 	 */
-	public function track( \WP_REST_Request $request ) {
-		try {
-			$id      = (string) $request->get_param( 'id' );
-			$type    = (string) $request->get_param( 'type' );
-			$variant = 'b' === $request->get_param( 'v' ) ? 'b' : 'a';
+	public static function client_ip() {
+		$server = Commerce::server();
+		$remote = isset( $server['REMOTE_ADDR'] ) ? (string) $server['REMOTE_ADDR'] : '';
+		$ip     = apply_filters( 'abpro_client_ip', $remote, $server );
 
-			if ( Licence::is_pro() && ! empty( Settings::get()['status'] ) && preg_match( '/^\d{1,10}$/', $id ) && in_array( $type, array( 'view', 'click', 'copy' ), true ) && self::same_origin() && ! self::limited( 'track', 300, 600 ) ) {
-				DB::track( (int) $id, $type, $variant );
-			}
-		} catch ( \Throwable $e ) {
-			// Statistics must never produce an error.
-			unset( $e );
-		}
-
-		$response = new \WP_REST_Response( null, 204 );
-		$response->header( 'Cache-Control', 'no-store' );
-
-		return $response;
+		return is_string( $ip ) && filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : $remote;
 	}
 
 	/**
@@ -150,15 +118,12 @@ class Endpoints {
 			// Cheap checks first: without valid ids there is nothing to do (no rate-limit write either).
 			if ( $ids && $get && ! empty( Settings::get()['status'] ) && self::same_origin( true ) && ! self::limited( 'cart', 1200, 600 ) ) {
 				$s        = Settings::effective();
-				$renderer = new Renderer( $s, Licence::is_pro() );
+				$renderer = new Renderer( $s );
 				$out      = array();
-				$user     = wp_get_current_user();
-				$mine     = $user->exists() ? (array) $user->roles : array( 'guest' );
 
 				foreach ( DB::active_messages( determine_locale(), get_locale() ) as $row ) {
-					$roles = json_decode( (string) $row['roles'], true );
-
-					if ( ! in_array( (int) $row['message_id'], $ids, true ) || ( is_array( $roles ) && $roles && ! array_intersect( $roles, $mine ) ) ) {
+					// Page rules cannot be checked here (no page); visitor rules of an add-on can ("abpro_cart_row").
+					if ( ! in_array( (int) $row['message_id'], $ids, true ) || ! apply_filters( 'abpro_cart_row', true, $row ) ) {
 						continue;
 					}
 
@@ -207,7 +172,6 @@ class Endpoints {
 		$admin  = new Admin();
 		$locale = (string) $request->get_param( 'pv_locale' );
 		$device = 'mobile' === $request->get_param( 'pv_device' ) ? 'mobile' : 'desktop';
-		$abv    = 'b' === $request->get_param( 'pv_variant' ) ? 'b' : 'a';
 		$cart   = (float) $request->get_param( 'pv_cart' );
 
 		list( $data, $texts ) = $admin->message_from_post( is_array( $post ) ? $post : array(), null, true );
@@ -225,38 +189,30 @@ class Endpoints {
 		$row['locale']     = $locale;
 		$row['status']     = 1;
 
-		if ( 'b' === $abv && ! empty( $row['ab_test'] ) && '' !== trim( $row['text_b'] ) ) {
-			$row['text']        = $row['text_b'];
-			$row['mobile_text'] = $row['mobile_text_b'];
-			$row['link_text']   = '' !== trim( $row['link_text_b'] ) ? $row['link_text_b'] : $row['link_text'];
-			$row['ab_test']     = 0;
-		}
+		$row = apply_filters( 'abpro_preview_row', $row, $request );
 
 		$s        = Settings::effective();
-		$pro      = Licence::is_pro();
-		$renderer = new Renderer( $s, $pro, true );
+		$renderer = new Renderer( $s, true );
 		$renderer->set_sample_subtotal( $cart );
 
-		$item  = $renderer->item( $row );
+		$item  = is_array( $row ) && $row ? $renderer->item( $row ) : null;
 		$html  = '';
 		$place = 'top';
 
 		if ( $item ) {
-			$place  = in_array( $item['placement'], array( 'top', 'bottom', 'cart', 'product', 'minicart' ), true ) ? $item['placement'] : ( 'bottom' === $s['position'] ? 'bottom' : 'top' );
-			$inline = in_array( $place, array( 'cart', 'product', 'minicart' ), true );
+			$places = Renderer::placements();
+			$place  = '' !== $item['placement'] && in_array( $item['placement'], $places, true ) ? $item['placement'] : ( 'bottom' === $s['position'] ? 'bottom' : 'top' );
+			$inline = Renderer::is_inline( $place );
 			$box    = $renderer->container( $place, array( $item ), $inline );
 
 			$box['id'] = $inline ? '' : 'abp-bar';
-			$need      = array(
-				'cart'  => false,
-				'email' => (bool) $item['email'],
-			);
-			$html      = $renderer->html( array( $box ), $renderer->common( $need ) );
+			$need      = apply_filters( 'abpro_need', array( 'cart' => false ), $item );
+			$html      = $renderer->html( array( $box ), $renderer->common( is_array( $need ) ? $need : array() ) );
 		}
 
 		return new \WP_REST_Response(
 			array(
-				'html'   => self::preview_document( $html, $place, $device, '' !== $s['custom_css'] ? ( new Features() )->css( $s['custom_css'] ) : '' ),
+				'html'   => self::preview_document( $html, $place, $device, (string) apply_filters( 'abpro_preview_css', '', $s ) ),
 				'shown'  => (bool) $item,
 				'place'  => $place,
 				'device' => $device,
@@ -276,16 +232,11 @@ class Endpoints {
 	private static function preview_document( $bar, $place, $device, $css ) {
 		$v      = rawurlencode( ABPRO_VERSION );
 		$base   = ABPRO_URL . 'assets/';
-		$inline = in_array( $place, array( 'cart', 'product', 'minicart' ), true );
-		$labels = array(
-			'cart'     => __( 'Cart', 'announcement-bar-pro' ),
-			'product'  => __( 'Product page — under the price', 'announcement-bar-pro' ),
-			'minicart' => __( 'Mini-cart', 'announcement-bar-pro' ),
-		);
+		$inline = Renderer::is_inline( $place );
 		$page   = '<main class="pv-page"><div class="pv-line w60"></div><div class="pv-line w80"></div><div class="pv-line w40"></div></main>';
 
 		if ( $inline ) {
-			$page = '<main class="pv-page"><p class="pv-label">' . esc_html( $labels[ $place ] ) . '</p>' . $bar . '<div class="pv-line w80"></div><div class="pv-line w60"></div></main>';
+			$page = '<main class="pv-page"><p class="pv-label">' . esc_html( (string) apply_filters( 'abpro_placement_label', $place ) ) . '</p>' . $bar . '<div class="pv-line w80"></div><div class="pv-line w60"></div></main>';
 			$bar  = '';
 		}
 
@@ -293,7 +244,7 @@ class Endpoints {
 		return '<!DOCTYPE html><html lang="' . esc_attr( str_replace( '_', '-', get_locale() ) ) . '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
 			. '<link rel="stylesheet" href="' . esc_url( $base . 'css/announcement-bar-pro.css?ver=' . $v ) . '">' // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- standalone preview document.
 			. '<link rel="stylesheet" href="' . esc_url( $base . 'css/announcement-bar-pro-wp.css?ver=' . $v ) . '">' // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- standalone preview document.
-			. '<style>body{margin:0;font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#1f2937;background:#f3f4f6;}.pv-page{padding:18px 20px;}.pv-line{height:10px;border-radius:5px;background:#d1d5db;margin:12px 0;}.w40{width:40%}.w60{width:60%}.w80{width:80%}.pv-label{margin:0 0 4px;font-size:12px;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.05em;}' . ( 'mobile' === $device ? '' : '' ) . '</style>'
+			. '<style>body{margin:0;font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#1f2937;background:#f3f4f6;}.pv-page{padding:18px 20px;}.pv-line{height:10px;border-radius:5px;background:#d1d5db;margin:12px 0;}.w40{width:40%}.w60{width:60%}.w80{width:80%}.pv-label{margin:0 0 4px;font-size:12px;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.05em;}</style>'
 			. ( '' !== $css ? '<style id="abp-custom-css">' . $css . '</style>' : '' )
 			. '</head><body>' . $bar
 			. '<script src="' . esc_url( $base . 'js/announcement-bar-pro-pre.js?ver=' . $v ) . '"></script>' // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- standalone preview document.

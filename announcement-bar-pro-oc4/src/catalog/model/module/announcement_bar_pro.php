@@ -4,7 +4,7 @@ namespace Opencart\Catalog\Model\Extension\AnnouncementBarPro\Module;
 /**
  * Announcement Bar Pro — catalog model (OpenCart 4.0.x / 4.1.x)
  *
- * @version 2.4.0
+ * @version 2.4.1
  */
 class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 	/**
@@ -218,21 +218,62 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 
 	/**
 	 * New or renewed sign-up (status 0 = waiting for confirmation, 1 = confirmed right away). Only hashes of the tokens
-	 * are stored. Returns the subscriber_id.
+	 * are stored. An unsubscribed row (status 2) is never changed here (2.4.1): its unsubscribe record (status, hashes,
+	 * consent, dates) stays as it is; only the address owner can subscribe again, through the confirmation e-mail and
+	 * resubscribe(). Returns the subscriber_id.
 	 */
 	public function saveSubscriber(array $data): int {
-		$fields = "`email` = '" . $this->db->escape((string)$data['email']) . "', `store_id` = '" . (int)$data['store_id'] . "', `language_id` = '" . (int)$data['language_id'] . "', `message_id` = '" . (int)$data['message_id'] . "', `status` = '" . ((int)$data['status'] === 1 ? 1 : 0) . "', `token` = '" . $this->db->escape((string)$data['token']) . "', `unsubscribe` = '" . $this->db->escape((string)$data['unsubscribe']) . "', `consent` = '" . $this->db->escape((string)$data['consent']) . "', `date_added` = NOW(), `date_confirmed` = " . ((int)$data['status'] === 1 ? 'NOW()' : 'NULL');
+		$status = (int)$data['status'] === 1 ? 1 : 0;
+		$values = array(
+			'language_id'    => "'" . (int)$data['language_id'] . "'",
+			'message_id'     => "'" . (int)$data['message_id'] . "'",
+			'token'          => "'" . $this->db->escape((string)$data['token']) . "'",
+			'unsubscribe'    => "'" . $this->db->escape((string)$data['unsubscribe']) . "'",
+			'consent'        => "'" . $this->db->escape((string)$data['consent']) . "'",
+			'date_added'     => 'NOW()',
+			'date_confirmed' => $status === 1 ? 'NOW()' : 'NULL'
+		);
 
-		$this->db->query("INSERT INTO `" . DB_PREFIX . "abp_subscriber` SET " . $fields . " ON DUPLICATE KEY UPDATE " . $fields);
+		$insert = array("`email` = '" . $this->db->escape((string)$data['email']) . "'", "`store_id` = '" . (int)$data['store_id'] . "'", "`status` = '" . $status . "'");
+		$update = array();
+
+		foreach ($values as $column => $value) {
+			$insert[] = "`" . $column . "` = " . $value;
+			$update[] = "`" . $column . "` = IF(`status` = 2, `" . $column . "`, " . $value . ")";
+		}
+
+		// The UPDATE list is evaluated left to right (MySQL, MariaDB): `status` comes last, so every IF() above still
+		// sees the stored status (with MariaDB's SIMULTANEOUS_ASSIGNMENT all of them do anyway).
+		$update[] = "`status` = IF(`status` = 2, 2, " . $status . ")";
+
+		$this->db->query("INSERT INTO `" . DB_PREFIX . "abp_subscriber` SET " . implode(', ', $insert) . " ON DUPLICATE KEY UPDATE " . implode(', ', $update));
 
 		$row = $this->getSubscriber((string)$data['email'], (int)$data['store_id']);
 
 		return $row ? (int)$row['subscriber_id'] : 0;
 	}
 
-	/** Confirmation (double opt-in): status 1, token used up. */
+	/** Confirmation (double opt-in) of a waiting sign-up: status 1, token used up. Never touches an unsubscribed row. */
 	public function confirmSubscriber(int $subscriber_id): void {
-		$this->db->query("UPDATE `" . DB_PREFIX . "abp_subscriber` SET `status` = '1', `token` = '', `date_confirmed` = NOW() WHERE `subscriber_id` = '" . (int)$subscriber_id . "'");
+		$this->db->query("UPDATE `" . DB_PREFIX . "abp_subscriber` SET `status` = '1', `token` = '', `date_confirmed` = NOW() WHERE `subscriber_id` = '" . (int)$subscriber_id . "' AND `status` = '0'");
+	}
+
+	/**
+	 * Re-subscription request of an unsubscribed address (2.4.1): only the hash of the new confirmation token is
+	 * stored; status, unsubscribe hash, consent, language, message and dates stay untouched until the owner confirms.
+	 */
+	public function setResubscribeToken(int $subscriber_id, string $token_hash): void {
+		$this->db->query("UPDATE `" . DB_PREFIX . "abp_subscriber` SET `token` = '" . $this->db->escape((string)$token_hash) . "' WHERE `subscriber_id` = '" . (int)$subscriber_id . "' AND `status` = '2'");
+	}
+
+	/**
+	 * Confirmed re-subscription (the owner opened the link of the confirmation e-mail and pressed the button): the only
+	 * way an unsubscribed row becomes subscribed again. New unsubscribe hash (derived from the confirmation token).
+	 */
+	public function resubscribe(int $subscriber_id, string $unsubscribe_hash): bool {
+		$this->db->query("UPDATE `" . DB_PREFIX . "abp_subscriber` SET `status` = '1', `token` = '', `date_confirmed` = NOW(), `unsubscribe` = '" . $this->db->escape((string)$unsubscribe_hash) . "' WHERE `subscriber_id` = '" . (int)$subscriber_id . "' AND `status` = '2'");
+
+		return $this->db->countAffected() > 0;
 	}
 
 	public function unsubscribe(int $subscriber_id): void {

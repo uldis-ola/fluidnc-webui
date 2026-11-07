@@ -14,13 +14,6 @@ defined( 'ABSPATH' ) || exit;
  */
 class Settings {
 	const OPTION = 'abpro_settings';
-	const STYLES = array( 'solid', 'gradient', 'soft', 'minimal', 'glass' );
-
-	/** Styles of the free edition. */
-	const FREE_STYLES = array( 'solid', 'soft', 'minimal' );
-
-	/** Settings that only work with a Pro licence (their stored value is kept while the licence is missing). */
-	const PRO_KEYS = array( 'max_messages', 'autohide', 'pause_button', 'font', 'custom_css', 'ga4', 'consent_wait', 'double_optin', 'privacy_id', 'signup_limit_ip', 'signup_limit_total', 'geo_cf', 'geo_fallback' );
 
 	/**
 	 * Settings of this request.
@@ -30,12 +23,12 @@ class Settings {
 	private static $cache = null;
 
 	/**
-	 * Default values.
+	 * Default values (filter "abpro_settings_defaults" adds the settings of an add-on).
 	 *
 	 * @return array
 	 */
 	public static function defaults() {
-		return array(
+		$own = array(
 			'status'             => 1,
 			'position'           => 'top',
 			'sticky'             => 0,
@@ -55,21 +48,35 @@ class Settings {
 			'default_text_color' => '#ffffff',
 			'languages'          => array(),
 			'delete_data'        => 0,
-			// Pro.
-			'max_messages'       => 0,
-			'autohide'           => 0,
-			'pause_button'       => 1,
-			'font'               => '',
-			'custom_css'         => '',
-			'ga4'                => 0,
-			'consent_wait'       => 0,
-			'double_optin'       => 1,
-			'privacy_id'         => 0,
-			'signup_limit_ip'    => 10,
-			'signup_limit_total' => 200,
-			'geo_cf'             => 0,
-			'geo_fallback'       => 'store',
 		);
+		$all = apply_filters( 'abpro_settings_defaults', $own );
+
+		return is_array( $all ) ? array_merge( $own, $all ) : $own;
+	}
+
+	/**
+	 * Choices of a select setting: value => label (filter "abpro_setting_choices" adds values of an add-on).
+	 *
+	 * @param string $key position | mode | style.
+	 * @return array
+	 */
+	public static function choices( $key ) {
+		$own  = array(
+			'position' => array( 'top' => __( 'Top of the page', 'announcement-bar-pro' ) ),
+			'mode'     => array(
+				'rotate' => __( 'Rotate one at a time', 'announcement-bar-pro' ),
+				'stack'  => __( 'Show all, one under another', 'announcement-bar-pro' ),
+			),
+			'style'    => array(
+				'solid'   => __( 'Solid', 'announcement-bar-pro' ),
+				'soft'    => __( 'Soft', 'announcement-bar-pro' ),
+				'minimal' => __( 'Minimal', 'announcement-bar-pro' ),
+			),
+		);
+		$list = isset( $own[ $key ] ) ? $own[ $key ] : array();
+		$more = apply_filters( 'abpro_setting_choices', $list, $key );
+
+		return is_array( $more ) && $more ? $more : $list;
 	}
 
 	/**
@@ -99,28 +106,24 @@ class Settings {
 	}
 
 	/**
-	 * Settings the storefront uses: Pro values fall back to the defaults (and Pro styles / placements to free ones)
-	 * while no Pro licence is active.
+	 * Settings the storefront uses: values this plugin does not offer (kept from an add-on) fall back to the ones it
+	 * does, unless an add-on takes them over (filter "abpro_effective_settings").
 	 *
 	 * @return array
 	 */
 	public static function effective() {
-		$s = self::get();
+		$stored = self::get();
+		$s      = $stored;
 
-		if ( Licence::is_pro() ) {
-			return $s;
+		foreach ( array( 'position', 'mode', 'style' ) as $key ) {
+			if ( ! isset( self::choices( $key )[ $s[ $key ] ] ) ) {
+				$s[ $key ] = 'mode' === $key && 'marquee' === $s[ $key ] ? 'rotate' : array_keys( self::choices( $key ) )[0];
+			}
 		}
 
-		foreach ( self::PRO_KEYS as $key ) {
-			$s[ $key ] = self::defaults()[ $key ];
-		}
+		$s = apply_filters( 'abpro_effective_settings', $s, $stored );
 
-		$s['pause_button'] = 0;
-		$s['position']     = 'top';
-		$s['mode']         = 'marquee' === $s['mode'] ? 'rotate' : $s['mode'];
-		$s['style']        = in_array( $s['style'], self::FREE_STYLES, true ) ? $s['style'] : 'solid';
-
-		return $s;
+		return is_array( $s ) ? $s : $stored;
 	}
 
 	/**
@@ -159,13 +162,14 @@ class Settings {
 	/**
 	 * Validates posted settings. Returns array( clean settings, errors by field ).
 	 *
+	 * Settings of an add-on are validated by it (filter "abpro_validate_settings"); without one they keep their stored
+	 * values.
+	 *
 	 * @param array $p   Posted values (unslashed).
 	 * @param array $old Stored settings.
-	 * @param bool  $pro Pro licence active.
 	 * @return array
 	 */
-	public static function validate( array $p, array $old, $pro ) {
-		$fx  = new Features();
+	public static function validate( array $p, array $old ) {
 		$san = new Sanitizer();
 		$err = array();
 		$out = $old;
@@ -203,11 +207,11 @@ class Settings {
 		$out['arrows']       = $flag( 'arrows' );
 		$out['allow_html']   = $flag( 'allow_html' );
 		$out['delete_data']  = $flag( 'delete_data' );
-		$out['position']     = $pick( 'position', $pro ? array( 'top', 'bottom' ) : array( 'top' ), 'top' );
-		$out['mode']         = $pick( 'mode', $pro ? array( 'rotate', 'marquee', 'stack' ) : array( 'rotate', 'stack' ), 'rotate' );
+		$out['position']     = $pick( 'position', array_map( 'strval', array_keys( self::choices( 'position' ) ) ), 'top' );
+		$out['mode']         = $pick( 'mode', array_map( 'strval', array_keys( self::choices( 'mode' ) ) ), 'rotate' );
 		$out['transition']   = $pick( 'transition', array( 'fade', 'slide' ), 'fade' );
 		$out['color_mode']   = $pick( 'color_mode', array( 'custom', 'auto' ), 'custom' );
-		$out['style']        = $pick( 'style', $pro ? self::STYLES : self::FREE_STYLES, 'solid' );
+		$out['style']        = $pick( 'style', array_map( 'strval', array_keys( self::choices( 'style' ) ) ), 'solid' );
 		$out['interval']     = $range( 'interval', 2, 60, $d['interval'] );
 		$out['speed']        = $range( 'speed', 20, 300, $d['speed'] );
 		$out['font_size']    = $range( 'font_size', 10, 30, $d['font_size'] );
@@ -239,37 +243,9 @@ class Settings {
 		}
 		$out['languages'] = array_values( array_slice( $langs, 0, 11 ) );
 
-		if ( ! $pro ) {
-			return array( $out, $err ); // Pro settings keep their stored values.
-		}
+		$result = apply_filters( 'abpro_validate_settings', array( $out, $err ), $p, $old );
 
-		$out['pause_button']       = $flag( 'pause_button' );
-		$out['ga4']                = $flag( 'ga4' );
-		$out['consent_wait']       = $flag( 'consent_wait' );
-		$out['double_optin']       = $flag( 'double_optin' );
-		$out['geo_cf']             = $flag( 'geo_cf' );
-		$out['max_messages']       = $range( 'max_messages', 0, 20, $d['max_messages'] );
-		$out['autohide']           = $range( 'autohide', 0, 600, $d['autohide'] );
-		$out['signup_limit_ip']    = $range( 'signup_limit_ip', 1, 1000, $d['signup_limit_ip'] );
-		$out['signup_limit_total'] = $range( 'signup_limit_total', 1, 100000, $d['signup_limit_total'] );
-		$out['font']               = $pick( 'font', Features::FONTS, '' );
-		$out['geo_fallback']       = $pick( 'geo_fallback', array( 'store', 'none' ), 'store' );
-
-		$privacy = isset( $p['privacy_id'] ) && is_scalar( $p['privacy_id'] ) ? (int) $p['privacy_id'] : 0;
-		if ( $privacy > 0 && 'publish' !== get_post_status( $privacy ) ) {
-			$err['privacy_id'] = __( 'Please choose a published page.', 'announcement-bar-pro' );
-			$privacy           = 0;
-		}
-		$out['privacy_id'] = $privacy;
-
-		$css = isset( $p['custom_css'] ) && is_string( $p['custom_css'] ) ? $p['custom_css'] : '';
-		if ( strlen( $css ) > Features::MAX_CSS ) {
-			/* translators: %d: number of characters */
-			$err['custom_css'] = sprintf( __( 'At most %d characters.', 'announcement-bar-pro' ), Features::MAX_CSS );
-		}
-		$out['custom_css'] = $fx->css( $css );
-
-		return array( $out, $err );
+		return is_array( $result ) && 2 === count( $result ) ? array_values( $result ) : array( $out, $err );
 	}
 
 	/**

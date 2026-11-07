@@ -1,7 +1,12 @@
 // Announcement Bar Pro for WordPress — end-to-end test on a REAL local WordPress + WooCommerce (Playwright Chromium).
-// Free mode first (Pro locked), then a Pro key is activated through the settings screen and every Pro feature is
-// created through the admin UI and checked on the storefront (Storefront theme, then Twenty Twenty-Five with the cart /
-// checkout blocks) at 1366 and 390 px: no JS errors, no PHP notices in debug.log, no horizontal scroll, contrast ≥ 4.5:1.
+// 1. The free plugin alone (wordpress.org build): no locked UI, no licence code, every free feature through the admin UI
+//    and on the storefront. 2. The Premium add-on is activated, a licence key is entered on the settings screen and
+//    every premium feature is created through the admin UI and checked on the storefront (Storefront theme, then Twenty
+//    Twenty-Five with the cart / checkout blocks), incl. Cloudflare Turnstile with Cloudflare's dummy test keys and the
+//    re-subscribe rule. 3. Licence removed, add-on deactivated: free behaviour, premium data kept. 4. Upgrade path from
+//    the single-plugin build 1.0.0 (Pro data) to the free plugin + add-on. Everything at 1366 and 390 px: no JS errors,
+//    no PHP notices in debug.log, no horizontal scroll, contrast ≥ 4.5:1.
+// Env also: SINGLE (folder of the unpacked single-plugin build 1.0.0), PLUGINS (wp-content/plugins), FREESRC, PREMSRC.
 // Env: WPBASE (http://localhost:8150) WPDIR (shops/wp) WPUSER WPPASS SHOTS MAILDIR WPCLI (command prefix) MYSQL MYSQLARGS
 const { chromium } = require('playwright');
 const { execSync, execFileSync } = require('child_process');
@@ -46,7 +51,9 @@ function licenceKey(body) { let sum = 0; body.split('').forEach((ch, i) => { sum
 	/* ---------------- Free mode: empty list ---------------- */
 	await p.goto(BASE + '/wp-admin/admin.php?page=announcement-bar-pro');
 	await noPhpErr('messages (empty)');
-	ok('free: edition badge "Free edition"', /Free edition/.test(await html()));
+	const wrapHtml = async () => p.evaluate(() => Array.from(document.querySelectorAll('.wrap.abp-admin')).map(e => e.outerHTML).join(''));
+	ok('free: no licence, edition or "Pro" upsell in the screen', !/abp-pro-badge|abp-locked|Free edition|[Ll]icen[cs]e|Pro features|upgrade|premium/i.test((await wrapHtml()).replace(/Announcement Bar Pro|announcement-bar-pro/g, '')), ((await wrapHtml()).match(/.{0,80}(abp-pro-badge|abp-locked|Free edition|[Ll]icen[cs]e|Pro features|upgrade|premium).{0,80}/i) || [''])[0]);
+	ok('free: premium add-on not active (no Templates / Subscribers tabs)', !/page=announcement-bar-pro-templates|page=announcement-bar-pro-subscribers/.test(await html()));
 	await p.screenshot({ path: SHOTS + '/admin-01-empty.png' });
 
 	const admin = s => BASE + '/wp-admin/admin.php?page=announcement-bar-pro' + s;
@@ -85,7 +92,8 @@ function licenceKey(body) { let sum = 0; body.split('').forEach((ch, i) => { sum
 		await p.screenshot({ path: SHOTS + '/admin-02-form-free.png', fullPage: false });
 	});
 	ok('free: message 1 saved through the form', m1.ok, m1.url);
-	ok('free: Pro groups are locked (disabled fieldsets with a Pro badge)', /<fieldset class="abp-group abp-locked" disabled/.test(m1.html) && /abp-pro-badge/.test(m1.html));
+	ok('free form: no locked or disabled premium fields, no upsell (wordpress.org guideline 5)', !/abp-locked|abp-pro-badge| disabled>|disabled="disabled"/.test(m1.html) && !/name="opt\[coupon_id\]"|name="placement"|name="ab_test"|name="opt\[email\]"|Pro<\/span>/.test(m1.html));
+	ok('free form: three free styles only', (m1.html.match(/name="style"/g) || []).length === 4 && !/abp-style-gradient|abp-style-glass/.test(m1.html));
 
 	// 2. Free-shipping progress from WooCommerce's "Free shipping" minimum (free).
 	let m2 = await newMessage(async () => {
@@ -111,12 +119,15 @@ function licenceKey(body) { let sum = 0; body.split('').forEach((ch, i) => { sum
 	// Free cannot smuggle Pro values: post a Pro placement directly.
 	const nonce = await p.evaluate(async (u) => { const r = await fetch(u); const t = await r.text(); return (t.match(/name="_wpnonce" value="([^"]+)"/) || [])[1]; }, admin('-edit&id=' + m4.id));
 	const forged = await p.evaluate(async ({ u, n, id }) => { const fd = new FormData(); fd.append('_wpnonce', n); fd.append('_wp_http_referer', '/'); fd.append('action', 'abpro_save_message'); fd.append('message_id', id); fd.append('texts[en_US][text]', 'Phones only: tap to call us'); fd.append('bg_color', '#1e3a8a'); fd.append('text_color', '#ffffff'); fd.append('device', 'mobile'); fd.append('status', '1'); fd.append('placement', 'bottom'); fd.append('priority', '99'); fd.append('ab_test', '1'); fd.append('style', 'glass'); const r = await fetch(u, { method: 'POST', body: fd }); return r.status; }, { u: BASE + '/wp-admin/admin-post.php', n: nonce, id: String(m4.id) });
-	ok('free: Pro fields posted without a licence are ignored', q(`select concat(placement,'|',priority,'|',ab_test,'|',style) from wp_abpro_messages where message_id=${m4.id}`) === '|0|0|', q(`select concat(placement,'|',priority,'|',ab_test,'|',style) from wp_abpro_messages where message_id=${m4.id}`) + ' ' + forged);
+	ok('free: premium fields posted to the free plugin are ignored (kept as stored)', q(`select concat(placement,'|',priority,'|',ab_test,'|',style) from wp_abpro_messages where message_id=${m4.id}`) === '|0|0|', q(`select concat(placement,'|',priority,'|',ab_test,'|',style) from wp_abpro_messages where message_id=${m4.id}`) + ' ' + forged);
 
 	await p.goto(admin(''));
 	await noPhpErr('messages list');
 	ok('list: three messages with feature badges', (await p.$$('.abp-list tbody tr')).length === 3 && /Countdown/.test(await html()) && /Free shipping/.test(await html()) && /Phones only/.test(await html()));
-	ok('list (free): statistics marked as Pro', /Statistics are part of Pro/.test(await html()));
+	ok('list (free): no statistics column, no upsell', !/Statistics|abp-pro-badge|part of Pro/.test(await html()));
+	await p.goto(admin('-settings'));
+	await noPhpErr('settings (free)');
+	ok('settings (free): bar, look and data only — no licence card, no locked cards', /name="status"/.test(await html()) && /name="delete_data"/.test(await html()) && !/abp-licence|licence_key|abp-locked|name="custom_css"|name="ga4"|turnstile/i.test(await html()));
 	await p.screenshot({ path: SHOTS + '/admin-03-list-free.png' });
 
 	/* ---------------- Storefront (Storefront theme), free ---------------- */
@@ -150,7 +161,7 @@ function licenceKey(body) { let sum = 0; body.split('').forEach((ch, i) => { sum
 	ok('free storefront: one top bar, first element of <body>, sticky off', (await sp.evaluate(firstEl)) === 'abp-bar' && await sp.evaluate(() => document.querySelectorAll('.abp-bar').length === 1 && !document.getElementById('abp-bar').classList.contains('abp-sticky')), await sp.evaluate(firstEl));
 	ok('free storefront: countdown running', /\d{2}:\d{2}:\d{2}/.test(await sp.textContent('#abp-bar')));
 	ok('free storefront: free-shipping text with the remaining amount from WooCommerce (50 €)', /Add\s*(50,00|50\.00)\s*€|€\s*50/.test(await sp.textContent('#abp-bar')) || /50[.,]00/.test(await sp.textContent('#abp-bar')), await sp.textContent('#abp-bar'));
-	ok('free storefront: no Pro attributes (no statistics URL, no pause button)', !/data-track=/.test(h) && !/abp-pause/.test(h));
+	ok('free storefront: no premium attributes (no statistics URL, no pause button, no Cloudflare script)', !/data-track=/.test(h) && !/abp-pause/.test(h) && !/challenges\.cloudflare\.com|data-ts=/.test(h));
 	ok('free storefront: phone-only message hidden on desktop', await sp.evaluate(() => { const e = document.querySelector('.abp-item[data-device="mobile"]'); return !!e && getComputedStyle(e).display === 'none'; }));
 	ok('free storefront: arrows let the visitor switch messages', !!(await sp.$('#abp-bar .abp-next')));
 	await sp.click('#abp-bar .abp-next'); await sleep(600);
@@ -176,16 +187,18 @@ function licenceKey(body) { let sum = 0; body.split('').forEach((ch, i) => { sum
 	ok('free storefront: closed bar stays closed on the next page', await sp.evaluate(() => { const b = document.getElementById('abp-bar'); return !b || getComputedStyle(b).display === 'none' || b.getAttribute('data-dismissed') === '1' || b.offsetHeight === 0; }));
 	await sp.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
 
-	/* ---------------- Activate Pro through the settings screen ---------------- */
+	/* ---------------- Premium add-on + licence through the settings screen ---------------- */
+	ok('add-on: activated (wp plugin activate)', /Success/.test(wp('plugin activate announcement-bar-pro-premium')));
 	await p.goto(admin('-settings'));
-	await noPhpErr('settings (free)');
+	await noPhpErr('settings (add-on, no key)');
+	ok('add-on without a key: licence card shown, premium settings not yet', /abp-licence/.test(await html()) && !/name="custom_css"/.test(await html()));
 	await p.fill('#abp-licence-key', 'ABP1-XXXX-XXXX-XXXX-XXXX');
 	await Promise.all([p.waitForNavigation(), p.click('.abp-licence button[type=submit]')]);
 	ok('licence: a wrong key is refused', /not valid/.test(await html()));
 	const key = licenceKey('HJKLMNPQRSTUVWX');
 	await p.fill('#abp-licence-key', key.toLowerCase());
 	await Promise.all([p.waitForNavigation(), p.click('.abp-licence button[type=submit]')]);
-	ok('licence: valid key activates Pro (offline check)', /Pro features are unlocked/.test(await html()) && /Pro active/.test(await html()));
+	ok('licence: valid key activates the premium features (offline check)', /Premium features are unlocked/.test(await html()) && /Premium active/.test(await html()));
 	ok('licence: key shown masked', (await html()).includes('ABP1-••••-••••-••••-' + key.slice(-4)) && !(await html()).includes(key.slice(5, 9) + '-'));
 
 	// Pro settings through the form: bottom position? keep top; pause button, GA4, custom CSS (sanitised).
@@ -198,6 +211,26 @@ function licenceKey(body) { let sum = 0; body.split('').forEach((ch, i) => { sum
 	ok('settings: saved', /Saved\./.test(await html()));
 	const css = wp('option pluck abpro_settings custom_css');
 	ok('settings: custom CSS cleaned (no tags, no @import)', !/<|script|@import/i.test(css) && /letter-spacing/.test(css), css);
+	// Cloudflare Turnstile keys: format checked; the secret is kept when the field is left empty and never printed.
+	const TS_SITE = '1x00000000000000000000AA', TS_PASS = '1x0000000000000000000000000000000AA', TS_FAIL = '2x0000000000000000000000000000000AA';
+	await p.fill('#abp-s-turnstile_site_key', 'not a key!');
+	await Promise.all([p.waitForNavigation(), p.click('form[action*="admin-post.php"] .submit button')]);
+	ok('turnstile settings: a malformed site key is refused', /does not look like a Turnstile key/.test(await html()) && wp('option pluck abpro_settings turnstile_site_key') === '');
+	await p.fill('#abp-s-turnstile_site_key', TS_SITE);
+	await Promise.all([p.waitForNavigation(), p.click('form[action*="admin-post.php"] .submit button')]);
+	ok('turnstile settings: site key without a secret is refused with a clear message', /enter the secret key too/.test(await html()));
+	await p.fill('#abp-s-turnstile_site_key', TS_SITE);
+	await p.fill('#abp-s-turnstile_secret', TS_PASS);
+	await Promise.all([p.waitForNavigation(), p.click('form[action*="admin-post.php"] .submit button')]);
+	ok('turnstile settings: both keys saved, status on', /Saved\./.test(await html()) && wp('option pluck abpro_settings turnstile_secret') === TS_PASS && /Status: on/.test(await html()));
+	ok('turnstile settings: the secret is never printed (empty password field with a "saved" hint)', !(await html()).includes(TS_PASS) && /type="password"[^>]*name="turnstile_secret" value=""/.test(await html()) && /secret key is saved/.test(await html()));
+	await Promise.all([p.waitForNavigation(), p.click('form[action*="admin-post.php"] .submit button')]);
+	ok('turnstile settings: saving again with the field empty keeps the secret', wp('option pluck abpro_settings turnstile_secret') === TS_PASS);
+	// Switch it off again until the storefront sign-up tests below (they start without Turnstile).
+	await p.fill('#abp-s-turnstile_site_key', '');
+	await p.check('#abp-s-turnstile_forget');
+	await Promise.all([p.waitForNavigation(), p.click('form[action*="admin-post.php"] .submit button')]);
+	ok('turnstile settings: "remove the saved secret" switches the check off', wp('option pluck abpro_settings turnstile_secret') === '' && /Status: off/.test(await html()));
 	await p.screenshot({ path: SHOTS + '/admin-04-settings-pro.png', fullPage: true });
 
 	/* ---------------- Pro messages through the form ---------------- */
@@ -275,6 +308,9 @@ function licenceKey(body) { let sum = 0; body.split('').forEach((ch, i) => { sum
 	const gaCalls = [];
 	await sp.exposeFunction('abpGa', (n, prm) => gaCalls.push(n + ':' + JSON.stringify(prm)));
 	await sp.addInitScript(() => { window.gtag = function (a, n, prm) { if (a === 'event') { window.abpGa(n, prm); } }; });
+	const trackPosts = [];
+	sp.on('request', r => { if (r.url().includes('/v1/track')) { trackPosts.push((r.postData() || '').replace(/-+WebKitFormBoundary[A-Za-z0-9]+-*|Content-Disposition: form-data; name=/g, ' ').replace(/\s+/g, ' ').trim()); } });
+	sp.on('response', r => { if (r.url().includes('/v1/track')) { trackPosts.push('status ' + r.status()); } });
 	h = await storeCheck('/', 'pro-home', 1366);
 	ok('pro storefront: top bar sticky with pause button and statistics URL', /id="abp-bar" class="abp abp-bar abp-pos-top abp-sticky/.test(h) && /abp-has-pause/.test(h) && /data-track="[^"]*announcement-bar-pro\/v1\/track"/.test(h));
 	ok('pro storefront: bottom bar with the WooCommerce coupon code and copy button', /id="abp-bar-bottom"/.test(h) && /<span class="abp-code">WELCOME10<\/span>/.test(h) && /data-style="gradient"/.test(h));
@@ -285,6 +321,7 @@ function licenceKey(body) { let sum = 0; body.split('').forEach((ch, i) => { sum
 	ok('pro storefront: tiers bar with 3 labelled steps', (await sp.$$('.abp-progress.abp-steps .abp-step')).length >= 3 && /Free shipping/.test(h));
 	ok('pro storefront: A/B item gets one variant in this browser', await sp.evaluate(() => { const e = document.querySelector('.abp-item[data-ab="1"]'); return !!e && /^[ab]$/.test(e.getAttribute('data-variant') || ''); }));
 	ok('pro storefront: e-mail form with consent box and privacy link', /class="abp-form"/.test(h) && /test consent text/.test(h) && /privacy/i.test(await sp.getAttribute('.abp-consent a', 'href') || ''));
+	ok('turnstile off: no data-ts, no widget box, no Cloudflare script', !/data-ts=|class="abp-ts"|challenges\.cloudflare\.com/.test(h) && await sp.evaluate(() => !document.querySelector('script[src*="challenges.cloudflare.com"]')));
 	ok('pro storefront: background image + overlay + font on the recurring countdown', await sp.evaluate(() => { const e = document.querySelector('.abp-item[data-img="1"]'); return !!e && /linear-gradient/.test(e.getAttribute('style')) && e.getAttribute('data-font') === 'serif' && !!e.querySelector('.abp-countdown[data-recur="d|14:00|"]'); }));
 	ok('pro storefront: trigger message waits (data-toff) and appears after 2 s', await sp.evaluate(() => !!document.querySelector('.abp-item[data-trig="delay:2"][data-toff]')) && (await (async () => { await sleep(2600); return sp.evaluate(() => !document.querySelector('.abp-item[data-trig="delay:2"]').hasAttribute('data-toff')); })()));
 	ok('pro storefront: custom CSS printed as inline style, cleaned', /<style id="announcement-bar-pro-wp-inline-css">[^<]*letter-spacing/.test(h));
@@ -298,9 +335,9 @@ function licenceKey(body) { let sum = 0; body.split('').forEach((ch, i) => { sum
 	ok('pro storefront: pause button toggles (aria-pressed)', await sp.getAttribute('#abp-bar .abp-pause', 'aria-pressed') === 'true');
 	await sleep(1500);
 	ok('pro storefront: GA4 events sent through the site\'s gtag', gaCalls.some(c => c.startsWith('abp_view:')) && gaCalls.some(c => c.startsWith('abp_copy:')), gaCalls.slice(0, 5).join(' '));
-	// Statistics counted (views + copy).
-	await sleep(500);
-	ok('pro storefront: statistics counted (views, code copy)', parseInt(q(`select views+views_b from wp_abpro_messages where message_id=${P1.id}`), 10) >= 1 && parseInt(q(`select copies from wp_abpro_messages where message_id=${P1.id}`), 10) >= 1, q(`select concat(views,'/',copies) from wp_abpro_messages where message_id=${P1.id}`));
+	// Statistics counted (views + copy); the beacons arrive asynchronously.
+	for (let i = 0; i < 20 && !(parseInt(q(`select copies from wp_abpro_messages where message_id=${P1.id}`), 10) >= 1); i++) { await sleep(250); }
+	ok('pro storefront: statistics counted (views, code copy)', parseInt(q(`select views+views_b from wp_abpro_messages where message_id=${P1.id}`), 10) >= 1 && parseInt(q(`select copies from wp_abpro_messages where message_id=${P1.id}`), 10) >= 1, JSON.stringify(trackPosts.slice(-6)) + ' rate=' + q('select max(hits) from wp_abpro_rate') + ' ' + q(`select concat(views,'/',copies) from wp_abpro_messages where message_id=${P1.id}`));
 	// Forged statistics from another origin are not counted.
 	const v0 = q(`select views from wp_abpro_messages where message_id=${P12.id}`);
 	execSync(`curl -s -o NUL -X POST -H "Origin: https://evil.example" -d "id=${P12.id}&type=view&v=a" ${BASE}/wp-json/announcement-bar-pro/v1/track`);
@@ -361,14 +398,111 @@ function licenceKey(body) { let sum = 0; body.split('').forEach((ch, i) => { sum
 		await Promise.all([sp.waitForNavigation(), sp.click('main button[type=submit]')]);
 		ok('confirm page: POST confirms', q("select status from wp_abpro_subscribers where email='reader@example.test'") === '1' && /confirmed/.test(await sp.content()));
 	}
-	const exp = wp(`eval "echo json_encode(AnnouncementBarPro\\Subscribers::export('reader@example.test'));"`);
+	/* ---------------- Re-subscribe rule: an unsubscribed address stays unsubscribed until its owner confirms ---------------- */
+	const unsubLink = (decoded.match(/https?:\/\/[^"'\s<>]*abp-subscription=unsubscribe[^"'\s<>]*/) || [''])[0].replace(/&amp;|&#038;/g, '&');
+	if (unsubLink) {
+		await sp.goto(unsubLink);
+		await Promise.all([sp.waitForNavigation(), sp.click('main button[type=submit]')]);
+	}
+	const rec = () => q("select concat_ws('|', status, unsubscribe, consent, date_added, ifnull(date_confirmed,''), locale, message_id) from wp_abpro_subscribers where email='reader@example.test'");
+	const unsubRow = rec();
+	ok('re-subscribe: the address was unsubscribed through the link of the e-mail', unsubRow.startsWith('2|'), unsubRow);
+	async function signUp(email) {
+		await sp.goto(BASE + '/'); await sleep(2600);
+		await sp.evaluate(() => { const it = document.querySelector('.abp-form').closest('.abp-item'); const bar = it.closest('.abp'); if (bar.abpApi && bar.abpApi.pause) { bar.abpApi.pause(); } });
+		const f = sp.locator('.abp-form').first();
+		await f.locator('.abp-email').fill(email, { force: true });
+		await f.locator('input[name="consent"]').check({ force: true });
+		const w = sp.waitForResponse(r => r.url().includes('/announcement-bar-pro/v1/subscribe'), { timeout: 20000 }).catch(() => null);
+		await f.locator('.abp-submit').click({ force: true });
+		const r = await w;
+		await sleep(600);
+		return { json: r ? await r.json().catch(() => ({})) : {}, msg: await sp.locator('.abp-form-msg, .abp-form-done').first().textContent().catch(() => '') };
+	}
+	const mailsBefore = fs.readdirSync(MAILDIR).filter(f => f.endsWith('.eml')).length;
+	const again = await signUp('reader@example.test');
+	await sleep(1500);
+	ok('re-subscribe: a third party signs the address up again — same answer as for anybody', again.json.ok === 1, JSON.stringify(again.json));
+	const afterRow = rec();
+	ok('re-subscribe: the unsubscribe record is unchanged (status 2, unsubscribe hash, consent, dates, language, message)', afterRow === unsubRow, unsubRow + ' → ' + afterRow);
+	ok('re-subscribe: only a new confirmation token is stored', q("select length(token) from wp_abpro_subscribers where email='reader@example.test'") === '64');
+	const reMails = fs.readdirSync(MAILDIR).filter(f => f.endsWith('.eml')).sort((a, b) => fs.statSync(path.join(MAILDIR, a)).mtimeMs - fs.statSync(path.join(MAILDIR, b)).mtimeMs);
+	const reRaw = reMails.length > mailsBefore ? fs.readFileSync(path.join(MAILDIR, reMails[reMails.length - 1]), 'utf8') : '';
+	const reDec = reRaw.replace(/=\r?\n/g, '').replace(/=3D/g, '=') + reRaw.split(/Content-Transfer-Encoding:\s*base64\s*\r?\n\r?\n/i).slice(1).map(part => Buffer.from(part.split(/\r?\n\r?\n|\r?\n--/)[0].replace(/\s+/g, ''), 'base64').toString('utf8')).join('\n');
+	const reLink = (reDec.match(/https?:\/\/[^"'\s<>]*abp-subscription=confirm[^"'\s<>]*/) || [''])[0].replace(/&amp;|&#038;/g, '&');
+	ok('re-subscribe: a new confirmation e-mail went to the address', !!reLink && /reader@example\.test/.test(reRaw));
+	if (unsubLink) {
+		await sp.goto(unsubLink);
+		ok('re-subscribe: the old unsubscribe link still says "unsubscribed"', /unsubscribed/i.test(await sp.content()) && rec() === unsubRow);
+	}
+	if (reLink) {
+		await sp.goto(reLink);
+		ok('re-subscribe: GET of the new confirm link changes nothing', rec() === unsubRow && /Confirm subscription/.test(await sp.content()));
+		await Promise.all([sp.waitForNavigation(), sp.click('main button[type=submit]')]);
+		const done = rec().split('|'), was = unsubRow.split('|');
+		ok('re-subscribe: the owner\'s confirmation subscribes again (status 1, new unsubscribe token; sign-up date and consent kept)', done[0] === '1' && done[1] !== was[1] && done[2] === was[2] && done[3] === was[3] && /confirmed/.test(await sp.content()), rec());
+		const newUnsub = (reDec.match(/https?:\/\/[^"'\s<>]*abp-subscription=unsubscribe[^"'\s<>]*/) || [''])[0].replace(/&amp;|&#038;/g, '&');
+		await sp.goto(reLink);
+		ok('re-subscribe: the confirm link works once', /invalid or has expired/.test(await sp.content()));
+		if (newUnsub) {
+			await sp.goto(newUnsub);
+			ok('re-subscribe: the unsubscribe link of the new e-mail works', /Stop e-mails/.test(await sp.content()));
+		}
+	}
+	// Opt-in off: an unsubscribed address is never subscribed again by a sign-up.
+	q("update wp_abpro_subscribers set status = 2, token = '' where email='reader@example.test'");
+	const fixed = rec();
+	wp('option patch update abpro_settings double_optin 0');
+	const off = await signUp('reader@example.test');
+	ok('re-subscribe (double opt-in off): same answer, the unsubscribed row stays as it is', off.json.ok === 1 && rec() === fixed, rec());
+	wp('option patch update abpro_settings double_optin 1');
+
+	/* ---------------- Cloudflare Turnstile (Cloudflare's official dummy keys, real siteverify) ---------------- */
+	wp(`option patch update abpro_settings turnstile_site_key ${TS_SITE}`);
+	wp(`option patch update abpro_settings turnstile_secret ${TS_PASS}`);
+	const cf = [];
+	const onReq = r => { if (r.url().includes('challenges.cloudflare.com')) { cf.push(r.url()); } };
+	sp.on('request', onReq);
+	await sp.goto(BASE + '/'); await sleep(3500);
+	h = await sp.content();
+	ok('turnstile on: form carries the site key, a widget box and the texts — never the secret', /class="abp-form"[^>]*data-ts="1x00000000000000000000AA"/.test(h) && /class="abp-ts"/.test(h) && /data-err-ts=/.test(h) && !h.includes(TS_PASS));
+	ok('turnstile on: Cloudflare\'s script is loaded (only now) and gives a token', cf.some(u => /turnstile\/v0\/api\.js/.test(u)) && await sp.evaluate(() => { const i = document.querySelector('.abp-form [name="cf-turnstile-response"]'); return !!i && i.value.length > 10; }), cf.slice(0, 2).join(' '));
+	const tp = await signUp('ts-pass@example.test');
+	ok('turnstile pass (dummy secret 1x…AA): sign-up accepted', tp.json.ok === 1 && q("select status from wp_abpro_subscribers where email='ts-pass@example.test'") === '0', JSON.stringify(tp.json));
+	await sp.goto(BASE + '/'); await sleep(2600);
+	const noTok = await sp.evaluate(async (u) => { const f = document.querySelector('.abp-form'); const fd = new FormData(); fd.append('email', 'ts-none@example.test'); fd.append('consent', '1'); fd.append('tok', f.getAttribute('data-tok')); fd.append('id', f.closest('.abp-item').getAttribute('data-id')); const r = await fetch(u, { method: 'POST', body: fd, credentials: 'same-origin' }); return r.json(); }, BASE + '/wp-json/announcement-bar-pro/v1/subscribe');
+	ok('turnstile: a POST without a token is refused ("wait a moment"), nothing stored', /wait a moment/.test(noTok.error || '') && q("select count(*) from wp_abpro_subscribers where email='ts-none@example.test'") === '0', JSON.stringify(noTok));
+	wp(`option patch update abpro_settings turnstile_secret ${TS_FAIL}`);
+	const tf = await signUp('ts-fail@example.test');
+	ok('turnstile fail (dummy secret 2x…AA): refused with a clear message, nothing stored', !tf.json.ok && /anti-bot check failed/.test(tf.json.error || '') && /anti-bot check failed/.test(tf.msg) && q("select count(*) from wp_abpro_subscribers where email='ts-fail@example.test'") === '0', JSON.stringify(tf.json) + ' ' + tf.msg);
+	ok('turnstile fail: the widget is reset for the next try (a new token)', await sp.evaluate(() => new Promise(res => setTimeout(() => { const i = document.querySelector('.abp-form [name="cf-turnstile-response"]'); res(!!i && i.value.length > 10); }, 2500))));
+	await sp.screenshot({ path: SHOTS + '/turnstile-fail-1366.png' });
+	// Wait for cookie consent: no Cloudflare request before consent, the box says why.
+	wp(`option patch update abpro_settings turnstile_secret ${TS_PASS}`);
+	wp('option patch update abpro_settings consent_wait 1');
+	cf.length = 0;
+	await sp.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+	await sp.goto(BASE + '/'); await sleep(2500);
+	ok('turnstile + consent wait: no Cloudflare request before consent, the box shows the reason', cf.length === 0 && /accept cookies/.test(await sp.evaluate(() => (document.querySelector('.abp-ts') || {}).textContent || '')), cf.length);
+	await sp.evaluate(() => { window.abpConsent = true; document.dispatchEvent(new Event('abp:consent')); });
+	await sleep(3500);
+	ok('turnstile + consent wait: after consent the widget loads and gives a token', cf.some(u => /api\.js/.test(u)) && await sp.evaluate(() => { const i = document.querySelector('.abp-form [name="cf-turnstile-response"]'); return !!i && i.value.length > 10; }));
+	await sp.screenshot({ path: SHOTS + '/turnstile-consent-1366.png' });
+	wp('option patch update abpro_settings consent_wait 0');
+	wp('option patch update abpro_settings turnstile_site_key ""');
+	wp('option patch update abpro_settings turnstile_secret ""');
+	sp.off('request', onReq);
+	const adminSettings = await (async () => { wp(`option patch update abpro_settings turnstile_secret ${TS_PASS}`); await p.goto(admin('-settings')); const x = await html(); wp('option patch update abpro_settings turnstile_secret ""'); return x; })();
+	ok('turnstile: the stored secret appears nowhere in the admin settings HTML', !adminSettings.includes(TS_PASS));
+
+	const exp = wp(`eval "echo json_encode(AnnouncementBarPro\\Premium\\Subscribers::export('reader@example.test'));"`);
 	ok('privacy exporter: returns the sign-up', /reader@example.test/.test(exp) && /Consent text shown/.test(exp), exp.slice(0, 200));
 	// Admin: subscribers screen, CSV export, erase.
 	await p.goto(admin('-subscribers'));
 	await noPhpErr('subscribers');
 	const [dl] = await Promise.all([p.waitForEvent('download'), p.click('form input[value="export"] ~ button')]);
 	const csv = fs.readFileSync(await dl.path(), 'utf8');
-	ok('subscribers: CSV export with header and the confirmed address', /^﻿?email,status,language/.test(csv) && /"reader@example.test","subscribed"/.test(csv), csv.slice(0, 200));
+	ok('subscribers: CSV export with header and the confirmed address', /^﻿?email,status,language/.test(csv) && /"reader@example.test","unsubscribed"/.test(csv) && /"ts-pass@example.test","pending"/.test(csv), csv.slice(0, 200));
 	await p.screenshot({ path: SHOTS + '/admin-07-subscribers.png' });
 	await p.fill('#abp-erase-email', 'reader@example.test');
 	await Promise.all([p.waitForNavigation(), p.click('.abp-confirm-erase button[type=submit]')]);
@@ -434,7 +568,7 @@ function licenceKey(body) { let sum = 0; body.split('').forEach((ch, i) => { sum
 	wp('theme activate storefront');
 	await p.goto(admin('-settings'));
 	await Promise.all([p.waitForNavigation(), p.click('.abp-licence button[name="remove"]')]);
-	ok('licence: removed through the settings screen', /removed from this site/.test(await html()) && /Free edition|Activate/.test(await html()));
+	ok('licence: removed through the settings screen', /removed from this site/.test(await html()) && /Activate/.test(await html()));
 	await sp.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
 	h = await storeCheck('/', 'free-again-home', 1366);
 	ok('free again: Pro-targeted messages hidden, free ones shown, no bottom bar, no statistics', /Autumn sale/.test(h) && !/id="abp-bar-bottom"/.test(h) && !/Only on the sale page|newsletter reader|Add \S+ more to unlock/.test(h) && !/data-track=/.test(h) && !/abp-pause/.test(h));
@@ -442,8 +576,23 @@ function licenceKey(body) { let sum = 0; body.split('').forEach((ch, i) => { sum
 	h = await storeCheck('/classic-cart/', 'free-again-cart', 1366);
 	ok('free again: no inline boxes', !/abp-inline/.test(h));
 
+	/* ---------------- Add-on deactivated: the free plugin alone keeps every premium value ---------------- */
+	const keep = q("select md5(group_concat(concat_ws('|', message_id, placement, priority, coupon, ab_test, roles, page_mode, options) order by message_id)) from wp_abpro_messages");
+	ok('add-on: deactivated', /Success/.test(wp('plugin deactivate announcement-bar-pro-premium')));
+	await p.goto(admin('-edit&id=' + P13.id));
+	await noPhpErr('message form (free alone, premium message)');
+	await Promise.all([p.waitForNavigation(), p.click('.abp-submit-row button[type=submit]')]);
+	ok('free alone: saving a premium message keeps its premium columns and options', q("select md5(group_concat(concat_ws('|', message_id, placement, priority, coupon, ab_test, roles, page_mode, options) order by message_id)) from wp_abpro_messages") === keep);
+	await p.goto(admin(''));
+	ok('free alone: premium messages marked "Not shown" in the list, no statistics, no tabs of the add-on', /Not shown: uses rules this site cannot apply/.test(await html()) && !/Statistics|page=announcement-bar-pro-templates/.test(await html()));
+	h = await storeCheck('/', 'free-alone-home', 1366);
+	ok('free alone: narrowing premium messages hidden, free messages shown', /Autumn sale/.test(h) && !/Only on the sale page|newsletter reader|NOT FOR LATVIA|CUSTOMERS ONLY|abp-inline|data-track=/.test(h));
+	ok('free alone: subscribers kept in the database', parseInt(q('select count(*) from wp_abpro_subscribers'), 10) >= 1);
+	ok('add-on: activated again', /Success/.test(wp('plugin activate announcement-bar-pro-premium')));
+
 	/* ---------------- Logs ---------------- */
-	const log = fs.readFileSync(logFile, 'utf8').split(/\r?\n/).filter(l => l.trim() !== '');
+	// WP-CLI's own update check cannot reach WordPress.org here (WP_HTTP_BLOCK_EXTERNAL): not the plugin.
+	const log = fs.readFileSync(logFile, 'utf8').split(/\r?\n/).filter(l => l.trim() !== '' && !/wp_update_(plugins|themes)\(\)/.test(l));
 	const ours = log.filter(l => /announcement-bar-pro|AnnouncementBarPro|abpro/i.test(l));
 	ok('debug.log: no PHP notices / warnings / errors from the plugin', ours.length === 0, ours.slice(0, 5).join('\n'));
 	ok('debug.log: nothing else either (WP_DEBUG on)', log.length === 0, log.slice(0, 3).join('\n'));

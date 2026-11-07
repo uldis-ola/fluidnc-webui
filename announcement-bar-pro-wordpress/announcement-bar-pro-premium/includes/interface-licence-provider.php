@@ -2,10 +2,10 @@
 /**
  * Licence provider interface (see class-licence.php).
  *
- * @package AnnouncementBarPro
+ * @package AnnouncementBarProPremium
  */
 
-namespace AnnouncementBarPro;
+namespace AnnouncementBarPro\Premium;
 
 defined( 'ABSPATH' ) || exit;
 

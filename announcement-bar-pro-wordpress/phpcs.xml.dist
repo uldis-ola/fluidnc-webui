@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <ruleset name="Announcement Bar Pro (WordPress)">
-	<description>WordPress Coding Standards + PHP 7.4 compatibility for the plugin.</description>
+	<description>WordPress Coding Standards + PHP 7.4 compatibility for the free plugin.</description>
 	<file>./announcement-bar-pro</file>
 	<arg name="extensions" value="php"/>
 	<arg value="sp"/>

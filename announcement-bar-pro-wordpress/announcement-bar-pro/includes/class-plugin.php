@@ -53,7 +53,6 @@ class Plugin {
 
 		$this->frontend = new Frontend();
 		new Endpoints();
-		Subscribers::init();
 
 		if ( is_admin() ) {
 			Admin::init();

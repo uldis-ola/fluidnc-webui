@@ -1,4 +1,4 @@
-/* Announcement Bar Pro v2.4.0 — no dependencies. Adapts itself to the shop theme (see "Automatic adaptation").
+/* Announcement Bar Pro v2.4.1 — no dependencies. Adapts itself to the shop theme (see "Automatic adaptation").
    Runs every bar (top / bottom) and box (cart page, product page, mini-cart) on the page; features start only when a
    message uses them (triggers, auto-hide, forms, goals, GA4). */
 (function () {
@@ -829,18 +829,20 @@
   /* ---------------- Free shipping, goals and cart conditions ----------------
      After OpenCart's own AJAX cart requests (add / remove / update, both versions) the amounts are fetched from a
      small read-only endpoint (same-origin GET, JSON) and every bar and box is updated in place. */
-  var cartTimer = null, cartBusy = false;
+  var cartTimer = null, cartBusy = false, cartAgain = false;
   function cartItems() { return document.querySelectorAll('.abp .abp-item[data-fs="1"], .abp .abp-item[data-cc="1"]'); }
   function refreshCart() {
     var holder = document.querySelector('.abp[data-cart]'), url = holder ? holder.getAttribute('data-cart') : '';
     var ids = [];
     Array.prototype.forEach.call(cartItems(), function (el) { var id = el.getAttribute('data-id'); if (/^\d+$/.test(id) && ids.indexOf(id) === -1) { ids.push(id); } });
-    if (!url || !ids.length || !window.fetch || cartBusy) { return; }
+    if (cartBusy) { cartAgain = true; return; } // a change during a refresh: refresh once more afterwards
+    if (!url || !ids.length || !window.fetch) { return; }
     cartBusy = true;
     window.fetch(url + (url.indexOf('?') === -1 ? '?' : '&') + 'ids=' + ids.slice(0, 20).join(','), { credentials: 'same-origin', headers: { Accept: 'application/json' } })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (json) {
         cartBusy = false;
+        if (cartAgain) { cartAgain = false; queueCart(); }
         if (!json || typeof json.m !== 'object' || !json.m) { return; }
         var touched = [];
         Array.prototype.forEach.call(cartItems(), function (el) {
@@ -874,12 +876,65 @@
           if (bar && bar.abpApi) { if (bar.style.display === 'none' || bar.querySelector('.abp-item[data-coff], .abp-item[data-cc]')) { bar.abpApi.refresh(); } bar.abpApi.relayout(); }
         });
       })
-      .catch(function () { cartBusy = false; });
+      .catch(function () { cartBusy = false; if (cartAgain) { cartAgain = false; queueCart(); } });
   }
   function queueCart() { clearTimeout(cartTimer); cartTimer = setTimeout(refreshCart, 300); }
 
+  /* ---------------- Cloudflare Turnstile (optional anti-bot check of the sign-up form) ----------------
+     Only when the shop entered its own keys: the form then carries data-ts (site key) and a .abp-ts box. Cloudflare's
+     script is loaded once, only on pages with such a form, and — with "wait for cookie consent" — only after consent
+     (until then the box shows data-ts-wait). The widget puts its token into the form ("cf-turnstile-response"); the
+     shop checks it with Cloudflare. A token is used once: after every answer of the shop the widget is reset. */
+  var tsState = 0, tsWait = [];
+  function tsReady() {
+    tsState = 2;
+    var q = tsWait;
+    tsWait = [];
+    q.forEach(function (fn) { try { fn(); } catch (e) { /* one form must not stop the others */ } });
+  }
+  function tsLoad(fn) {
+    if (tsState === 2 && window.turnstile) { fn(); return; }
+    tsWait.push(fn);
+    if (tsState) { return; }
+    tsState = 1;
+    window.abpTsReady = tsReady;
+    var s = document.createElement('script');
+    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=abpTsReady';
+    s.async = true;
+    s.onerror = function () {
+      tsState = 0;
+      tsWait = [];
+      Array.prototype.forEach.call(document.querySelectorAll('.abp-form[data-ts]'), function (f) { f.abpTs = undefined; var b = f.querySelector('.abp-ts'); if (b) { b.textContent = f.getAttribute('data-err-ts') || ''; } });
+    };
+    (document.head || document.documentElement).appendChild(s);
+  }
+  function tsStart(form) {
+    var box = form && form.querySelector ? form.querySelector('.abp-ts') : null;
+    if (!box || form.abpTs !== undefined || !inDoc(form)) { return; }
+    if (waitConsent()) { box.textContent = form.getAttribute('data-ts-wait') || ''; return; }
+    form.abpTs = null;
+    box.textContent = '';
+    tsLoad(function () {
+      if (!inDoc(form) || !window.turnstile) { return; }
+      try {
+        form.abpTs = window.turnstile.render(box, {
+          sitekey: form.getAttribute('data-ts'),
+          action: 'abp-signup',
+          appearance: 'interaction-only',
+          'refresh-expired': 'auto'
+        });
+      } catch (e) {
+        form.abpTs = undefined;
+        box.textContent = form.getAttribute('data-err-ts') || '';
+      }
+    });
+  }
+  function tsForms() { Array.prototype.forEach.call(document.querySelectorAll('.abp-form[data-ts]'), tsStart); }
+  function tsReset(form) { try { if (form.abpTs && window.turnstile) { window.turnstile.reset(form.abpTs); } } catch (e) { /* a new token comes with the next try */ } }
+
   /* ---------------- E-mail sign-up (newsletter, double opt-in) ----------------
-     Checked here first (address, consent box), then sent with the page's form token; the answer replaces the form. */
+     Checked here first (address, consent box, anti-bot token when on), then sent with the page's form token; the
+     answer replaces the form. */
   document.addEventListener('submit', function (e) {
     var form = e.target;
     if (!form || !form.classList || !form.classList.contains('abp-form')) { return; }
@@ -896,6 +951,10 @@
     var value = email ? email.value.trim() : '';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value) || value.length > 96) { say(form.getAttribute('data-err-email'), 'email'); return; }
     if (!consent || !consent.checked) { say(form.getAttribute('data-err-consent'), 'consent'); return; }
+    if (form.hasAttribute('data-ts')) {
+      var tsv = form.querySelector('[name="cf-turnstile-response"]');
+      if (!tsv || !tsv.value) { tsStart(form); say(waitConsent() ? form.getAttribute('data-ts-wait') : form.getAttribute('data-err-ts'), 'form'); return; }
+    }
     if (form.abpBusy || !window.fetch || !window.FormData) { return; }
     form.abpBusy = true;
     if (btn) { btn.disabled = true; }
@@ -920,12 +979,14 @@
           ga(bar, item, 'abp_subscribe');
           if (bar && bar.abpApi) { bar.abpApi.relayout(); }
         } else {
+          tsReset(form);
           say((j && j.error) || form.getAttribute('data-err-failed'), (j && j.field) || 'form');
         }
       })
       .catch(function () {
         form.abpBusy = false;
         if (btn) { btn.disabled = false; }
+        tsReset(form);
         say(form.getAttribute('data-err-failed'), 'form');
       });
   }, true);
@@ -937,6 +998,7 @@
     Array.prototype.forEach.call(document.querySelectorAll('.abp[data-abp], #abp-bar'), function (bar) {
       try { init(bar); } catch (e) { /* one broken box must not stop the others */ }
     });
+    tsForms();
   }
   var hooked = false;
   function hookAjax() {
@@ -959,6 +1021,7 @@
     if (consentSeen || window.abpConsent !== true || !document.querySelector('.abp[data-consent="1"]')) { return; }
     consentSeen = true;
     try { if (window.abpPre && window.abpPre.consent) { window.abpPre.consent(); } } catch (e) { /* bars keep working */ }
+    tsForms();
     instances.forEach(function (api) {
       try { if (inDoc(api.bar)) { api.refresh(); api.trackShown(); } } catch (e2) { /* one broken box must not stop the others */ }
     });

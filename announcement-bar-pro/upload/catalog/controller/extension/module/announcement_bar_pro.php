@@ -5,10 +5,10 @@ defined('VERSION') || exit; // not callable directly (in the universal package t
  * Bars: event catalog/view/common/header/after (footer/after + view/[any]/after as automatic fallback).
  * Inline boxes (2.4.0): checkout/cart, product/product and common/cart views; each fails silently without its hook.
  * Public endpoints: track, cart, subscribe (POST, JSON), confirm / unsubscribe (pages). None writes the session.
- * @version 2.4.0
+ * @version 2.4.1
  */
 class ControllerExtensionModuleAnnouncementBarPro extends Controller {
-	const VERSION = '2.4.0';
+	const VERSION = '2.4.1';
 	const CODE    = 'module_announcement_bar_pro';
 	const ROUTE   = 'extension/module/announcement_bar_pro';
 
@@ -395,6 +395,10 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			'cart'         => $schema >= 7 && $need['cart'] ? $link('cart') : '',
 			'subscribe'    => $schema >= 8 && $need['email'] ? $link('subscribe') : '',
 			'token'        => $schema >= 8 && $need['email'] ? $this->fx->token($this->config->get(self::CODE . '_secret'), $this->session->getId()) : '',
+			// Cloudflare Turnstile (2.4.1): only the public site key, and only when both keys are set.
+			'ts'           => $schema >= 8 && $need['email'] && $this->fx->tsOn($this->config->get(self::CODE . '_ts_site'), $this->config->get(self::CODE . '_ts_secret')) ? $this->fx->tsSiteKey($this->config->get(self::CODE . '_ts_site')) : '',
+			'ts_wait'      => $this->language->get('abp_text_ts_wait'),
+			'err_ts'       => $this->language->get('abp_error_ts_wait'),
 			'privacy'      => $schema >= 8 && $need['email'] && (int)$this->config->get(self::CODE . '_privacy_id') > 0 ? str_replace('&amp;', '&', $this->url->link('information/information', 'information_id=' . (int)$this->config->get(self::CODE . '_privacy_id'), $https)) : '',
 			'now'          => time() * 1000, // server clock: countdown/expiry/schedule must not trust the visitor's clock
 			'tz'           => (int)date('Z'), // store time zone offset for the weekly schedule and cut-off times
@@ -1001,6 +1005,9 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 				} elseif (!isset($post['consent']) || $post['consent'] !== '1') {
 					$json['error'] = $text('abp_error_consent');
 					$json['field'] = 'consent';
+				} elseif (($ts_error = $this->turnstileError($post)) !== '') {
+					$json['error'] = $ts_error;
+					$json['field'] = 'form';
 				} else {
 					$json = $this->signUp($email, $id);
 				}
@@ -1017,10 +1024,41 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 	}
 
 	/**
+	 * Cloudflare Turnstile (2.4.1, only when both keys are set): checks the widget's token ("cf-turnstile-response")
+	 * with Cloudflare's siteverify, for the same client IP as the rate limit. Fails closed. '' = passed or off, else
+	 * the message for the visitor (no token yet / check failed or unavailable).
+	 */
+	private function turnstileError(array $post) {
+		$site   = $this->config->get(self::CODE . '_ts_site');
+		$secret = $this->config->get(self::CODE . '_ts_secret');
+
+		if (!$this->fx->tsOn($site, $secret)) {
+			return '';
+		}
+
+		$codes  = array();
+		$result = $this->fx->tsVerify($secret, isset($post['cf-turnstile-response']) ? $post['cf-turnstile-response'] : '', $this->clientIp(), array($this->fx, 'httpPost'), $codes);
+
+		if ($result === 'ok') {
+			return '';
+		}
+
+		// A wrong key or an unreachable Cloudflare is the shop's problem: log it (codes only, never keys or tokens).
+		if ($result === 'failed' && array_intersect($codes, array('missing-input-secret', 'invalid-input-secret', 'http-error', 'bad-json', 'internal-error'))) {
+			$this->log->write('Announcement Bar Pro: Cloudflare Turnstile check not possible — ' . implode(', ', $codes));
+		}
+
+		return $this->language->get($result === 'missing' ? 'abp_error_ts_missing' : 'abp_error_ts_failed');
+	}
+
+	/**
 	 * Stores the sign-up and sends the confirmation e-mail (double opt-in), or subscribes at once (opt-in off).
 	 * The answer is the same whether or not the address was known. Without double opt-in nobody proves that the
 	 * address is theirs, so customer accounts' newsletter flags are never changed then and an unsubscribed address is
 	 * never subscribed again (only its owner can, through the confirmation e-mail of double opt-in).
+	 * Re-subscribe rule (2.4.1): an unsubscribed address keeps its unsubscribe record untouched (status, unsubscribe
+	 * hash, consent, language, message, dates); a new sign-up only stores the hash of a new confirmation token and
+	 * mails it. Nothing changes unless the owner confirms (tokenPage → resubscribe()).
 	 */
 	private function signUp($email, $message_id) {
 		$model    = $this->model_extension_module_announcement_bar_pro;
@@ -1044,7 +1082,22 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			return $done;
 		}
 
-		$token = bin2hex(random_bytes(32));
+		// Confirmation token with its creation time in the first 8 hex digits (only its sha256 is stored).
+		$token = $this->fx->optinToken();
+
+		if ($existing && (int)$existing['status'] === 2) {
+			// Re-subscription: the unsubscribe link of this mail is derived from the token (nothing else is stored).
+			$model->setResubscribeToken((int)$existing['subscriber_id'], hash('sha256', $token));
+
+			if (!$this->sendConfirmation($email, $token, $this->fx->unsubToken($token, (string)$this->config->get(self::CODE . '_secret')))) {
+				$model->setResubscribeToken((int)$existing['subscriber_id'], '');
+
+				return array('error' => $this->language->get('abp_error_failed'));
+			}
+
+			return $done;
+		}
+
 		$unsub = bin2hex(random_bytes(32));
 
 		// Proof of consent: the consent text this shop showed (never a text sent by the browser).
@@ -1167,7 +1220,10 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 				$row = $this->model_extension_module_announcement_bar_pro->getSubscriberByToken($action === 'confirm' ? 'token' : 'unsubscribe', hash('sha256', $token));
 			}
 
-			$valid = $row && ($action === 'unsubscribe' ? (int)$row['status'] !== 2 : (int)$row['status'] === 0 && strtotime($row['date_added']) > time() - 7 * 86400);
+			// Confirm: a waiting sign-up (status 0, at most 7 days old) or a re-subscription of an unsubscribed address
+			// (status 2, token created at most 7 days ago — the time is inside the token, which is looked up by hash).
+			$resub = $row && $action === 'confirm' && (int)$row['status'] === 2;
+			$valid = $row && ($action === 'unsubscribe' ? (int)$row['status'] !== 2 : ((int)$row['status'] === 0 && strtotime($row['date_added']) > time() - 7 * 86400) || ($resub && $this->fx->tokenFresh($token)));
 			$store = html_entity_decode((string)$this->config->get('config_name'), ENT_QUOTES, 'UTF-8');
 
 			if (!$valid) {
@@ -1176,7 +1232,12 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 				$model = $this->model_extension_module_announcement_bar_pro;
 
 				if ($action === 'confirm') {
-					$model->confirmSubscriber((int)$row['subscriber_id']);
+					if ($resub) {
+						$model->resubscribe((int)$row['subscriber_id'], hash('sha256', $this->fx->unsubToken($token, (string)$this->config->get(self::CODE . '_secret'))));
+					} else {
+						$model->confirmSubscriber((int)$row['subscriber_id']);
+					}
+
 					$model->setCustomerNewsletter($row['email'], true);
 					$model->countSubscribe((int)$row['message_id']);
 					$data['text'] = $this->language->get('abp_text_confirmed');

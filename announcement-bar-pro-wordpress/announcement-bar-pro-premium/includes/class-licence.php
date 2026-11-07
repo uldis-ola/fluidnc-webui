@@ -7,10 +7,10 @@
  * key on the vendor's licence server — only when the site owner presses "Activate", never in the background without
  * their consent. See LICENSING.md in the source repository.
  *
- * @package AnnouncementBarPro
+ * @package AnnouncementBarProPremium
  */
 
-namespace AnnouncementBarPro;
+namespace AnnouncementBarPro\Premium;
 
 defined( 'ABSPATH' ) || exit;
 

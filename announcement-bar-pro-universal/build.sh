@@ -23,6 +23,15 @@ for f in announcement_bar_pro.js announcement_bar_pro_pre.js announcement_bar_pr
 	cmp -s "$OC3/upload/catalog/view/javascript/announcement_bar_pro/$f" "$OC4/catalog/view/javascript/$f" \
 		|| { echo "Shared file differs between kits: $f" >&2; exit 1; }
 done
+# 2.4.1: the WordPress edition uses the same storefront files (its names use "-" instead of "_"). When its directory
+# is next to this one, every copy must be byte-identical to the OpenCart ones.
+WP=../announcement-bar-pro-wordpress/announcement-bar-pro/assets
+if [ -d "$WP" ]; then
+	for pair in "announcement_bar_pro.js:js/announcement-bar-pro.js" "announcement_bar_pro_pre.js:js/announcement-bar-pro-pre.js" "announcement_bar_pro.css:css/announcement-bar-pro.css"; do
+		cmp -s "$OC3/upload/catalog/view/javascript/announcement_bar_pro/${pair%%:*}" "$WP/${pair#*:}" \
+			|| { echo "Shared storefront file differs between OpenCart and WordPress: ${pair%%:*} / $WP/${pair#*:}" >&2; exit 1; }
+	done
+fi
 # The admin script and styles (live preview, autocomplete, import) are shared too (2.3.0).
 for f in abp_admin.js abp_admin.css; do
 	cmp -s "$OC3/upload/admin/view/javascript/announcement_bar_pro/$f" "$OC4/admin/view/javascript/$f" 		|| { echo "Shared admin file differs between kits: $f" >&2; exit 1; }

@@ -472,5 +472,85 @@ foreach (array('OC3' => '\Announcementbarpro\Features', 'OC4' => '\Opencart\Syst
 	check("$kit extraOf / extra: plain text, tier rows by index, length limit reported", $ex['tier_label'] === array('A', 'B') && $ex['email_button'] === 'Jo&in' && $cl['tier_label'] === array('X', 'Z') && isset($errs['tier_text']) && $cl['email_consent'] === 'ok');
 }
 
+// 15. 2.4.1: Cloudflare Turnstile verification (mocked siteverify), key formats, confirmation tokens with their time,
+// derived unsubscribe token — the library of both kits; plus source checks of the re-subscribe rule and the secret.
+foreach (array('OC3' => '\Announcementbarpro\Features', 'OC4' => '\Opencart\System\Library\Extension\AnnouncementBarPro\Features') as $kit => $cls) {
+	$f = new $cls();
+	$SITE = '1x00000000000000000000AA'; $SECRET = '1x0000000000000000000000000000000AA';
+	check("$kit tsSiteKey / tsSecretKey: Cloudflare's dummy keys pass", $f->tsSiteKey($SITE) === $SITE && $f->tsSiteKey('3x00000000000000000000FF') !== '' && $f->tsSecretKey($SECRET) === $SECRET && $f->tsSecretKey('2x0000000000000000000000000000000AA') !== '' && $f->tsSecretKey(' ' . $SECRET . ' ') === $SECRET);
+	check("$kit tsSiteKey / tsSecretKey: wrong formats refused", $f->tsSiteKey('short') === '' && $f->tsSiteKey(str_repeat('a', 101)) === '' && $f->tsSiteKey('0x4AAA.AAA') === '' && $f->tsSiteKey('<script>xx</script>') === '' && $f->tsSecretKey('0x4AAAAA"AAAA') === '' && $f->tsSecretKey(str_repeat('a', 201)) === '' && $f->tsSecretKey('a b c d e f g h') === '' && $f->tsSecretKey('0x4AAAAAAA.secret_-x') !== '');
+	check("$kit tsOn(): only with both keys", $f->tsOn($SITE, $SECRET) && !$f->tsOn($SITE, '') && !$f->tsOn('', $SECRET) && !$f->tsOn(null, null) && !$f->tsOn('bad', $SECRET));
+	$calls = array();
+	$mock = function ($body) use (&$calls) {
+		return function ($url, array $fields) use ($body, &$calls) {
+			$calls[] = array($url, $fields);
+			if ($body instanceof \Exception) { throw $body; }
+			return $body;
+		};
+	};
+	$codes = null;
+	$r = $f->tsVerify($SECRET, 'XXXX.DUMMY.TOKEN.XXXX', '203.0.113.7', $mock('{"success":true,"error-codes":[],"hostname":"example.com"}'), $codes);
+	check("$kit tsVerify: success → ok; POSTs secret, response and the client IP to siteverify", $r === 'ok' && $codes === array() && $calls[0][0] === 'https://challenges.cloudflare.com/turnstile/v0/siteverify' && $calls[0][1] === array('secret' => $SECRET, 'response' => 'XXXX.DUMMY.TOKEN.XXXX', 'remoteip' => '203.0.113.7'), json_encode($calls));
+	$calls = array();
+	check("$kit tsVerify: success with our action → ok; v4-mapped IP sent plain; junk IP left out", $f->tsVerify($SECRET, 'tok', '::ffff:198.51.100.2', $mock('{"success":true,"action":"abp-signup"}')) === 'ok' && $calls[0][1]['remoteip'] === '198.51.100.2' && $f->tsVerify($SECRET, 'tok', 'junk', $mock('{"success":true}')) === 'ok' && !isset($calls[1][1]['remoteip']));
+	$r = $f->tsVerify($SECRET, 'tok', '1.2.3.4', $mock('{"success":false,"error-codes":["invalid-input-response","timeout-or-duplicate"]}'), $codes);
+	check("$kit tsVerify: success=false → failed with Cloudflare's error codes", $r === 'failed' && $codes === array('invalid-input-response', 'timeout-or-duplicate'), json_encode($codes));
+	check("$kit tsVerify: success as string \"true\" / 1 / missing → failed (strict)", $f->tsVerify($SECRET, 'tok', '', $mock('{"success":"true"}')) === 'failed' && $f->tsVerify($SECRET, 'tok', '', $mock('{"success":1}')) === 'failed' && $f->tsVerify($SECRET, 'tok', '', $mock('{"hostname":"x"}'), $codes) === 'failed' && $codes === array('not-success'));
+	$r1 = $f->tsVerify($SECRET, 'tok', '', $mock(false), $c1);
+	$r2 = $f->tsVerify($SECRET, 'tok', '', $mock(new \Exception('timeout')), $c2);
+	$r3 = $f->tsVerify($SECRET, 'tok', '', $mock(''), $c3);
+	check("$kit tsVerify: network failure (false, exception, empty body) → failed (fail closed)", $r1 === 'failed' && $r2 === 'failed' && $r3 === 'failed' && $c1 === array('http-error') && $c2 === array('http-error'));
+	$r1 = $f->tsVerify($SECRET, 'tok', '', $mock('<html>502 Bad Gateway</html>'), $c1);
+	$r2 = $f->tsVerify($SECRET, 'tok', '', $mock('"success"'), $c2);
+	check("$kit tsVerify: bad JSON → failed", $r1 === 'failed' && $r2 === 'failed' && $c1 === array('bad-json') && $c2 === array('bad-json'));
+	$r1 = $f->tsVerify($SECRET, 'tok', '', $mock('{"success":true,"action":"login"}'), $c1);
+	check("$kit tsVerify: another action → failed; empty action accepted", $r1 === 'failed' && $c1 === array('wrong-action') && $f->tsVerify($SECRET, 'tok', '', $mock('{"success":true,"action":""}')) === 'ok' && $f->tsVerify($SECRET, 'tok', '', $mock('{"success":true,"action":["abp-signup"]}')) === 'failed');
+	$calls = array();
+	check("$kit tsVerify: empty / missing token → missing, Cloudflare not asked", $f->tsVerify($SECRET, '', '1.2.3.4', $mock('{"success":true}')) === 'missing' && $f->tsVerify($SECRET, '  ', '', $mock('{"success":true}')) === 'missing' && $f->tsVerify($SECRET, null, '', $mock('{"success":true}')) === 'missing' && $f->tsVerify($SECRET, array('x'), '', $mock('{"success":true}')) === 'missing' && $calls === array());
+	check("$kit tsVerify: oversized / control-character token and bad secret → failed without asking Cloudflare", $f->tsVerify($SECRET, str_repeat('a', 2049), '', $mock('{"success":true}')) === 'failed' && $f->tsVerify($SECRET, "a\nb", '', $mock('{"success":true}')) === 'failed' && $f->tsVerify('', 'tok', '', $mock('{"success":true}')) === 'failed' && $f->tsVerify('bad secret!', 'tok', '', $mock('{"success":true}')) === 'failed' && $f->tsVerify($SECRET, 'tok', '', 'not callable') === 'failed' && $calls === array());
+	check("$kit httpPost(): https only", $f->httpPost('http://challenges.cloudflare.com/x', array()) === false && $f->httpPost('file:///etc/passwd', array()) === false);
+	// Confirmation tokens: the first 8 hex digits carry the creation time.
+	$T = 1794000000; $tok = $f->optinToken($T);
+	check("$kit optinToken(): 64 hex, time prefix, random part differs", preg_match('/^[0-9a-f]{64}$/', $tok) === 1 && substr($tok, 0, 8) === sprintf('%08x', $T) && $f->tokenTime($tok) === $T && substr($f->optinToken($T), 8) !== substr($tok, 8) && strlen($f->optinToken()) === 64);
+	check("$kit tokenFresh(): fresh, 7 days, older than 7 days, future (5 min skew)", $f->tokenFresh($tok, $T + 60) && $f->tokenFresh($tok, $T + 7 * 86400) && !$f->tokenFresh($tok, $T + 7 * 86400 + 1) && $f->tokenFresh($tok, $T - 299) && !$f->tokenFresh($tok, $T - 301) && !$f->tokenFresh($f->optinToken($T + 3600), $T));
+	check("$kit tokenTime(): non-tokens → 0, never fresh", $f->tokenTime('xyz') === 0 && $f->tokenTime(strtoupper($tok)) === 0 && $f->tokenTime(str_repeat('0', 64)) === 0 && !$f->tokenFresh(str_repeat('0', 64), $T) && $f->tokenTime(array()) === 0 && $f->tokenTime(substr($tok, 0, 63)) === 0);
+	$u = $f->unsubToken($tok, 'secret');
+	check("$kit unsubToken(): HMAC-SHA256('unsub|' . token, secret), 64 hex, differs per token and key", $u === hash_hmac('sha256', 'unsub|' . $tok, 'secret') && preg_match('/^[0-9a-f]{64}$/', $u) === 1 && $u !== $f->unsubToken($tok, 'other') && $u !== $f->unsubToken($f->optinToken($T), 'secret') && $u !== $tok);
+}
+$ctrl = array('OC3' => '/announcement-bar-pro/upload/catalog/controller/extension/module/announcement_bar_pro.php', 'OC4' => '/announcement-bar-pro-oc4/src/catalog/controller/module/announcement_bar_pro.php');
+$cmod = array('OC3' => '/announcement-bar-pro/upload/catalog/model/extension/module/announcement_bar_pro.php', 'OC4' => '/announcement-bar-pro-oc4/src/catalog/model/module/announcement_bar_pro.php');
+$actl = array('OC3' => '/announcement-bar-pro/upload/admin/controller/extension/module/announcement_bar_pro.php', 'OC4' => '/announcement-bar-pro-oc4/src/admin/controller/module/announcement_bar_pro.php');
+foreach ($ctrl as $kit => $file) {
+	$src = file_get_contents($root . $file);
+	preg_match('/function signUp\(.*?\n\t}/s', $src, $m);
+	$su = isset($m[0]) ? $m[0] : '';
+	$resub = strpos($su, "(int)\$existing['status'] === 2) {");
+	check("$kit signUp(): status 2 + double opt-in → only setResubscribeToken + mail with the derived unsubscribe token, returns before saveSubscriber()", $resub !== false && strpos($su, 'setResubscribeToken') > $resub && strpos($su, '->unsubToken($token') > $resub && strpos($su, 'return $done;', $resub) < strpos($su, 'saveSubscriber(') && strpos($su, '$this->fx->optinToken()') !== false && strpos($su, 'bin2hex(random_bytes(32));') > $resub);
+	preg_match('/function tokenPage\(.*?\n\t}/s', $src, $m);
+	$tp = isset($m[0]) ? $m[0] : '';
+	check("$kit tokenPage(): status 2 confirm only with a fresh token, then resubscribe() with sha256 of the derived unsubscribe token", strpos($tp, "(\$resub && \$this->fx->tokenFresh(\$token))") !== false && strpos($tp, "\$model->resubscribe((int)\$row['subscriber_id'], hash('sha256', \$this->fx->unsubToken(\$token,") !== false);
+	preg_match('/public function subscribe\(.*?\n\t}/s', $src, $m);
+	$sb = isset($m[0]) ? $m[0] : '';
+	check("$kit subscribe(): Turnstile after token, honeypot, limits, address and consent, right before signUp()", strpos($sb, 'turnstileError($post)') > strpos($sb, "abp_error_consent") && strpos($sb, 'turnstileError($post)') > strpos($sb, "'subscribe-all'") && strpos($sb, 'turnstileError($post)') < strpos($sb, '$this->signUp(') && strpos($sb, "\$json['field'] = 'form';") !== false);
+	check("$kit turnstileError(): same client IP as the rate limit, real transport, both messages", strpos($src, "->tsVerify(\$secret, isset(\$post['cf-turnstile-response']) ? \$post['cf-turnstile-response'] : '', \$this->clientIp(), array(\$this->fx, 'httpPost'), \$codes)") !== false && strpos($src, "'abp_error_ts_missing' : 'abp_error_ts_failed'") !== false);
+	check("$kit storefront data: only the site key (when both keys are set), never the secret", preg_match("/'ts'\s+=> \\\$schema >= 8 && \\\$need\['email'\] && \\\$this->fx->tsOn\(/", $src) === 1 && substr_count($src, "_ts_secret'") === 2);
+}
+foreach ($cmod as $kit => $file) {
+	$src = file_get_contents($root . $file);
+	preg_match('/function saveSubscriber\(.*?\n\t}/s', $src, $m);
+	$ss = isset($m[0]) ? $m[0] : '';
+	check("$kit saveSubscriber(): ON DUPLICATE KEY UPDATE never changes an unsubscribed row (IF(status = 2 …), status last)", strpos($ss, '"`" . $column . "` = IF(`status` = 2, `" . $column . "`, " . $value . ")"') !== false && strpos($ss, '$update[] = "`status` = IF(`status` = 2, 2, " . $status . ")";') > strpos($ss, 'foreach ($values'));
+	check("$kit setResubscribeToken / resubscribe / confirmSubscriber: only `token` while unsubscribed; status 2 → 1 only in resubscribe(); confirm only status 0", preg_match("/function setResubscribeToken\(.*?SET `token` = '\" \. \\\$this->db->escape\(\(string\)\\\$token_hash\) \. \"' WHERE `subscriber_id` = '\" \. \(int\)\\\$subscriber_id \. \"' AND `status` = '2'\"/s", $src) === 1 && preg_match("/function resubscribe\(.*?SET `status` = '1', `token` = '', `date_confirmed` = NOW\(\), `unsubscribe` = .*? AND `status` = '2'\"/s", $src) === 1 && preg_match("/function confirmSubscriber\(.*? AND `status` = '0'\"/s", $src) === 1);
+}
+foreach ($actl as $kit => $file) {
+	$src = file_get_contents($root . $file);
+	preg_match('/private function settingKeys\(.*?\n\t}/s', $src, $m);
+	check("$kit admin: the Turnstile secret is not a displayed setting, only a saved / not saved flag; an empty field keeps it", isset($m[0]) && strpos($m[0], "'ts_site'") !== false && strpos($m[0], "'ts_secret'") === false && strpos($src, "'ts_secret_saved'   => \$this->fx->tsSecretKey(") !== false && strpos($src, "return \$this->postValue('ts_secret_remove') === '1' ? '' : null;") !== false);
+}
+foreach (array('OC3' => '/announcement-bar-pro/upload/admin/view/template/extension/module/announcement_bar_pro.twig', 'OC4' => '/announcement-bar-pro-oc4/src/admin/view/template/module/announcement_bar_pro.twig') as $kit => $file) {
+	$src = file_get_contents($root . $file);
+	check("$kit admin form: secret field is an empty password field (never filled in)", preg_match('/<input type="password" name="module_announcement_bar_pro_ts_secret"[^>]*value=""/', $src) === 1 && strpos($src, 'setting.ts_secret') === false);
+}
+
 echo "\n$pass passed, $fail failed\n";
 exit($fail ? 1 : 0);

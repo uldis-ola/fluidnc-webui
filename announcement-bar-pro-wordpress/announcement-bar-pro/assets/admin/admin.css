@@ -7,7 +7,6 @@
 .abp-edition{display:inline-block;padding:3px 10px;border-radius:999px;background:#f1f5f9;color:#334155;font-size:12px;font-weight:600;border:1px solid var(--abp-line);}
 .abp-edition-pro{background:#ede9fe;color:#4c1d95;border-color:#ddd6fe;}
 .abp-tabs{margin-bottom:16px;}
-.abp-pro-badge{display:inline-block;vertical-align:middle;margin-left:4px;padding:1px 7px;border-radius:999px;background:#ede9fe;color:#4c1d95;font-size:11px;font-weight:700;letter-spacing:.03em;line-height:1.6;}
 .abp-hint{display:flex;gap:8px;align-items:flex-start;padding:10px 14px;margin:0 0 16px;border-radius:8px;background:#f0f9ff;color:#075985;font-size:13px;line-height:1.45;border:1px solid #e0f2fe;}
 .abp-small{color:var(--abp-muted);font-size:12px;}
 /* Cards */
@@ -40,8 +39,8 @@
 /* Pro / locked groups */
 .abp-group{margin:6px 0 14px;padding:12px 14px 4px;border:1px solid var(--abp-line);border-radius:10px;background:var(--abp-soft);min-width:0;}
 .abp-group>legend{padding:0 6px;font-weight:600;color:var(--abp-ink);}
-.abp-group.abp-locked{background:#fafafa;}
-.abp-group.abp-locked .abp-field,.abp-group.abp-locked .abp-help,.abp-group.abp-locked table{opacity:.75;}
+.abp-group.abp-no-rights{background:#fafafa;}
+.abp-group.abp-no-rights .abp-field,.abp-group.abp-no-rights .abp-help,.abp-group.abp-no-rights table{opacity:.75;}
 /* Language switcher */
 .abp-langs{display:inline-flex;flex-wrap:wrap;gap:4px;padding:3px;margin:0 0 12px;border-radius:9px;background:#f1f5f9;border:1px solid var(--abp-line);}
 .abp-langs button{border:0;background:transparent;padding:5px 12px;border-radius:7px;font-size:13px;color:#334155;cursor:pointer;line-height:1.4;}

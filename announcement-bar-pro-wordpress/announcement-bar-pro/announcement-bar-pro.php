@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       Announcement Bar Pro
- * Description:       Announcement bars with rotating messages, schedules, countdowns and a WooCommerce free-shipping progress bar. Pro adds more bars, inline boxes, targeting, A/B tests, coupons and a GDPR e-mail sign-up.
+ * Description:       Announcement bars with rotating messages, schedules, countdowns and a WooCommerce free-shipping progress bar. Fast, accessible, privacy-friendly.
  * Version:           1.0.0
  * Requires at least: 6.2
  * Requires PHP:      7.4
@@ -20,21 +20,20 @@ defined( 'ABSPATH' ) || exit;
 
 define( 'ABPRO_VERSION', '1.0.0' );
 define( 'ABPRO_SCHEMA', 1 );
+define( 'ABPRO_API', 1 ); // Version of the hooks for add-ons (README.md, "Hooks for add-ons").
 define( 'ABPRO_FILE', __FILE__ );
 define( 'ABPRO_DIR', plugin_dir_path( __FILE__ ) );
 define( 'ABPRO_URL', plugin_dir_url( __FILE__ ) );
 
 require_once ABPRO_DIR . 'includes/class-sanitizer.php';
-require_once ABPRO_DIR . 'includes/class-features.php';
+require_once ABPRO_DIR . 'includes/class-options.php';
 require_once ABPRO_DIR . 'includes/class-icons.php';
-require_once ABPRO_DIR . 'includes/class-licence.php';
 require_once ABPRO_DIR . 'includes/class-settings.php';
 require_once ABPRO_DIR . 'includes/class-db.php';
 require_once ABPRO_DIR . 'includes/class-commerce.php';
 require_once ABPRO_DIR . 'includes/class-renderer.php';
 require_once ABPRO_DIR . 'includes/class-frontend.php';
 require_once ABPRO_DIR . 'includes/class-endpoints.php';
-require_once ABPRO_DIR . 'includes/class-subscribers.php';
 require_once ABPRO_DIR . 'includes/class-plugin.php';
 
 if ( is_admin() ) {

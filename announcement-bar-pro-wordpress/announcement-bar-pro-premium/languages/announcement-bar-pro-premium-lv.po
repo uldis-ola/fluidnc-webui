@@ -1,0 +1,1291 @@
+# Copyright (C) 2026 3DP SIA
+# This file is distributed under the GPL-2.0-or-later.
+msgid ""
+msgstr "Project-Id-Version: Announcement Bar Pro — Premium 1.0.0\nReport-Msgid-Bugs-To: extension@3dp.lv\nLast-Translator: 3DP SIA <extension@3dp.lv>\nLanguage-Team: 3DP SIA <extension@3dp.lv>\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: lv\nPlural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n != 0 ? 1 : 2);\nPOT-Creation-Date: 2026-11-07T19:35:55+00:00\nPO-Revision-Date: 2026-11-07 12:00+0000\nX-Generator: WP-CLI 2.12.0\nX-Domain: announcement-bar-pro-premium\n"
+
+#. Plugin Name of the plugin
+#: announcement-bar-pro-premium.php
+msgid "Announcement Bar Pro — Premium"
+msgstr "Announcement Bar Pro — Premium"
+
+#. Description of the plugin
+#: announcement-bar-pro-premium.php
+msgid "Premium add-on for the free Announcement Bar Pro plugin: bottom bar and boxes in the cart, under the product price and in the mini-cart, targeting, reward tiers, coupons, A/B tests with statistics, a GDPR e-mail sign-up (optional Cloudflare Turnstile), templates and more."
+msgstr "Premium papildinājums bezmaksas spraudnim Announcement Bar Pro: apakšējā josla un bloki grozā, zem produkta cenas un mini grozā, mērķēšana, balvu pakāpes, kuponi, A/B testi ar statistiku, VDAR atbilstoša e-pasta pieteikšanās (ar izvēles Cloudflare Turnstile), veidnes un vēl."
+
+#. Author of the plugin
+#: announcement-bar-pro-premium.php
+msgid "3DP SIA"
+msgstr "3DP SIA"
+
+#: announcement-bar-pro-premium.php:58
+msgid "Announcement Bar Pro — Premium needs the free Announcement Bar Pro plugin with add-on support. Please update Announcement Bar Pro (Plugins → Add New) to its current version from WordPress.org."
+msgstr "Announcement Bar Pro — Premium vajag bezmaksas spraudni Announcement Bar Pro ar papildinājumu atbalstu. Lūdzu, atjauniniet Announcement Bar Pro (Spraudņi → Pievienot jaunu) uz jaunāko versiju no WordPress.org."
+
+#: announcement-bar-pro-premium.php:59
+msgid "Announcement Bar Pro — Premium needs the free Announcement Bar Pro plugin. Please install and activate it (Plugins → Add New, search for \"Announcement Bar Pro\"); the premium features start as soon as it is active."
+msgstr "Announcement Bar Pro — Premium vajag bezmaksas spraudni Announcement Bar Pro. Lūdzu, instalējiet un aktivizējiet to (Spraudņi → Pievienot jaunu, meklējiet \"Announcement Bar Pro\"); Premium iespējas sāk darboties, tiklīdz tas ir aktīvs."
+
+#: includes/class-addon.php:131
+msgid "Licence"
+msgstr "Licence"
+
+#: includes/class-addon.php:140
+msgid "Premium"
+msgstr "Premium"
+
+#: includes/class-addon.php:140
+msgid "Premium: no licence key"
+msgstr "Premium: nav licences atslēgas"
+
+#: includes/class-addon.php:153
+msgid "Premium features are unlocked. Thank you!"
+msgstr "Premium iespējas ir atbloķētas. Paldies!"
+
+#: includes/class-addon.php:154
+#: includes/class-local-licence-provider.php:78
+msgid "This licence key is not valid. Please check it and try again."
+msgstr "Šī licences atslēga nav derīga. Lūdzu, pārbaudiet to un mēģiniet vēlreiz."
+
+#: includes/class-addon.php:155
+msgid "The licence key was removed from this site."
+msgstr "Licences atslēga ir noņemta no šīs vietnes."
+
+#: includes/class-addon.php:171
+msgid "Premium licence"
+msgstr "Premium licence"
+
+#. translators: %s: masked licence key
+#: includes/class-addon.php:178
+msgid "Premium active"
+msgstr "Premium aktīvs"
+
+#. translators: %s: masked licence key
+#: includes/class-addon.php:178
+#, php-format
+msgid "Key %s"
+msgstr "Atslēga %s"
+
+#: includes/class-addon.php:179
+msgid "Remove key from this site"
+msgstr "Noņemt atslēgu no šīs vietnes"
+
+#: includes/class-addon.php:181
+msgid "Enter the licence key from your order to switch on the premium features: more bars and boxes, targeting, coupons, A/B tests with statistics, the e-mail sign-up and templates."
+msgstr "Ievadiet licences atslēgu no sava pasūtījuma, lai ieslēgtu Premium iespējas: vairāk joslu un bloku, mērķēšanu, kuponus, A/B testus ar statistiku, e-pasta pieteikšanos un veidnes."
+
+#: includes/class-addon.php:182
+msgid "Licence key"
+msgstr "Licences atslēga"
+
+#: includes/class-addon.php:183
+msgid "The key is checked on this site only; no data is sent anywhere."
+msgstr "Atslēga tiek pārbaudīta tikai šajā vietnē; dati nekur netiek sūtīti."
+
+#: includes/class-addon.php:184
+msgid "Activate"
+msgstr "Aktivizēt"
+
+#: includes/class-addon.php:190
+msgid "A stored key is not valid any more."
+msgstr "Saglabātā atslēga vairs nav derīga."
+
+#: includes/class-local-licence-provider.php:84
+msgid "Pro features are unlocked. Thank you!"
+msgstr "Pro funkcijas ir atbloķētas. Paldies!"
+
+#: includes/class-pro-admin.php:79
+#: includes/class-pro-admin.php:93
+#: includes/class-pro-admin.php:1232
+msgid "Templates"
+msgstr "Veidnes"
+
+#: includes/class-pro-admin.php:135
+msgid "Delete every entry of this address from the list? This cannot be undone."
+msgstr "Dzēst visus šīs adreses ierakstus no saraksta? Šo darbību nevar atsaukt."
+
+#: includes/class-pro-admin.php:136
+msgid "Make variant B the main text and end the A/B test?"
+msgstr "Padarīt B variantu par galveno tekstu un beigt A/B testu?"
+
+#: includes/class-pro-admin.php:137
+msgid "Choose a background image"
+msgstr "Izvēlieties fona attēlu"
+
+#: includes/class-pro-admin.php:138
+msgid "Use this image"
+msgstr "Izmantot šo attēlu"
+
+#: includes/class-pro-admin.php:153
+msgid "Statistics reset."
+msgstr "Statistika atiestatīta."
+
+#: includes/class-pro-admin.php:154
+msgid "Variant B is now the main text; the A/B test has ended."
+msgstr "B variants tagad ir galvenais teksts; A/B tests ir beidzies."
+
+#: includes/class-pro-admin.php:173
+msgid "Statistics"
+msgstr "Statistika"
+
+#: includes/class-pro-admin.php:211
+msgid "Views"
+msgstr "Skatījumi"
+
+#: includes/class-pro-admin.php:212
+msgid "Clicks"
+msgstr "Klikšķi"
+
+#: includes/class-pro-admin.php:213
+msgid "CTR"
+msgstr "CTR"
+
+#: includes/class-pro-admin.php:218
+msgid "Code copies"
+msgstr "Kodu kopēšanas reizes"
+
+#: includes/class-pro-admin.php:222
+msgid "Sign-ups"
+msgstr "Pieteikšanās"
+
+#: includes/class-pro-admin.php:237
+msgid "Use B"
+msgstr "Izmantot B"
+
+#: includes/class-pro-admin.php:240
+msgid "Reset statistics"
+msgstr "Atiestatīt statistiku"
+
+#: includes/class-pro-admin.php:247
+msgid "Start from a template"
+msgstr "Sākt no veidnes"
+
+#: includes/class-pro-admin.php:297
+msgid "Reward tiers"
+msgstr "Balvu līmeņi"
+
+#: includes/class-pro-admin.php:301
+msgid "Recurring countdown"
+msgstr "Atkārtota atpakaļskaitīšana"
+
+#: includes/class-pro-admin.php:305
+#: includes/class-pro-admin.php:910
+msgid "Coupon"
+msgstr "Kupons"
+
+#: includes/class-pro-admin.php:309
+#: includes/class-pro-admin.php:958
+msgid "A/B test"
+msgstr "A/B tests"
+
+#: includes/class-pro-admin.php:313
+#: includes/class-pro-settings.php:231
+msgid "E-mail sign-up"
+msgstr "E-pasta pieteikšanās"
+
+#: includes/class-pro-admin.php:317
+msgid "Targeted"
+msgstr "Mērķēts"
+
+#: includes/class-pro-admin.php:321
+msgid "Trigger"
+msgstr "Aktivizētājs"
+
+#: includes/class-pro-admin.php:334
+msgid "Main bar (settings)"
+msgstr "Galvenā josla (iestatījumi)"
+
+#: includes/class-pro-admin.php:335
+#: includes/class-pro-admin.php:676
+msgid "Top bar"
+msgstr "Augšējā josla"
+
+#: includes/class-pro-admin.php:336
+#: includes/class-pro-admin.php:677
+msgid "Bottom bar"
+msgstr "Apakšējā josla"
+
+#: includes/class-pro-admin.php:337
+msgid "Cart page box"
+msgstr "Bloks groza lapā"
+
+#: includes/class-pro-admin.php:338
+msgid "Product page box (under the price)"
+msgstr "Bloks produkta lapā (zem cenas)"
+
+#: includes/class-pro-admin.php:339
+msgid "Mini-cart box"
+msgstr "Bloks mini grozā"
+
+#: includes/class-pro-admin.php:425
+msgid "Reward tiers (several goals)"
+msgstr "Balvu līmeņi (vairāki mērķi)"
+
+#: includes/class-pro-admin.php:439
+#: includes/class-pro-settings.php:76
+msgid "Gradient"
+msgstr "Gradients"
+
+#: includes/class-pro-admin.php:439
+msgid "Colour blend"
+msgstr "Krāsu pāreja"
+
+#: includes/class-pro-admin.php:440
+#: includes/class-pro-settings.php:77
+msgid "Glass"
+msgstr "Stikls"
+
+#: includes/class-pro-admin.php:440
+msgid "See-through, blurred"
+msgstr "Caurspīdīgs, izplūdis"
+
+#: includes/class-pro-admin.php:466
+msgid "Reward tiers — labels and own texts"
+msgstr "Balvu līmeņi — nosaukumi un paša teksti"
+
+#: includes/class-pro-admin.php:467
+msgid "Label of each tier (shown under the bar and for {goal}); optional own text while that tier is next."
+msgstr "Katra līmeņa nosaukums (tiek rādīts zem joslas un vietā {goal}); neobligāts paša teksts, kamēr šis līmenis ir nākamais."
+
+#. translators: %d: tier number
+#: includes/class-pro-admin.php:470
+#, php-format
+msgid "Tier %d label"
+msgstr "%d. līmeņa nosaukums"
+
+#. translators: %d: tier number
+#: includes/class-pro-admin.php:472
+#, php-format
+msgid "Tier %d own text"
+msgstr "%d. līmeņa paša teksts"
+
+#: includes/class-pro-admin.php:481
+msgid "Variant B (A/B test)"
+msgstr "B variants (A/B tests)"
+
+#: includes/class-pro-admin.php:482
+msgid "Text B"
+msgstr "B teksts"
+
+#: includes/class-pro-admin.php:485
+msgid "Shorter text B for phones (optional)"
+msgstr "Īsāks B teksts tālruņiem (neobligāti)"
+
+#: includes/class-pro-admin.php:492
+msgid "Button text B (optional)"
+msgstr "B pogas teksts (neobligāti)"
+
+#: includes/class-pro-admin.php:496
+msgid "E-mail sign-up texts (empty = default text)"
+msgstr "E-pasta pieteikšanās teksti (tukšs = noklusētais teksts)"
+
+#: includes/class-pro-admin.php:499
+msgid "Field placeholder"
+msgstr "Lauka paraugteksts"
+
+#: includes/class-pro-admin.php:500
+msgid "Button"
+msgstr "Poga"
+
+#: includes/class-pro-admin.php:504
+msgid "Consent text (stored with each sign-up as proof)"
+msgstr "Piekrišanas teksts (tiek saglabāts ar katru pieteikumu kā pierādījums)"
+
+#: includes/class-pro-admin.php:513
+msgid "Text after sending"
+msgstr "Teksts pēc nosūtīšanas"
+
+#: includes/class-pro-admin.php:531
+msgid "Background image and font"
+msgstr "Fona attēls un fonts"
+
+#: includes/class-pro-admin.php:534
+msgid "Background image"
+msgstr "Fona attēls"
+
+#: includes/class-pro-admin.php:535
+msgid "Choose image"
+msgstr "Izvēlēties attēlu"
+
+#: includes/class-pro-admin.php:535
+msgid "Remove image"
+msgstr "Noņemt attēlu"
+
+#: includes/class-pro-admin.php:540
+msgid "Colour over the image (%)"
+msgstr "Krāsas slānis virs attēla (%)"
+
+#: includes/class-pro-admin.php:547
+msgid "Keeps the text readable: 55 % or more for most photos."
+msgstr "Saglabā teksta salasāmību: lielākajai daļai fotoattēlu 55 % vai vairāk."
+
+#: includes/class-pro-admin.php:550
+msgid "Font"
+msgstr "Fonts"
+
+#: includes/class-pro-admin.php:561
+msgid "Theme font"
+msgstr "Motīva fonts"
+
+#: includes/class-pro-admin.php:562
+msgid "System UI"
+msgstr "Sistēmas fonts"
+
+#: includes/class-pro-admin.php:563
+msgid "Humanist sans"
+msgstr "Humānistiskais bezserifu"
+
+#: includes/class-pro-admin.php:564
+msgid "Geometric sans"
+msgstr "Ģeometriskais bezserifu"
+
+#: includes/class-pro-admin.php:565
+msgid "Serif"
+msgstr "Serifu fonts"
+
+#: includes/class-pro-admin.php:566
+msgid "Monospace"
+msgstr "Vienplatuma fonts"
+
+#: includes/class-pro-admin.php:567
+msgid "Rounded"
+msgstr "Noapaļots"
+
+#: includes/class-pro-admin.php:584
+msgid "Tier amounts"
+msgstr "Līmeņu summas"
+
+#: includes/class-pro-admin.php:585
+msgid "2 to 5 rising amounts; labels are set per language under Message."
+msgstr "No 2 līdz 5 augošas summas; nosaukumus katrai valodai iestata sadaļā Paziņojums."
+
+#. translators: %d: tier number
+#: includes/class-pro-admin.php:589
+#, php-format
+msgid "Tier %d"
+msgstr "%d. līmenis"
+
+#: includes/class-pro-admin.php:594
+msgid "Amounts by country, state or currency"
+msgstr "Summas pēc valsts, štata vai valūtas"
+
+#: includes/class-pro-admin.php:595
+msgid "Optional. A state amount wins over a country amount, which wins over a currency amount; otherwise the amount above is used."
+msgstr "Neobligāti. Štata summa ir svarīgāka par valsts summu, bet valsts summa — par valūtas summu; citādi tiek izmantota augstāk norādītā summa."
+
+#: includes/class-pro-admin.php:603
+#: includes/class-pro-admin.php:605
+msgid "Country"
+msgstr "Valsts"
+
+#: includes/class-pro-admin.php:603
+#: includes/class-pro-admin.php:609
+msgid "State code (optional)"
+msgstr "Štata kods (neobligāti)"
+
+#: includes/class-pro-admin.php:603
+#: includes/class-pro-admin.php:609
+msgid "Amount"
+msgstr "Summa"
+
+#: includes/class-pro-admin.php:611
+msgid "Add row"
+msgstr "Pievienot rindu"
+
+#. translators: %s: currency code
+#: includes/class-pro-admin.php:618
+#, php-format
+msgid "Fixed amount in %s"
+msgstr "Fiksēta summa valūtā %s"
+
+#: includes/class-pro-admin.php:620
+msgid "Currency amounts are for multi-currency shops: the amount is used as it is, without conversion."
+msgstr "Valūtu summas paredzētas veikaliem ar vairākām valūtām: summa tiek izmantota tāda, kāda tā ir, bez konvertēšanas."
+
+#: includes/class-pro-admin.php:632
+msgid "Recurring countdown (daily / weekly cut-off)"
+msgstr "Atkārtota atpakaļskaitīšana (ikdienas / iknedēļas termiņš)"
+
+#: includes/class-pro-admin.php:636
+msgid "Repeat"
+msgstr "Atkārtot"
+
+#: includes/class-pro-admin.php:639
+msgid "No — count down to the end date"
+msgstr "Nē — skaitīt līdz beigu datumam"
+
+#: includes/class-pro-admin.php:640
+msgid "Every day"
+msgstr "Katru dienu"
+
+#: includes/class-pro-admin.php:641
+msgid "Once a week"
+msgstr "Reizi nedēļā"
+
+#: includes/class-pro-admin.php:647
+msgid "Cut-off time"
+msgstr "Termiņa laiks"
+
+#: includes/class-pro-admin.php:656
+msgid "Day"
+msgstr "Diena"
+
+#: includes/class-pro-admin.php:657
+msgid "Skip these days"
+msgstr "Izlaist šīs dienas"
+
+#: includes/class-pro-admin.php:675
+msgid "Main bar (position from the settings)"
+msgstr "Galvenā josla (novietojums no iestatījumiem)"
+
+#: includes/class-pro-admin.php:680
+msgid "Box on the cart page"
+msgstr "Bloks groza lapā"
+
+#: includes/class-pro-admin.php:681
+msgid "Box under the product price"
+msgstr "Bloks zem produkta cenas"
+
+#: includes/class-pro-admin.php:682
+msgid "Box in the mini-cart"
+msgstr "Bloks mini grozā"
+
+#: includes/class-pro-admin.php:685
+msgid "Placement and priority"
+msgstr "Novietojums un prioritāte"
+
+#: includes/class-pro-admin.php:687
+msgid "Placement"
+msgstr "Novietojums"
+
+#: includes/class-pro-admin.php:687
+msgid "Boxes appear in the cart (classic page and cart block), under the price of the product page and in the classic mini-cart."
+msgstr "Bloki tiek rādīti grozā (klasiskajā lapā un groza blokā), produkta lapā zem cenas un klasiskajā mini grozā."
+
+#: includes/class-pro-admin.php:690
+msgid "Priority (0–100)"
+msgstr "Prioritāte (0–100)"
+
+#: includes/class-pro-admin.php:696
+msgid "Higher priority comes first; with \"most messages at once\" set, lower ones are left out."
+msgstr "Augstāka prioritāte tiek rādīta pirmā; ja ir iestatīts „Vienlaikus rādīt ne vairāk paziņojumu”, zemākie tiek izlaisti."
+
+#: includes/class-pro-admin.php:701
+msgid "Visitors and pages"
+msgstr "Apmeklētāji un lapas"
+
+#: includes/class-pro-admin.php:704
+msgid "Not logged in"
+msgstr "Nav pieteicies"
+
+#: includes/class-pro-admin.php:705
+msgid "Show to (none ticked = everyone)"
+msgstr "Rādīt (nekas neatzīmēts = visiem)"
+
+#: includes/class-pro-admin.php:712
+msgid "Pages"
+msgstr "Lapas"
+
+#: includes/class-pro-admin.php:715
+msgid "Every page"
+msgstr "Katra lapa"
+
+#: includes/class-pro-admin.php:716
+msgid "Front page only"
+msgstr "Tikai sākumlapa"
+
+#: includes/class-pro-admin.php:717
+msgid "Only these pages"
+msgstr "Tikai šīs lapas"
+
+#: includes/class-pro-admin.php:718
+msgid "All pages except these"
+msgstr "Visas lapas, izņemot šīs"
+
+#: includes/class-pro-admin.php:724
+msgid "Page rules (one per line)"
+msgstr "Lapu noteikumi (viens katrā rindā)"
+
+#. translators: %s: list of page types
+#: includes/class-pro-admin.php:729
+#, php-format
+msgid "Page types: %s — or paths such as /sale/ (exact) and /blog/* (everything below)."
+msgstr "Lapu veidi: %s — vai ceļi, piemēram, /sale/ (precīzi) un /blog/* (viss zem tā)."
+
+#: includes/class-pro-admin.php:735
+msgid "Visitors coming from (sites)"
+msgstr "Apmeklētāji no (vietnēm)"
+
+#: includes/class-pro-admin.php:739
+msgid "For example facebook.com, instagram.com — separated by commas."
+msgstr "Piemēram, facebook.com, instagram.com — atdalīt ar komatiem."
+
+#: includes/class-pro-admin.php:743
+msgid "utm_source"
+msgstr "utm_source"
+
+#: includes/class-pro-admin.php:744
+msgid "utm_medium"
+msgstr "utm_medium"
+
+#: includes/class-pro-admin.php:745
+msgid "utm_campaign"
+msgstr "utm_campaign"
+
+#: includes/class-pro-admin.php:746
+msgid "Campaign values of the landing page, kept for the visit (decided in the browser)."
+msgstr "Ienākšanas lapas kampaņas vērtības, kas tiek saglabātas apmeklējuma laikā (lēmums tiek pieņemts pārlūkā)."
+
+#: includes/class-pro-admin.php:749
+msgid "New or returning visitors"
+msgstr "Jauni vai atkārtoti apmeklētāji"
+
+#: includes/class-pro-admin.php:752
+msgid "Everyone"
+msgstr "Visi"
+
+#: includes/class-pro-admin.php:753
+msgid "First visit only"
+msgstr "Tikai pirmais apmeklējums"
+
+#: includes/class-pro-admin.php:754
+msgid "Returning visitors only"
+msgstr "Tikai atkārtoti apmeklētāji"
+
+#: includes/class-pro-admin.php:761
+msgid "Show"
+msgstr "Rādīt"
+
+#: includes/class-pro-admin.php:764
+msgid "At once"
+msgstr "Uzreiz"
+
+#: includes/class-pro-admin.php:765
+msgid "After a delay (seconds)"
+msgstr "Pēc aizkaves (sekundes)"
+
+#: includes/class-pro-admin.php:766
+msgid "After scrolling (%)"
+msgstr "Pēc ritināšanas (%)"
+
+#: includes/class-pro-admin.php:767
+msgid "When the visitor is about to leave (computers)"
+msgstr "Kad apmeklētājs grasās aiziet (datoros)"
+
+#: includes/class-pro-admin.php:774
+msgid "Seconds / scroll %"
+msgstr "Sekundes / ritināšana %"
+
+#: includes/class-pro-admin.php:798
+msgid "Products, countries and cart"
+msgstr "Produkti, valstis un grozs"
+
+#: includes/class-pro-admin.php:811
+msgid "With products or categories chosen, the message shows only on those product pages and category pages."
+msgstr "Ja ir izvēlēti produkti vai kategorijas, paziņojums tiek rādīts tikai šo produktu un kategoriju lapās."
+
+#: includes/class-pro-admin.php:812
+msgid "Product pages"
+msgstr "Produktu lapas"
+
+#: includes/class-pro-admin.php:813
+msgid "Category pages"
+msgstr "Kategoriju lapas"
+
+#: includes/class-pro-admin.php:820
+msgid "Countries"
+msgstr "Valstis"
+
+#: includes/class-pro-admin.php:823
+msgid "Every country"
+msgstr "Katra valsts"
+
+#: includes/class-pro-admin.php:824
+msgid "Only these countries"
+msgstr "Tikai šīs valstis"
+
+#: includes/class-pro-admin.php:825
+msgid "All except these countries"
+msgstr "Visas valstis, izņemot šīs"
+
+#: includes/class-pro-admin.php:829
+msgid "Choose countries"
+msgstr "Izvēlēties valstis"
+
+#: includes/class-pro-admin.php:829
+msgid "Search a country…"
+msgstr "Meklēt valsti…"
+
+#: includes/class-pro-admin.php:833
+msgid "The visitor's country comes from the WooCommerce customer address (or WooCommerce's own geolocation setting). No outside service is asked."
+msgstr "Apmeklētāja valsts tiek noteikta pēc WooCommerce klienta adreses (vai WooCommerce paša ģeolokācijas iestatījuma). Neviens ārējs pakalpojums netiek izmantots."
+
+#: includes/class-pro-admin.php:835
+msgid "Cart conditions (every set condition must hold)"
+msgstr "Groza nosacījumi (jāizpildās katram iestatītajam)"
+
+#: includes/class-pro-admin.php:837
+msgid "Subtotal from"
+msgstr "Starpsumma no"
+
+#: includes/class-pro-admin.php:838
+msgid "Subtotal up to"
+msgstr "Starpsumma līdz"
+
+#: includes/class-pro-admin.php:839
+msgid "Items from"
+msgstr "Preču skaits no"
+
+#: includes/class-pro-admin.php:840
+msgid "Items up to"
+msgstr "Preču skaits līdz"
+
+#: includes/class-pro-admin.php:849
+msgid "Cart contains one of these products"
+msgstr "Grozā ir kāds no šiem produktiem"
+
+#: includes/class-pro-admin.php:850
+msgid "Cart contains a product of these categories"
+msgstr "Grozā ir produkts no šīm kategorijām"
+
+#: includes/class-pro-admin.php:865
+msgid "Search a product…"
+msgstr "Meklēt produktu…"
+
+#: includes/class-pro-admin.php:889
+msgid "Search a category…"
+msgstr "Meklēt kategoriju…"
+
+#: includes/class-pro-admin.php:908
+msgid "Coupon, sign-up and A/B test"
+msgstr "Kupons, pieteikšanās un A/B tests"
+
+#: includes/class-pro-admin.php:923
+msgid "— none —"
+msgstr "— nav —"
+
+#: includes/class-pro-admin.php:932
+msgid "WooCommerce coupon"
+msgstr "WooCommerce kupons"
+
+#: includes/class-pro-admin.php:937
+msgid "Shows the code with a copy button. The message hides itself when the coupon expires or is used up — the same rules WooCommerce uses."
+msgstr "Rāda kodu ar kopēšanas pogu. Paziņojums paslēpjas, kad kuponam beidzas termiņš vai tas ir izmantots — pēc tiem pašiem noteikumiem, ko izmanto WooCommerce."
+
+#: includes/class-pro-admin.php:944
+msgid "Or a fixed code"
+msgstr "Vai fiksēts kods"
+
+#: includes/class-pro-admin.php:948
+msgid "Shown as it is (not checked against the shop)."
+msgstr "Tiek rādīts tāds, kāds tas ir (netiek pārbaudīts veikalā)."
+
+#: includes/class-pro-admin.php:954
+msgid "E-mail sign-up (GDPR, double opt-in)"
+msgstr "E-pasta pieteikšanās (GDPR, dubultā apstiprināšana)"
+
+#: includes/class-pro-admin.php:955
+msgid "Show an e-mail sign-up form in this message"
+msgstr "Rādīt e-pasta pieteikšanās formu šajā paziņojumā"
+
+#: includes/class-pro-admin.php:955
+msgid "With a consent box, a link to the privacy page and a confirmation e-mail. Texts per language are under Message."
+msgstr "Ar piekrišanas rūtiņu, saiti uz privātuma lapu un apstiprinājuma e-pastu. Teksti katrai valodai ir sadaļā Paziņojums."
+
+#: includes/class-pro-admin.php:959
+msgid "Test a second text (variant B)"
+msgstr "Testēt otru tekstu (B variants)"
+
+#: includes/class-pro-admin.php:959
+msgid "Each browser keeps one variant. Views, clicks and CTR per variant appear in the message list."
+msgstr "Katrs pārlūks saglabā vienu variantu. Skatījumi, klikšķi un CTR katram variantam ir redzami paziņojumu sarakstā."
+
+#: includes/class-pro-admin.php:972
+msgid "Variant"
+msgstr "Variants"
+
+#: includes/class-pro-admin.php:1035
+msgid "A countdown needs an end date or a daily / weekly cut-off time."
+msgstr "Atpakaļskaitīšanai vajag beigu datumu vai ikdienas / iknedēļas pēdējo pasūtīšanas laiku."
+
+#. translators: %d: number of characters
+#: includes/class-pro-admin.php:1070
+#: includes/class-pro-admin.php:1076
+#: includes/class-pro-admin.php:1085
+#: includes/class-pro-settings.php:158
+#, php-format
+msgid "At most %d characters."
+msgstr "Ne vairāk kā %d rakstzīmes."
+
+#: includes/class-pro-admin.php:1094
+msgid "Every tier needs a label in each language that has a text."
+msgstr "Katram līmenim ir nepieciešams nosaukums katrā valodā, kurā ir teksts."
+
+#: includes/class-pro-admin.php:1103
+msgid "An A/B test needs a text for variant B."
+msgstr "A/B testam ir nepieciešams B varianta teksts."
+
+#. translators: 1: smallest value, 2: largest value
+#: includes/class-pro-admin.php:1110
+#: includes/class-pro-settings.php:125
+#, php-format
+msgid "Please enter a whole number from %1$d to %2$d."
+msgstr "Lūdzu, ievadiet veselu skaitli no %1$d līdz %2$d."
+
+#: includes/class-pro-admin.php:1119
+msgid "Use 1–32 letters, digits, \"-\" or \"_\"."
+msgstr "Izmantojiet 1–32 burtus, ciparus, \"-\" vai \"_\"."
+
+#: includes/class-pro-admin.php:1134
+msgid "One rule per line: a page type from the list or a path that starts with \"/\" (a \"*\" at the end matches everything below it)."
+msgstr "Viens noteikums katrā rindā: lapas veids no saraksta vai ceļš, kas sākas ar \"/\" (\"*\" beigās aptver visu zem tā)."
+
+#: includes/class-pro-admin.php:1136
+msgid "Please add at least one page rule."
+msgstr "Lūdzu, pievienojiet vismaz vienu lapu noteikumu."
+
+#: includes/class-pro-admin.php:1150
+msgid "Some of the chosen items do not exist any more."
+msgstr "Daži izvēlētie vienumi vairs neeksistē."
+
+#: includes/class-pro-admin.php:1194
+#: includes/class-pro-settings.php:114
+msgid "Please choose one of the offered values."
+msgstr "Lūdzu, izvēlieties kādu no piedāvātajām vērtībām."
+
+#: includes/class-pro-admin.php:1195
+msgid "Please choose countries from the list."
+msgstr "Lūdzu, izvēlieties valstis no saraksta."
+
+#: includes/class-pro-admin.php:1196
+msgid "Please choose at least one country."
+msgstr "Lūdzu, izvēlieties vismaz vienu valsti."
+
+#: includes/class-pro-admin.php:1197
+msgid "Each row needs a country from the list, an optional state of that country and an amount above 0."
+msgstr "Katrā rindā jābūt valstij no saraksta, neobligātam šīs valsts štatam un summai, kas lielāka par 0."
+
+#: includes/class-pro-admin.php:1198
+msgid "Each country / state may appear only once."
+msgstr "Katra valsts / štats drīkst parādīties tikai vienu reizi."
+
+#: includes/class-pro-admin.php:1199
+msgid "Amounts above 0, only for currencies of the shop."
+msgstr "Summas, lielākas par 0, tikai veikala valūtām."
+
+#: includes/class-pro-admin.php:1200
+msgid "Please choose an existing coupon."
+msgstr "Lūdzu, izvēlieties esošu kuponu."
+
+#: includes/class-pro-admin.php:1201
+msgid "Tier amounts must rise from row to row."
+msgstr "Līmeņu summām jāpieaug no rindas uz rindu."
+
+#: includes/class-pro-admin.php:1202
+msgid "Reward tiers need 2 to 5 amounts."
+msgstr "Balvu līmeņiem nepieciešamas 2 līdz 5 summas."
+
+#: includes/class-pro-admin.php:1203
+msgid "Please enter an amount such as 49.99."
+msgstr "Lūdzu, ievadiet summu, piemēram, 49.99."
+
+#: includes/class-pro-admin.php:1204
+msgid "Please enter a whole number."
+msgstr "Lūdzu, ievadiet veselu skaitli."
+
+#: includes/class-pro-admin.php:1205
+msgid "The maximum must not be smaller than the minimum."
+msgstr "Maksimumam jābūt ne mazākam par minimumu."
+
+#: includes/class-pro-admin.php:1206
+msgid "Some of the chosen products do not exist any more."
+msgstr "Daži izvēlētie produkti vairs neeksistē."
+
+#: includes/class-pro-admin.php:1207
+msgid "Some of the chosen categories do not exist any more."
+msgstr "Dažas izvēlētās kategorijas vairs neeksistē."
+
+#: includes/class-pro-admin.php:1208
+msgid "Use values such as newsletter, google or spring-sale, separated by commas (at most 20)."
+msgstr "Izmantojiet vērtības, piemēram, newsletter, google vai spring-sale, atdalot ar komatiem (ne vairāk kā 20)."
+
+#: includes/class-pro-admin.php:1209
+msgid "Use site names such as facebook.com, separated by commas (at most 20)."
+msgstr "Izmantojiet vietņu nosaukumus, piemēram, facebook.com, atdalot ar komatiem (ne vairāk kā 20)."
+
+#: includes/class-pro-admin.php:1210
+msgid "Delay: 1 to 600 seconds."
+msgstr "Aizkave: no 1 līdz 600 sekundēm."
+
+#: includes/class-pro-admin.php:1211
+msgid "Scroll depth: 1 to 100 %."
+msgstr "Ritināšanas dziļums: no 1 līdz 100 %."
+
+#: includes/class-pro-admin.php:1212
+msgid "Please enter the cut-off time as HH:MM."
+msgstr "Lūdzu, ievadiet termiņa laiku formātā HH:MM."
+
+#: includes/class-pro-admin.php:1213
+msgid "At least one day must stay active."
+msgstr "Vismaz vienai dienai jāpaliek aktīvai."
+
+#: includes/class-pro-admin.php:1214
+msgid "Please choose an image from the media library."
+msgstr "Lūdzu, izvēlieties attēlu no multivides bibliotēkas."
+
+#: includes/class-pro-admin.php:1215
+msgid "Overlay: 0 to 90 %."
+msgstr "Pārklājums: no 0 līdz 90 %."
+
+#: includes/class-pro-admin.php:1246
+msgid "Needs WooCommerce."
+msgstr "Nepieciešams WooCommerce."
+
+#. translators: %s: template name
+#: includes/class-pro-admin.php:1249
+#, php-format
+msgid "Use template: %s"
+msgstr "Izmantot veidni: %s"
+
+#. translators: %s: template name
+#: includes/class-pro-admin.php:1249
+msgid "Use template"
+msgstr "Izmantot veidni"
+
+#: includes/class-pro-render.php:95
+msgid "Cart"
+msgstr "Grozs"
+
+#: includes/class-pro-render.php:96
+msgid "Product page — under the price"
+msgstr "Produkta lapa — zem cenas"
+
+#: includes/class-pro-render.php:97
+msgid "Mini-cart"
+msgstr "Mini grozs"
+
+#. translators: %s: coupon code
+#: includes/class-pro-render.php:471
+#, php-format
+msgid "Copy code %s"
+msgstr "Kopēt kodu %s"
+
+#: includes/class-pro-render.php:561
+msgid "Show announcements"
+msgstr "Rādīt paziņojumus"
+
+#: includes/class-pro-render.php:562
+msgid "Pause messages"
+msgstr "Apturēt paziņojumus"
+
+#: includes/class-pro-render.php:563
+msgid "Play messages"
+msgstr "Turpināt paziņojumus"
+
+#: includes/class-pro-render.php:564
+msgid "Copy"
+msgstr "Kopēt"
+
+#: includes/class-pro-render.php:565
+msgid "Copied!"
+msgstr "Nokopēts!"
+
+#: includes/class-pro-render.php:566
+msgid "Privacy policy"
+msgstr "Privātuma politika"
+
+#: includes/class-pro-render.php:567
+msgid "Sending…"
+msgstr "Sūta…"
+
+#: includes/class-pro-render.php:568
+#: includes/class-subscribers.php:157
+msgid "Please enter a valid e-mail address."
+msgstr "Lūdzu, ievadi derīgu e-pasta adresi."
+
+#: includes/class-pro-render.php:569
+#: includes/class-subscribers.php:162
+msgid "Please tick the box to agree."
+msgstr "Lūdzu, atzīmē rūtiņu, lai piekristu."
+
+#: includes/class-pro-render.php:570
+#: includes/class-subscribers.php:124
+#: includes/class-subscribers.php:262
+#: includes/class-subscribers.php:295
+msgid "Sorry, the sign-up did not work. Please try again later."
+msgstr "Diemžēl pieteikšanās neizdevās. Lūdzu, mēģini vēlāk."
+
+#: includes/class-pro-render.php:571
+msgid "This form uses Cloudflare's anti-bot check. Please accept cookies to use it."
+msgstr "Šī forma izmanto Cloudflare pretrobotu pārbaudi. Lai to lietotu, lūdzu, piekrītiet sīkdatnēm."
+
+#: includes/class-pro-render.php:572
+msgid "The anti-bot check is not ready yet — please wait a moment or reload the page."
+msgstr "Pretrobotu pārbaude vēl nav gatava — lūdzu, mirkli pagaidiet vai pārlādējiet lapu."
+
+#: includes/class-pro-render.php:720
+msgid "Your e-mail address"
+msgstr "Tava e-pasta adrese"
+
+#: includes/class-pro-render.php:721
+msgid "Subscribe"
+msgstr "Pieteikties"
+
+#: includes/class-pro-render.php:722
+msgid "I agree to receive news and offers by e-mail. I can unsubscribe at any time."
+msgstr "Piekrītu saņemt jaunumus un piedāvājumus e-pastā. Varu atteikties jebkurā brīdī."
+
+#: includes/class-pro-render.php:723
+msgid "Almost done — please confirm with the link we sent to your inbox."
+msgstr "Gandrīz gatavs — lūdzu, apstiprini ar saiti, ko nosūtījām uz tavu e-pastu."
+
+#: includes/class-pro-settings.php:72
+msgid "Bottom of the screen"
+msgstr "Ekrāna apakšā"
+
+#: includes/class-pro-settings.php:74
+msgid "Scrolling ticker"
+msgstr "Skrejošā rinda"
+
+#: includes/class-pro-settings.php:150
+msgid "Please choose a published page."
+msgstr "Lūdzu, izvēlieties publicētu lapu."
+
+#: includes/class-pro-settings.php:172
+msgid "This secret key does not look like a Turnstile key. Please copy it again from Cloudflare."
+msgstr "Šī slepenā atslēga neizskatās pēc Turnstile atslēgas. Lūdzu, nokopējiet to vēlreiz no Cloudflare."
+
+#: includes/class-pro-settings.php:180
+msgid "This site key does not look like a Turnstile key. Please copy it again from Cloudflare."
+msgstr "Šī vietnes atslēga neizskatās pēc Turnstile atslēgas. Lūdzu, nokopējiet to vēlreiz no Cloudflare."
+
+#: includes/class-pro-settings.php:183
+msgid "Please enter the secret key too — the check is on only with both keys."
+msgstr "Lūdzu, ievadiet arī slepeno atslēgu — pārbaude darbojas tikai ar abām atslēgām."
+
+#: includes/class-pro-settings.php:198
+msgid "Ticker speed (px/s)"
+msgstr "Skrejošās rindas ātrums (px/s)"
+
+#: includes/class-pro-settings.php:207
+msgid "Behaviour"
+msgstr "Uzvedība"
+
+#: includes/class-pro-settings.php:209
+msgid "Most messages at once"
+msgstr "Vienlaikus rādīt ne vairāk paziņojumu"
+
+#: includes/class-pro-settings.php:209
+msgid "0 = no limit; higher priority wins."
+msgstr "0 = bez ierobežojuma; uzvar augstāka prioritāte."
+
+#: includes/class-pro-settings.php:210
+msgid "Hide the bar after (seconds)"
+msgstr "Paslēpt joslu pēc (sekundēm)"
+
+#: includes/class-pro-settings.php:210
+msgid "0 = never; a small tab brings it back."
+msgstr "0 = nekad; maza cilne to atgriež."
+
+#: includes/class-pro-settings.php:212
+msgid "Pause button for moving messages"
+msgstr "Pauzes poga kustīgiem paziņojumiem"
+
+#: includes/class-pro-settings.php:213
+msgid "Font of all bars"
+msgstr "Visu joslu fonts"
+
+#: includes/class-pro-settings.php:214
+msgid "Custom CSS"
+msgstr "Pielāgots CSS"
+
+#: includes/class-pro-settings.php:214
+msgid "Cleaned on save: no @import, scripts or outside code."
+msgstr "Saglabājot tiek iztīrīts: bez @import, skriptiem un ārēja koda."
+
+#: includes/class-pro-settings.php:217
+msgid "Privacy and analytics"
+msgstr "Privātums un analītika"
+
+#: includes/class-pro-settings.php:218
+msgid "Wait for cookie consent"
+msgstr "Gaidīt piekrišanu sīkdatnēm"
+
+#: includes/class-pro-settings.php:218
+msgid "A/B choice, visitor memory, statistics, GA4 events and the Cloudflare Turnstile check start only after the consent tool allows it (WP Consent API, or window.abpConsent = true)."
+msgstr "A/B izvēle, apmeklētāja atcerēšanās, statistika, GA4 notikumi un Cloudflare Turnstile pārbaude sākas tikai tad, kad piekrišanas rīks to atļauj (WP Consent API vai window.abpConsent = true)."
+
+#: includes/class-pro-settings.php:219
+msgid "Send GA4 events (view, click, copy, sign-up)"
+msgstr "Sūtīt GA4 notikumus (skatījums, klikšķis, kopēšana, pieteikšanās)"
+
+#: includes/class-pro-settings.php:219
+msgid "Only if the site already loads Google Analytics (gtag or Tag Manager). The plugin itself loads nothing."
+msgstr "Tikai tad, ja vietne jau ielādē Google Analytics (gtag vai Tag Manager). Pats spraudnis neko neielādē."
+
+#: includes/class-pro-settings.php:220
+msgid "Use CloudFlare's country header"
+msgstr "Izmantot CloudFlare valsts galveni"
+
+#: includes/class-pro-settings.php:220
+msgid "Only for requests that really come from CloudFlare's addresses."
+msgstr "Tikai pieprasījumiem, kas tiešām nāk no CloudFlare adresēm."
+
+#: includes/class-pro-settings.php:223
+msgid "Unknown country"
+msgstr "Nezināma valsts"
+
+#: includes/class-pro-settings.php:225
+msgid "Treat as the shop's country"
+msgstr "Uzskatīt par veikala valsti"
+
+#: includes/class-pro-settings.php:226
+msgid "Treat as unknown"
+msgstr "Uzskatīt par nezināmu"
+
+#: includes/class-pro-settings.php:232
+msgid "Confirm sign-ups by e-mail (double opt-in, recommended)"
+msgstr "Apstiprināt pieteikšanos pa e-pastu (dubultā apstiprināšana, ieteicams)"
+
+#: includes/class-pro-settings.php:238
+msgid "— WordPress privacy page —"
+msgstr "— WordPress privātuma lapa —"
+
+#: includes/class-pro-settings.php:243
+msgid "Privacy page linked in the form"
+msgstr "Formā norādītā privātuma lapa"
+
+#: includes/class-pro-settings.php:245
+msgid "Sign-ups per visitor per hour"
+msgstr "Pieteikšanās reizes uz apmeklētāju stundā"
+
+#: includes/class-pro-settings.php:246
+msgid "Sign-ups per hour in total"
+msgstr "Pieteikšanās reizes stundā kopā"
+
+#: includes/class-pro-settings.php:250
+msgid "Cloudflare Turnstile (optional anti-bot check)"
+msgstr "Cloudflare Turnstile (izvēles pretrobotu pārbaude)"
+
+#: includes/class-pro-settings.php:251
+msgid "Off unless both keys are filled in. Create a free widget in your Cloudflare account (Turnstile), add this site's domain and copy its site key and secret key here. When it is on, Cloudflare's script is loaded only on pages with a sign-up form, and Cloudflare processes the visitor's IP address and browser data for the check. With \"Wait for cookie consent\" the script loads only after consent. Mention Cloudflare Turnstile in your privacy policy."
+msgstr "Izslēgta, kamēr nav aizpildītas abas atslēgas. Izveidojiet bezmaksas logrīku savā Cloudflare kontā (Turnstile), pievienojiet šīs vietnes domēnu un iekopējiet šeit tā vietnes atslēgu un slepeno atslēgu. Kad pārbaude ir ieslēgta, Cloudflare skripts tiek ielādēts tikai lapās ar pieteikšanās formu, un Cloudflare pārbaudei apstrādā apmeklētāja IP adresi un pārlūka datus. Ar \"Gaidīt piekrišanu sīkdatnēm\" skripts tiek ielādēts tikai pēc piekrišanas. Pieminiet Cloudflare Turnstile savā privātuma politikā."
+
+#: includes/class-pro-settings.php:252
+msgid "Site key"
+msgstr "Vietnes atslēga"
+
+#: includes/class-pro-settings.php:253
+msgid "Secret key"
+msgstr "Slepenā atslēga"
+
+#: includes/class-pro-settings.php:255
+msgid "A secret key is saved — leave the field empty to keep it. It is never shown again."
+msgstr "Slepenā atslēga ir saglabāta — atstājiet lauku tukšu, lai to paturētu. Tā vairs nekad netiek rādīta."
+
+#: includes/class-pro-settings.php:255
+msgid "Kept on the server only; never shown on any page."
+msgstr "Glabājas tikai serverī; netiek rādīta nevienā lapā."
+
+#: includes/class-pro-settings.php:261
+msgid "Remove the saved secret key (switches the check off)"
+msgstr "Noņemt saglabāto slepeno atslēgu (izslēdz pārbaudi)"
+
+#: includes/class-pro-settings.php:269
+msgid "Status: on"
+msgstr "Statuss: ieslēgta"
+
+#: includes/class-pro-settings.php:272
+msgid "Status: off"
+msgstr "Statuss: izslēgta"
+
+#: includes/class-subscribers.php:132
+msgid "This page is too old — please reload it and try again."
+msgstr "Šī lapa ir novecojusi — lūdzu, pārlādē to un mēģini vēlreiz."
+
+#: includes/class-subscribers.php:136
+msgid "Too many attempts — please try again later."
+msgstr "Pārāk daudz mēģinājumu — lūdzu, mēģini vēlāk."
+
+#: includes/class-subscribers.php:170
+msgid "Please wait a moment until the anti-bot check is done, then send again."
+msgstr "Lūdzu, mirkli pagaidiet, līdz pretrobotu pārbaude ir pabeigta, un tad sūtiet vēlreiz."
+
+#: includes/class-subscribers.php:175
+msgid "The anti-bot check failed. Please reload the page and try again."
+msgstr "Pretrobotu pārbaude neizdevās. Lūdzu, pārlādējiet lapu un mēģiniet vēlreiz."
+
+#: includes/class-subscribers.php:234
+msgid "Thank you — you are subscribed!"
+msgstr "Paldies — tu esi pieteicies!"
+
+#. translators: %s: site name
+#: includes/class-subscribers.php:320
+#, php-format
+msgid "Please confirm your subscription — %s"
+msgstr "Lūdzu, apstiprini pieteikšanos — %s"
+
+#. translators: %s: site name
+#: includes/class-subscribers.php:322
+#, php-format
+msgid "please confirm that you want to receive news and offers from %s at this address. Open this link and press the button:"
+msgstr "lūdzu, apstiprini, ka vēlies saņemt %s jaunumus un piedāvājumus uz šo adresi. Atver šo saiti un nospied pogu:"
+
+#: includes/class-subscribers.php:325
+msgid "Hello,"
+msgstr "Sveiki,"
+
+#: includes/class-subscribers.php:326
+#: includes/class-subscribers.php:420
+msgid "Confirm subscription"
+msgstr "Apstiprināt pieteikšanos"
+
+#: includes/class-subscribers.php:327
+msgid "If you did not ask for this, simply ignore this e-mail — you will not be subscribed. The link is valid for 7 days."
+msgstr "Ja to neesi pieprasījis, vienkārši ignorē šo e-pastu — tu netiksi pieteikts. Saite ir derīga 7 dienas."
+
+#: includes/class-subscribers.php:328
+msgid "Unsubscribe at any time:"
+msgstr "Atteikties var jebkurā brīdī:"
+
+#: includes/class-subscribers.php:371
+msgid "Confirm your subscription"
+msgstr "Apstiprini pieteikšanos"
+
+#: includes/class-subscribers.php:371
+#: includes/class-subscribers.php:420
+msgid "Unsubscribe"
+msgstr "Atteikties"
+
+#: includes/class-subscribers.php:390
+#: includes/class-subscribers.php:402
+msgid "You have been unsubscribed. You will not receive any more e-mails from us."
+msgstr "Tu esi atteicies. Vairs nesūtīsim tev e-pastus."
+
+#: includes/class-subscribers.php:390
+msgid "This link is invalid or has expired."
+msgstr "Šī saite nav derīga vai tai ir beidzies termiņš."
+
+#: includes/class-subscribers.php:395
+#: includes/class-subscribers.php:399
+msgid "Thank you — your subscription is confirmed."
+msgstr "Paldies — tava pieteikšanās ir apstiprināta."
+
+#. translators: 1: site name, 2: e-mail address
+#: includes/class-subscribers.php:409
+#, php-format
+msgid "Please confirm that %1$s may send news and offers to %2$s."
+msgstr "Lūdzu, apstiprini, ka %1$s drīkst sūtīt jaunumus un piedāvājumus uz %2$s."
+
+#. translators: 1: site name, 2: e-mail address
+#: includes/class-subscribers.php:411
+#, php-format
+msgid "Stop e-mails from %1$s to %2$s?"
+msgstr "Pārtraukt %1$s e-pastus uz %2$s?"
+
+#: includes/class-subscribers.php:429
+msgid "Continue to the site"
+msgstr "Turpināt uz vietni"
+
+#: includes/class-subscribers.php:450
+#: includes/class-subscribers.php:465
+msgid "Announcement Bar Pro sign-ups"
+msgstr "Announcement Bar Pro pieteikšanās"
+
+#: includes/class-subscribers.php:484
+#: includes/class-subscribers.php:622
+msgid "Waiting for confirmation"
+msgstr "Gaida apstiprinājumu"
+
+#: includes/class-subscribers.php:485
+#: includes/class-subscribers.php:621
+msgid "Subscribed"
+msgstr "Pieteicies"
+
+#: includes/class-subscribers.php:486
+#: includes/class-subscribers.php:623
+msgid "Unsubscribed"
+msgstr "Atteicies"
+
+#: includes/class-subscribers.php:490
+msgid "Newsletter sign-up (Announcement Bar Pro)"
+msgstr "Pieteikšanās jaunumiem (Announcement Bar Pro)"
+
+#: includes/class-subscribers.php:494
+#: includes/class-subscribers.php:631
+msgid "E-mail address"
+msgstr "E-pasta adrese"
+
+#: includes/class-subscribers.php:498
+msgid "Status"
+msgstr "Statuss"
+
+#: includes/class-subscribers.php:502
+msgid "Consent text shown"
+msgstr "Parādītais piekrišanas teksts"
+
+#: includes/class-subscribers.php:506
+msgid "Signed up (UTC)"
+msgstr "Pieteicies (UTC)"
+
+#: includes/class-subscribers.php:510
+msgid "Confirmed (UTC)"
+msgstr "Apstiprināts (UTC)"
+
+#: includes/class-subscribers.php:548
+msgid "Announcement bars on this site remember in your browser (local storage) which announcements you closed, so they stay closed. Nothing is sent to us for this."
+msgstr "Paziņojumu joslas šajā vietnē jūsu pārlūkā (lokālajā krātuvē) atceras, kurus paziņojumus esat aizvēris, lai tie paliktu aizvērti. Šim nolūkam mums nekas netiek sūtīts."
+
+#: includes/class-subscribers.php:549
+msgid "If you sign up for our news through an announcement bar, we store your e-mail address, your language, the consent text you agreed to and the dates of your sign-up and confirmation. We send you one e-mail to confirm the sign-up; without confirmation the entry is deleted after 30 days. Every e-mail has an unsubscribe link."
+msgstr "Ja piesakāties mūsu jaunumiem, izmantojot paziņojumu joslu, mēs glabājam jūsu e-pasta adresi, valodu, piekrišanas tekstu, kuram piekritāt, un pieteikšanās un apstiprināšanas datumus. Mēs nosūtām jums vienu e-pastu pieteikšanās apstiprināšanai; bez apstiprinājuma ieraksts tiek dzēsts pēc 30 dienām. Katrā e-pastā ir atteikšanās saite."
+
+#: includes/class-subscribers.php:550
+msgid "View, click and code-copy counts of announcements are stored as totals only, without any personal data. Your IP address is never stored; a keyed hash of it is kept for at most two days to limit abuse of the forms."
+msgstr "Paziņojumu skatījumu, klikšķu un kodu kopēšanas skaits tiek glabāts tikai kā kopsummas, bez jebkādiem personas datiem. Jūsu IP adrese netiek glabāta nekad; tās atslēgtais jaucējkods tiek glabāts ne ilgāk kā divas dienas, lai ierobežotu formu ļaunprātīgu izmantošanu."
+
+#: includes/class-subscribers.php:551
+msgid "If the anti-bot check Cloudflare Turnstile is switched on, pages with a sign-up form load a script from Cloudflare, Inc., which processes your IP address and technical data of your browser to tell people from bots, and our server sends the result token and your IP address to Cloudflare to check it. If the site waits for cookie consent, the script is loaded only after your consent. See Cloudflare's privacy policy."
+msgstr "Ja ir ieslēgta pretrobotu pārbaude Cloudflare Turnstile, lapas ar pieteikšanās formu ielādē skriptu no Cloudflare, Inc., kas apstrādā jūsu IP adresi un pārlūka tehniskos datus, lai atšķirtu cilvēkus no robotiem, un mūsu serveris pārbaudei nosūta Cloudflare rezultāta žetonu un jūsu IP adresi. Ja vietne gaida sīkdatņu piekrišanu, skripts tiek ielādēts tikai pēc jūsu piekrišanas. Skatiet Cloudflare privātuma politiku."
+
+#: includes/class-subscribers.php:566
+#: includes/class-subscribers.php:580
+#: includes/class-subscribers.php:613
+msgid "Subscribers"
+msgstr "Abonenti"
+
+#: includes/class-subscribers.php:598
+msgid "The address was deleted from the list."
+msgstr "Adrese ir dzēsta no saraksta."
+
+#: includes/class-subscribers.php:599
+msgid "That address is not on the list."
+msgstr "Šīs adreses sarakstā nav."
+
+#: includes/class-subscribers.php:616
+msgid "The sign-up form needs an active licence key. Existing entries stay here and can still be exported or erased."
+msgstr "Pieteikšanās formai vajag aktīvu licences atslēgu. Esošie ieraksti paliek šeit, un tos joprojām var eksportēt vai dzēst."
+
+#: includes/class-subscribers.php:620
+msgid "List"
+msgstr "Saraksts"
+
+#: includes/class-subscribers.php:624
+msgid "Sign-ups are confirmed by e-mail (double opt-in) unless switched off in the settings. Unconfirmed entries are deleted after 30 days. The plugin does not send newsletters: export the confirmed addresses into your mailing tool."
+msgstr "Pieteikšanās tiek apstiprināta pa e-pastu (dubultā apstiprināšana), ja vien tas nav izslēgts iestatījumos. Neapstiprinātie ieraksti tiek dzēsti pēc 30 dienām. Spraudnis nesūta jaunumu vēstules: eksportējiet apstiprinātās adreses uz savu e-pasta izsūtīšanas rīku."
+
+#: includes/class-subscribers.php:627
+msgid "Export CSV"
+msgstr "Eksportēt CSV"
+
+#: includes/class-subscribers.php:629
+msgid "Erase an address"
+msgstr "Dzēst adresi"
+
+#: includes/class-subscribers.php:632
+msgid "Deletes the entry completely (right to erasure). Requests made through Tools → Erase Personal Data are handled automatically as well."
+msgstr "Pilnībā izdzēš ierakstu (tiesības uz dzēšanu). Pieprasījumi, kas veikti sadaļā Rīki → Dzēst personas datus, tiek apstrādāti automātiski."
+
+#: includes/class-subscribers.php:632
+msgid "Erase"
+msgstr "Dzēst"
