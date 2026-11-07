@@ -1,19 +1,78 @@
-/* Announcement Bar Pro v2.3.0 — no dependencies. Adapts itself to the shop theme (see "Automatic adaptation"). */
+/* Announcement Bar Pro v2.4.0 — no dependencies. Adapts itself to the shop theme (see "Automatic adaptation").
+   Runs every bar (top / bottom) and box (cart page, product page, mini-cart) on the page; features start only when a
+   message uses them (triggers, auto-hide, forms, goals, GA4). */
 (function () {
   'use strict';
 
-  function init() {
-    var bar = document.getElementById('abp-bar');
+  if (window.AnnouncementBarPro) { return; } // loaded twice (e.g. inside an AJAX fragment): keep the first copy
+
+  /* ---------------- Shared: privacy, statistics, GA4 ---------------- */
+  // Nothing is sent or stored for statistics when the visitor asks not to be tracked (Do Not Track / Global Privacy
+  // Control) or the shop's consent tool sets window.abpConsent = false.
+  function privacyOff() {
+    var d = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+    return d === '1' || d === 'yes' || navigator.globalPrivacyControl === true || window.abpConsent === false;
+  }
+  var reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  function variant(el) { return el && el.getAttribute('data-variant') === 'b' ? 'b' : 'a'; }
+  function inDoc(el) { return !!el && document.documentElement.contains(el); }
+
+  /* Statistics (counters only): one "view" per message per browser session when it is really shown, one "click"
+     when its button or a link in it is used, one "copy" when its coupon code is copied; A/B messages report their
+     variant. No cookies or storage besides sessionStorage "abp_track". Every failure is silent. */
+  var sent = {}, letter = { view: 'v', click: 'c', copy: 'p' };
+  function seenInSession(key) {
+    var list = [];
+    try { list = JSON.parse(sessionStorage.getItem('abp_track') || '[]'); if (!Array.isArray(list)) { list = []; } } catch (e1) { list = []; }
+    if (sent[key] || list.indexOf(key) !== -1) { return true; }
+    sent[key] = 1;
+    list.push(key);
+    try { sessionStorage.setItem('abp_track', JSON.stringify(list.slice(-200))); } catch (e2) { /* storage blocked: memory only */ }
+    return false;
+  }
+  function track(bar, el, type) {
+    try {
+      var id = el && parseInt(el.getAttribute('data-id'), 10), url = bar && bar.getAttribute('data-track');
+      if (!id || id < 1 || !letter[type] || privacyOff()) { return; }
+      ga(bar, el, 'abp_' + type);
+      if (!url || seenInSession(letter[type] + id)) { return; }
+      var fd = new FormData();
+      fd.append('id', String(id));
+      fd.append('type', type);
+      fd.append('v', variant(el));
+      if (!(navigator.sendBeacon && navigator.sendBeacon(url, fd)) && window.fetch) {
+        window.fetch(url, { method: 'POST', body: fd, keepalive: true, credentials: 'same-origin' }).catch(function () {});
+      }
+    } catch (e) { /* statistics must never break the bar */ }
+  }
+  /* GA4: only when the shop already loads it (gtag or a GTM dataLayer). Message number, version and placement only. */
+  function ga(bar, el, name) {
+    try {
+      if (!bar || bar.getAttribute('data-ga') !== '1' || privacyOff()) { return; }
+      var id = parseInt(el.getAttribute('data-id'), 10);
+      if (!id || seenInSession('g' + name.slice(4, 6) + id)) { return; }
+      var params = { abp_message_id: id, abp_variant: variant(el), abp_placement: bar.getAttribute('data-place') || '' };
+      if (typeof window.gtag === 'function') { window.gtag('event', name, params); } else if (window.dataLayer && typeof window.dataLayer.push === 'function') {
+        var ev = { event: name };
+        for (var k in params) { if (Object.prototype.hasOwnProperty.call(params, k)) { ev[k] = params[k]; } }
+        window.dataLayer.push(ev);
+      }
+    } catch (e) { /* analytics must never break the bar */ }
+  }
+
+  var instances = [];
+
+  function init(bar) {
     if (!bar || bar.getAttribute('data-dismissed') === '1' || bar.abpInit) { return; }
     bar.abpInit = true;
 
-    var mode = bar.getAttribute('data-mode');
-    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var timer = null, tickTimer = null, index = 0, paused = false;
+    var inline = bar.getAttribute('data-abp') === 'inline';
+    var mode = inline ? 'stack' : bar.getAttribute('data-mode');
+    var timer = null, tickTimer = null, index = 0, paused = false, userPaused = false;
     // Offset between server and visitor clock, so a wrong PC clock cannot shift countdowns/expiry/schedules.
     var skew = (parseInt(bar.getAttribute('data-now'), 10) || Date.now()) - Date.now();
     function serverNow() { return Date.now() + skew; }
-    // Store time zone offset (seconds) for the weekly schedule.
+    // Store time zone offset (seconds) for the weekly schedule and cut-off times.
     var tz = parseInt(bar.getAttribute('data-tz'), 10) || 0;
 
     if (mode === 'marquee' && reduced) {
@@ -25,7 +84,6 @@
     Array.prototype.forEach.call(bar.querySelectorAll('.abp-item[data-ab="1"]'), function (el) {
       if (!el.hasAttribute('data-variant')) { el.setAttribute('data-variant', 'a'); }
     });
-    function variant(el) { return el && el.getAttribute('data-variant') === 'b' ? 'b' : 'a'; }
 
     /* ---------------- Weekly schedule (store time) ----------------
        data-wd = ISO weekdays (1 = Monday … 7 = Sunday), data-t1/data-t2 = daily window HH:MM; a window that
@@ -50,52 +108,43 @@
       });
       return changed;
     }
+    // Next daily / weekly cut-off after now (store time): "d|14:00|67" = daily at 14:00 except Sat+Sun, "w|14:00|5".
+    function nextCutoff(rule, now) {
+      var m = /^([dw])\|(\d{2}):(\d{2})\|([1-7]*)$/.exec(rule || '');
+      if (!m) { return 0; }
+      var local = new Date(now + tz * 1000);
+      for (var i = 0; i < 8; i++) {
+        var at = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate() + i, parseInt(m[2], 10), parseInt(m[3], 10)) - tz * 1000;
+        var dow = new Date(at + tz * 1000).getUTCDay() || 7;
+        if (at > now && (m[1] === 'w' ? m[4] === String(dow) : m[4].indexOf(String(dow)) === -1)) { return at; }
+      }
+      return 0;
+    }
 
-    /* ---------------- Device targeting (breakpoint 768 px, same as the CSS) ----------------
-       Items marked data-device="mobile" / "desktop" are hidden by CSS on the other screen size; here they are
-       also left out of rotation, marquee and stack, and the bar hides itself when nothing is left. */
+    /* ---------------- Which messages may show ----------------
+       Device (768 px, like the CSS), schedule (data-off), cart conditions (data-coff), campaign / visitor rules
+       (data-uoff, decided by the pre-script), triggers not fired yet (data-toff); then "Messages per bar" (data-max). */
     var mq = window.matchMedia ? window.matchMedia('(max-width: 767px)') : null;
     var closed = false, deviceHidden = false;
+    var max = parseInt(bar.getAttribute('data-max'), 10) || 0;
     function isMobile() { return mq ? mq.matches : window.innerWidth < 768; }
-    function fits(el) { var d = el.getAttribute('data-device'); return !el.hasAttribute('data-off') && (!d || d === 'all' || (d === 'mobile') === isMobile()); }
+    function fits(el) { var d = el.getAttribute('data-device'); return !el.hasAttribute('data-off') && !el.hasAttribute('data-coff') && !el.hasAttribute('data-uoff') && !el.hasAttribute('data-toff') && (!d || d === 'all' || (d === 'mobile') === isMobile()); }
     function allItems() { return bar.querySelectorAll('.abp-item'); }
-    function items() { return Array.prototype.filter.call(allItems(), fits); }
-
-    /* ---------------- Statistics (counters only) ----------------
-       One "view" per message per browser session when it is really shown, one "click" when its button or a
-       link in it is used, one "copy" when its coupon code is copied; A/B messages report their variant.
-       Nothing is sent when the visitor asks not to be tracked (Do Not Track / GPC); every failure is silent.
-       No cookies or storage besides sessionStorage "abp_track". */
-    var trackUrl = bar.getAttribute('data-track') || '';
-    var noTrack = (function (d) { return d === '1' || d === 'yes'; })(navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack) || navigator.globalPrivacyControl === true;
-    var sent = {}, letter = { view: 'v', click: 'c', copy: 'p' };
-    function track(el, type) {
-      try {
-        var id = el && parseInt(el.getAttribute('data-id'), 10);
-        if (!trackUrl || noTrack || !id || id < 1 || !letter[type]) { return; }
-        var key = letter[type] + id, list = [];
-        try { list = JSON.parse(sessionStorage.getItem('abp_track') || '[]'); if (!Array.isArray(list)) { list = []; } } catch (e1) { list = []; }
-        if (sent[key] || list.indexOf(key) !== -1) { return; }
-        sent[key] = 1;
-        list.push(key);
-        try { sessionStorage.setItem('abp_track', JSON.stringify(list.slice(-200))); } catch (e2) { /* storage blocked: memory only */ }
-        var fd = new FormData();
-        fd.append('id', String(id));
-        fd.append('type', type);
-        fd.append('v', variant(el));
-        if (!(navigator.sendBeacon && navigator.sendBeacon(trackUrl, fd)) && window.fetch) {
-          window.fetch(trackUrl, { method: 'POST', body: fd, keepalive: true, credentials: 'same-origin' }).catch(function () {});
-        }
-      } catch (e) { /* statistics must never break the bar */ }
+    function items() {
+      var list = Array.prototype.filter.call(allItems(), fits);
+      Array.prototype.forEach.call(allItems(), function (el) { var over = max > 0 && list.indexOf(el) >= max; if (over !== el.hasAttribute('data-over')) { if (over) { el.setAttribute('data-over', '1'); } else { el.removeAttribute('data-over'); } } });
+      return max > 0 ? list.slice(0, max) : list;
     }
+    function hidden() { return bar.style.display === 'none' || bar.classList.contains('abp-min'); }
+
     // Views: the active message (rotate) or every message on screen (marquee, stack).
     function trackShown() {
-      if (bar.style.display === 'none') { return; }
+      if (hidden()) { return; }
       var list = items();
-      if (mode === 'rotate') { track(list[index], 'view'); } else { list.forEach(function (el) { track(el, 'view'); }); }
+      if (mode === 'rotate') { track(bar, list[index], 'view'); } else { list.forEach(function (el) { track(bar, el, 'view'); }); }
     }
 
-    /* ---------------- Automatic adaptation to the theme ----------------
+    /* ---------------- Automatic adaptation to the theme (bars only) ----------------
        Works on any theme without settings:
        - fixed / sticky headers stuck to the top are moved down below the bar while the bar is on screen;
        - fixed elements stuck to the bottom (cookie banners, mobile tab bars) lift a bottom bar above them;
@@ -114,12 +163,13 @@
     // Find wide fixed/sticky bars resting near the top (a stack of them is fine) or on the bottom edge.
     // Runs on load, resize and at most once a second while scrolling — never on every frame.
     function rescan() {
+      if (inline) { return; }
       lastScan = Date.now();
       var list = candidates(), vw = window.innerWidth, vh = window.innerHeight, top = [], bottom = [];
       var known = cache.top.map(function (e) { return e.el; });
       for (var i = 0; i < list.length; i++) {
         var el = list[i];
-        if (el === bar || bar.contains(el) || el.contains(bar) || (el.className && String(el.className).indexOf('abp-spacer') !== -1)) { continue; }
+        if (el === bar || bar.contains(el) || el.contains(bar) || (el.className && /abp-(spacer|bar|tab)/.test(String(el.className)))) { continue; }
         var k = known.indexOf(el);
         if (k !== -1) { top.push(cache.top[k]); continue; } // keep what we already moved (to restore it later)
         var cs = window.getComputedStyle(el);
@@ -148,7 +198,8 @@
     }
 
     function adaptEdges() {
-      if (bar.style.display === 'none') { restoreEdges(); return; }
+      if (inline) { return; }
+      if (hidden()) { restoreEdges(); return; }
       var maxZ = 0;
       if (isTop) {
         // Reads first, writes after (no layout thrashing).
@@ -180,6 +231,7 @@
       }
       // Stay above the theme's fixed bars, but below modal windows (Bootstrap backdrop 1040+).
       bar.style.zIndex = maxZ >= 1030 ? String(Math.min(maxZ + 1, 1039)) : '';
+      if (tab) { tab.style.zIndex = bar.style.zIndex; }
     }
 
     /* ---------------- Colours and styles ----------------
@@ -266,7 +318,7 @@
     function paintItem(el) {
       var style = el.getAttribute('data-style') || 'solid', auto = bar.getAttribute('data-color') === 'auto';
       var base = auto && theme ? theme : hexRgb(el.getAttribute('data-c')), own = auto ? null : hexRgb(el.getAttribute('data-t'));
-      if (!base) { return; }
+      if (!base || el.hasAttribute('data-img')) { return; } // a background image keeps its own colour overlay
       if (!auto && style === 'solid') { return; } // custom colours are not changed
       var k = skinOf(base, own, style), st = el.style;
       st.backgroundColor = k.bg; st.backgroundImage = k.image; st.color = k.fg;
@@ -281,14 +333,15 @@
       for (var i = 0; i < probes.length; i++) {
         var els = document.querySelectorAll(probes[i]);
         for (var j = 0; j < els.length && j < 6; j++) {
-          if (bar.contains(els[j]) || !els[j].getBoundingClientRect().width) { continue; }
+          if (els[j].closest && els[j].closest('.abp')) { continue; }
+          if (!els[j].getBoundingClientRect().width) { continue; }
           var rgb = parseRgb(window.getComputedStyle(els[j]).backgroundColor);
           if (rgb) { var l = luminance(rgb); if (l < 0.8 && l > 0.005) { return rgb; } }
         }
       }
       var links = document.querySelectorAll('a[href]');
       for (var k = 0; k < links.length && k < 40; k++) {
-        if (bar.contains(links[k])) { continue; }
+        if (links[k].closest && links[k].closest('.abp')) { continue; }
         var c = parseRgb(window.getComputedStyle(links[k]).color);
         if (c && luminance(c) < 0.5) { return c; }
       }
@@ -317,6 +370,7 @@
       bar.style.backgroundImage = item.style.backgroundImage || '';
       bar.style.color = item.style.color;
       bar.classList.toggle('abp-glass', !!item.abpGlass);
+      if (tab) { tab.style.backgroundColor = item.style.backgroundColor; tab.style.color = item.style.color; }
     }
 
     // Some themes put the whole page in an absolutely positioned wrapper (OpenCart 4.1: #container).
@@ -324,21 +378,22 @@
     function wrappers() {
       var out = [], kids = document.body.children;
       for (var i = 0; i < kids.length; i++) {
-        if (kids[i] !== bar && String(kids[i].className).indexOf('abp-spacer') === -1 && window.getComputedStyle(kids[i]).position === 'absolute' && kids[i].offsetHeight > window.innerHeight / 2) { out.push(kids[i]); }
+        if (!/(^|\s)abp(-spacer|-tab)?(\s|$)/.test(String(kids[i].className)) && window.getComputedStyle(kids[i]).position === 'absolute' && kids[i].offsetHeight > window.innerHeight / 2) { out.push(kids[i]); }
       }
       return out;
     }
 
     function fitBody() {
-      var hidden = bar.style.display === 'none';
+      if (inline) { return; }
+      var hide = hidden();
       if (bar.classList.contains('abp-pos-bottom')) {
-        document.body.style.paddingBottom = hidden ? '' : bar.offsetHeight + 'px';
+        document.body.style.paddingBottom = hide ? '' : bar.offsetHeight + 'px';
         // With an absolutely positioned page wrapper, body padding does not extend the page: add an
         // invisible block below the wrapper instead, so the footer can scroll above the fixed bar.
         var ws = wrappers(), end = 0;
         ws.forEach(function (w) { end = Math.max(end, w.offsetTop + w.offsetHeight); });
         var sp = document.getElementById('abp-bottom-spacer');
-        if (ws.length && !hidden) {
+        if (ws.length && !hide) {
           if (!sp) { sp = document.createElement('div'); sp.id = 'abp-bottom-spacer'; sp.className = 'abp-spacer'; sp.setAttribute('aria-hidden', 'true'); document.body.appendChild(sp); }
           sp.style.cssText = 'position:absolute;left:0;width:1px;pointer-events:none;top:' + end + 'px;height:' + bar.offsetHeight + 'px;';
           if (window.ResizeObserver && !bar.abpRo) { bar.abpRo = new ResizeObserver(function () { fitBody(); }); ws.forEach(function (w) { bar.abpRo.observe(w); }); }
@@ -350,9 +405,9 @@
       if (bar.classList.contains('abp-sticky')) {
         // CSS sticky works only when <body> is as tall as the page; otherwise pin the bar and keep its space.
         var broken = document.body.offsetHeight < document.documentElement.scrollHeight - 2 || wrappers().length > 0;
-        bar.classList.toggle('abp-pinned', broken && !hidden);
+        bar.classList.toggle('abp-pinned', broken && !hide);
         var spacer = bar.nextElementSibling && bar.nextElementSibling.className === 'abp-spacer' ? bar.nextElementSibling : null;
-        if (broken && !hidden) {
+        if (broken && !hide) {
           if (!spacer) { spacer = document.createElement('div'); spacer.className = 'abp-spacer'; bar.parentNode.insertBefore(spacer, bar.nextSibling); }
           spacer.style.height = bar.offsetHeight + 'px';
         } else if (spacer) {
@@ -363,21 +418,21 @@
 
     // Rotate mode: reserve the height of the tallest message so the page does not jump on every change.
     function stabilise() {
-      var track = bar.querySelector('.abp-track');
-      if (!track) { return; }
-      track.style.minHeight = '';
+      var trackEl = bar.querySelector('.abp-track');
+      if (!trackEl) { return; }
+      trackEl.style.minHeight = '';
       if (mode !== 'rotate') { return; }
-      var list = items(), max = 0, min = Infinity;
+      var list = items(), maxH = 0, min = Infinity;
       for (var i = 0; i < list.length; i++) {
         var was = list[i].style.display;
         list[i].style.display = 'block';
         var h = list[i].offsetHeight;
-        max = Math.max(max, h); min = Math.min(min, h);
+        maxH = Math.max(maxH, h); min = Math.min(min, h);
         list[i].style.display = was;
       }
       // Reserve the tallest height only when messages are similar; one very long message must not
       // turn every short one into a huge bar (e.g. on phones).
-      if (max && max <= min * 2.5) { track.style.minHeight = max + 'px'; }
+      if (maxH && maxH <= min * 2.5) { trackEl.style.minHeight = maxH + 'px'; }
     }
 
     var navs = bar.querySelectorAll('.abp-nav');
@@ -391,6 +446,7 @@
         if (all[n] === list[index]) { all[n].classList.add('abp-active'); } else { all[n].classList.remove('abp-active'); }
       }
       for (var b = 0; b < navs.length; b++) { navs[b].hidden = mode !== 'rotate' || list.length < 2; }
+      if (pauseBtn) { pauseBtn.hidden = !(mode === 'marquee' || (mode === 'rotate' && list.length > 1)); }
       paintBar(list[index]);
       fitBody();
       trackShown();
@@ -400,23 +456,23 @@
 
     function startRotate() {
       stopRotate();
-      if (paused || mode !== 'rotate' || items().length < 2) { return; }
+      if (paused || userPaused || mode !== 'rotate' || items().length < 2 || hidden()) { return; }
       var ms = Math.max(2, parseInt(bar.getAttribute('data-interval'), 10) || 5) * 1000;
-      timer = setInterval(function () { show(index + 1); }, ms);
+      timer = setInterval(function () { if (!inDoc(bar)) { stopRotate(); return; } show(index + 1); }, ms);
     }
 
     function startMarquee() {
       if (mode !== 'marquee') { return; }
-      var track = bar.querySelector('.abp-track'), view = bar.querySelector('.abp-viewport');
-      if (!track || !view) { return; }
-      track.classList.remove('abp-run');
+      var trackEl = bar.querySelector('.abp-track'), view = bar.querySelector('.abp-viewport');
+      if (!trackEl || !view) { return; }
+      trackEl.classList.remove('abp-run');
       var speed = Math.max(20, parseInt(bar.getAttribute('data-speed'), 10) || 60);
-      var from = view.clientWidth, to = track.scrollWidth;
-      track.style.setProperty('--abp-from', from + 'px');
-      track.style.setProperty('--abp-to', -to + 'px');
-      track.style.setProperty('--abp-duration', ((from + to) / speed).toFixed(2) + 's');
-      void track.offsetWidth; // restart animation
-      track.classList.add('abp-run');
+      var from = view.clientWidth, to = trackEl.scrollWidth;
+      trackEl.style.setProperty('--abp-from', from + 'px');
+      trackEl.style.setProperty('--abp-to', -to + 'px');
+      trackEl.style.setProperty('--abp-duration', ((from + to) / speed).toFixed(2) + 's');
+      void trackEl.offsetWidth; // restart animation
+      trackEl.classList.add('abp-run');
     }
 
     function relayout() { rescan(); stabilise(); show(Math.min(index, Math.max(items().length - 1, 0))); startRotate(); startMarquee(); fitBody(); }
@@ -432,7 +488,7 @@
       restoreEdges();
     }
 
-    // Something changed which messages may be shown (screen size crossed 768 px, schedule, expiry):
+    // Something changed which messages may be shown (screen size crossed 768 px, schedule, expiry, cart, trigger):
     // rebuild from the messages that fit now, hide the bar when none is left, show it again when one is.
     function refreshVisible() {
       if (closed) { return; }
@@ -446,12 +502,15 @@
       }
       index = 0;
       relayout();
+      armAutohide();
     }
 
     function pad(n) { return (n < 10 ? '0' : '') + n; }
 
     // Countdowns, weekly schedules and removal of messages whose end time passed while the page is open.
+    // A daily / weekly cut-off (data-recur) starts again for the next cut-off instead.
     function tick() {
+      if (!inDoc(bar)) { clearInterval(tickTimer); tickTimer = null; return; }
       var now = serverNow(), changed = applySchedule(), list = allItems();
       for (var i = list.length - 1; i >= 0; i--) {
         var end = parseInt(list[i].getAttribute('data-end'), 10);
@@ -460,6 +519,10 @@
       var nodes = bar.querySelectorAll('.abp-countdown');
       for (var c = 0; c < nodes.length; c++) {
         var cEnd = parseInt(nodes[c].getAttribute('data-end'), 10), left = Math.floor((cEnd - now) / 1000);
+        if ((!cEnd || left <= 0) && nodes[c].getAttribute('data-recur')) {
+          cEnd = nextCutoff(nodes[c].getAttribute('data-recur'), now);
+          if (cEnd) { nodes[c].setAttribute('data-end', String(cEnd)); left = Math.floor((cEnd - now) / 1000); }
+        }
         if (!cEnd || left <= 0) {
           var item = nodes[c].closest ? nodes[c].closest('.abp-item') : null;
           if (item && item.parentNode) { item.parentNode.removeChild(item); changed = true; }
@@ -470,6 +533,15 @@
       }
       if (changed) { refreshVisible(); }
       if (!bar.querySelector('.abp-countdown, .abp-item[data-end], .abp-item[data-wd], .abp-item[data-t1]') && tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+    }
+
+    // Keyboard users: continue at the first focusable element after the bar, not at <body>.
+    function focusAfter(focusWasInside) {
+      if (!focusWasInside) { return; }
+      var next = document.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      for (var k2 = 0; k2 < next.length; k2++) {
+        if (!bar.contains(next[k2]) && (bar.compareDocumentPosition(next[k2]) & 4) && next[k2].offsetParent !== null) { next[k2].focus(); break; }
+      }
     }
 
     var close = bar.querySelector('.abp-close');
@@ -491,14 +563,10 @@
         var focusWasInside = bar.contains(document.activeElement);
         closed = true;
         if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+        clearTimeout(minTimer);
+        if (tab) { tab.hidden = true; }
         hideBar();
-        // Keyboard users: continue at the first focusable element after the bar, not at <body>.
-        if (focusWasInside) {
-          var next = document.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
-          for (var k2 = 0; k2 < next.length; k2++) {
-            if (!bar.contains(next[k2]) && (bar.compareDocumentPosition(next[k2]) & 4) && next[k2].offsetParent !== null) { next[k2].focus(); break; }
-          }
-        }
+        focusAfter(focusWasInside);
       });
     }
 
@@ -540,7 +608,7 @@
         if (ok) {
           btn.classList.add('abp-copied');
           if (label) { label.textContent = btn.getAttribute('data-copied') || 'Copied!'; }
-          track(btn.closest('.abp-item'), 'copy');
+          track(bar, btn.closest('.abp-item'), 'copy');
           clearTimeout(btn.abpT);
           btn.abpT = setTimeout(function () { btn.classList.remove('abp-copied'); if (label) { label.textContent = btn.getAttribute('data-label') || 'Copy'; } }, 2200);
         }
@@ -552,100 +620,181 @@
     function pointerIsMouse(e) { return !e.pointerType || e.pointerType === 'mouse'; }
     var touchTimer = null;
     function pause() { paused = true; bar.classList.add('abp-paused'); stopRotate(); }
-    function resume() { if (touchTimer) { clearTimeout(touchTimer); touchTimer = null; } paused = false; bar.classList.remove('abp-paused'); startRotate(); }
+    function resume() {
+      if (touchTimer) { clearTimeout(touchTimer); touchTimer = null; }
+      paused = false;
+      if (userPaused) { return; } // the pause button wins until it is pressed again
+      bar.classList.remove('abp-paused');
+      startRotate();
+    }
     // Touch: a tap pauses for at most 8 s; a tap anywhere outside the bar resumes at once.
     function touchPause() { pause(); if (touchTimer) { clearTimeout(touchTimer); } touchTimer = setTimeout(resume, 8000); }
 
-    if (window.PointerEvent) {
-      bar.addEventListener('pointerenter', function (e) { if (pointerIsMouse(e)) { pause(); } });
-      bar.addEventListener('pointerleave', function (e) { if (pointerIsMouse(e)) { resume(); } });
-      bar.addEventListener('pointerup', function (e) {
-        if (!pointerIsMouse(e) && !(e.target.closest && e.target.closest('a, button'))) { if (paused) { resume(); } else { touchPause(); } }
-      });
-      document.addEventListener('pointerdown', function (e) { if (paused && touchTimer && !bar.contains(e.target)) { resume(); } }, true);
-    } else {
-      bar.addEventListener('mouseenter', pause);
-      bar.addEventListener('mouseleave', resume);
+    if (!inline) {
+      if (window.PointerEvent) {
+        bar.addEventListener('pointerenter', function (e) { if (pointerIsMouse(e)) { pause(); } });
+        bar.addEventListener('pointerleave', function (e) { if (pointerIsMouse(e)) { resume(); } });
+        bar.addEventListener('pointerup', function (e) {
+          if (!pointerIsMouse(e) && !(e.target.closest && e.target.closest('a, button, input, label, form'))) { if (paused) { resume(); } else { touchPause(); } }
+        });
+        document.addEventListener('pointerdown', function (e) { if (paused && touchTimer && !bar.contains(e.target)) { resume(); } }, true);
+      } else {
+        bar.addEventListener('mouseenter', pause);
+        bar.addEventListener('mouseleave', resume);
+      }
+      bar.addEventListener('focusin', pause);
+      bar.addEventListener('focusout', function () { setTimeout(function () { if (!bar.contains(document.activeElement)) { resume(); } }, 0); });
     }
-    bar.addEventListener('focusin', pause);
-    bar.addEventListener('focusout', function () { setTimeout(function () { if (!bar.contains(document.activeElement)) { resume(); } }, 0); });
+
+    /* ---------------- Pause / play button (WCAG 2.2.2: moving content can be stopped) ---------------- */
+    var pauseBtn = bar.querySelector('.abp-pause');
+    if (pauseBtn) {
+      pauseBtn.addEventListener('click', function () {
+        userPaused = !userPaused;
+        var label = bar.getAttribute(userPaused ? 'data-l-play' : 'data-l-pause') || '';
+        pauseBtn.setAttribute('aria-pressed', userPaused ? 'true' : 'false');
+        if (label) { pauseBtn.setAttribute('aria-label', label); pauseBtn.title = label; }
+        bar.classList.toggle('abp-user-paused', userPaused);
+        if (userPaused) { pause(); } else { resume(); }
+      });
+    }
+
+    /* ---------------- Auto-hide: fold into a small tab after N seconds (bars only) ----------------
+       Not while the mouse / keyboard focus is on the bar; stays folded for the rest of the visit (sessionStorage
+       "abp_min"); the tab (a real button, labelled, aria-expanded) opens it again. */
+    var autohide = inline ? 0 : parseInt(bar.getAttribute('data-autohide'), 10) || 0, tab = null, minTimer = null, armed = false;
+    function minList() { try { var v = JSON.parse(sessionStorage.getItem('abp_min') || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+    function saveMin(on) {
+      try {
+        var place = bar.getAttribute('data-place'), list = minList().filter(function (p) { return p !== place; });
+        if (on) { list.push(place); }
+        sessionStorage.setItem('abp_min', JSON.stringify(list));
+      } catch (e) { /* storage blocked */ }
+    }
+    function makeTab() {
+      if (tab || !autohide) { return; }
+      tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'abp-tab abp-tab-' + (isTop ? 'top' : 'bottom') + (isTop && !bar.classList.contains('abp-sticky') ? '' : ' abp-tab-fixed');
+      tab.setAttribute('aria-expanded', 'false');
+      if (bar.id) { tab.setAttribute('aria-controls', bar.id); }
+      tab.setAttribute('aria-label', bar.getAttribute('data-l-show') || 'Show');
+      tab.title = bar.getAttribute('data-l-show') || '';
+      tab.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2.5 6.2v3.6h2.2l4.6 3V3.2l-4.6 3H2.5zM11.4 5.4a3.6 3.6 0 0 1 0 5.2M12.9 3.8a5.8 5.8 0 0 1 0 8.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      tab.hidden = true;
+      bar.parentNode.insertBefore(tab, bar.nextSibling);
+      tab.addEventListener('click', expand);
+    }
+    function minimize() {
+      if (closed || bar.style.display === 'none') { return; }
+      var focusWasInside = bar.contains(document.activeElement);
+      makeTab();
+      bar.classList.add('abp-min');
+      stopRotate();
+      fitBody();
+      restoreEdges();
+      if (tab) { tab.hidden = false; paintBar(items()[index]); }
+      saveMin(true);
+      if (focusWasInside && tab) { tab.focus(); }
+    }
+    function expand() {
+      bar.classList.remove('abp-min');
+      if (tab) { tab.hidden = true; tab.setAttribute('aria-expanded', 'true'); }
+      saveMin(false);
+      armed = true; // opened by the visitor: not folded again on this page
+      relayout();
+      var first = bar.querySelector('.abp-item.abp-active a[href], .abp-item.abp-active button, .abp-item.abp-active input, .abp-close');
+      if (first) { first.focus(); }
+    }
+    function armAutohide() {
+      if (!autohide || armed || closed || hidden()) { return; }
+      armed = true;
+      var wait = function () { minTimer = setTimeout(function () { if (paused || userPaused) { wait(); } else { minimize(); } }, autohide * 1000); };
+      wait();
+    }
+    if (autohide && bar.classList.contains('abp-min')) {
+      // Folded earlier in this visit (the pre-script added abp-min before the first paint).
+      makeTab();
+      armed = true;
+      tab.hidden = false;
+    }
+
+    /* ---------------- Triggers: after a delay, after scrolling, on exit intent ----------------
+       Once fired, the message shows at once on the next pages of this visit (sessionStorage "abp_trig"). */
+    function fired(el) {
+      try {
+        var list = JSON.parse(sessionStorage.getItem('abp_trig') || '[]');
+        list = Array.isArray(list) ? list : [];
+        if (list.indexOf(el.getAttribute('data-id')) === -1) { list.push(el.getAttribute('data-id')); }
+        sessionStorage.setItem('abp_trig', JSON.stringify(list.slice(-100)));
+      } catch (e) { /* storage blocked: only this page */ }
+    }
+    function appear(el) {
+      if (closed || !el.hasAttribute('data-toff') || !inDoc(el)) { return; }
+      var wasHidden = bar.style.display === 'none';
+      el.removeAttribute('data-toff');
+      fired(el);
+      refreshVisible();
+      var list = items(), i = list.indexOf(el);
+      if (mode === 'rotate' && i > 0) { show(i); startRotate(); }
+      if (wasHidden && !hidden() && !reduced) {
+        bar.classList.add('abp-enter');
+        setTimeout(function () { bar.classList.remove('abp-enter'); }, 700);
+      }
+    }
+    Array.prototype.forEach.call(bar.querySelectorAll('.abp-item[data-trig][data-toff]'), function (el) {
+      var t = String(el.getAttribute('data-trig')).split(':'), v = parseInt(t[1], 10) || 0;
+      if (t[0] === 'delay') {
+        setTimeout(function () { appear(el); }, Math.max(1, v) * 1000);
+      } else if (t[0] === 'scroll') {
+        var onScroll = function () {
+          var room = document.documentElement.scrollHeight - window.innerHeight, pct = room > 0 ? (window.pageYOffset || document.documentElement.scrollTop) * 100 / room : 100;
+          if (pct >= v) { window.removeEventListener('scroll', onScroll); appear(el); }
+        };
+        window.addEventListener('scroll', onScroll, { passive: true });
+        setTimeout(onScroll, 400);
+      } else if (t[0] === 'exit' && window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+        // Exit intent: the mouse leaves the window through the top edge (desktop only).
+        var onOut = function (e) { if (!e.relatedTarget && e.clientY <= 0) { document.removeEventListener('mouseout', onOut); appear(el); } };
+        setTimeout(function () { document.addEventListener('mouseout', onOut); }, 1500);
+      }
+    });
 
     var resizeTimer = null;
     window.addEventListener('resize', function () {
+      if (!inDoc(bar)) { return; }
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(relayout, 200);
     });
 
     // While scrolling only the cached elements are updated; the page is re-scanned at most once a second
     // (headers that become fixed only after scrolling).
-    var edgeQueued = false, scanTimer = null;
-    window.addEventListener('scroll', function () {
-      if (edgeQueued) { return; }
-      edgeQueued = true;
-      window.requestAnimationFrame(function () {
-        edgeQueued = false;
-        var wait = 1000 - (Date.now() - lastScan);
-        if (wait <= 0) { rescan(); } else if (!scanTimer) {
-          scanTimer = setTimeout(function () { scanTimer = null; rescan(); adaptEdges(); }, wait);
-        }
-        adaptEdges();
-      });
-    }, { passive: true });
+    if (!inline) {
+      var edgeQueued = false, scanTimer = null;
+      window.addEventListener('scroll', function () {
+        if (edgeQueued) { return; }
+        edgeQueued = true;
+        window.requestAnimationFrame(function () {
+          edgeQueued = false;
+          var wait = 1000 - (Date.now() - lastScan);
+          if (wait <= 0) { rescan(); } else if (!scanTimer) {
+            scanTimer = setTimeout(function () { scanTimer = null; rescan(); adaptEdges(); }, wait);
+          }
+          adaptEdges();
+        });
+      }, { passive: true });
+    }
 
-    // Clicks on the button, the whole-message link or a link inside the text.
+    // Clicks on the button, the whole-message link or a link inside the text (not the privacy link of a form).
     bar.addEventListener('click', function (e) {
       var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
-      if (a && bar.contains(a)) { track(a.closest('.abp-item'), 'click'); }
+      if (a && bar.contains(a) && !a.closest('.abp-form')) { track(bar, a.closest('.abp-item'), 'click'); }
     });
-
-    /* ---------------- Free-shipping progress ----------------
-       After OpenCart's own AJAX cart requests (add / remove / update, both versions) the remaining amount is
-       fetched from a small read-only endpoint (same-origin GET, JSON) and the message is updated in place. */
-    var cartUrl = bar.getAttribute('data-cart') || '', cartTimer = null, cartBusy = false;
-    function refreshCart() {
-      var ids = Array.prototype.map.call(bar.querySelectorAll('.abp-item[data-fs="1"]'), function (el) { return el.getAttribute('data-id'); }).filter(function (x) { return /^\d+$/.test(x); });
-      if (!cartUrl || !ids.length || !window.fetch || cartBusy) { return; }
-      cartBusy = true;
-      window.fetch(cartUrl + (cartUrl.indexOf('?') === -1 ? '?' : '&') + 'ids=' + ids.slice(0, 20).join(','), { credentials: 'same-origin', headers: { Accept: 'application/json' } })
-        .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (json) {
-          cartBusy = false;
-          if (!json || typeof json.m !== 'object' || !json.m) { return; }
-          Object.keys(json.m).forEach(function (id) {
-            var el = bar.querySelector('.abp-item[data-fs="1"][data-id="' + String(parseInt(id, 10)) + '"]'), row = json.m[id];
-            if (!el || !row || typeof row !== 'object') { return; }
-            ['a', 'b'].forEach(function (v) {
-              var txt = el.querySelector('.abp-v-' + v + ' .abp-txt');
-              if (txt && typeof row[v] === 'string') { txt.innerHTML = row[v]; } // server-sanitized HTML
-            });
-            var fill = el.querySelector('.abp-progress-fill'), p = Math.max(0, Math.min(100, parseFloat(row.p) || 0));
-            if (fill) { fill.style.width = p + '%'; }
-            var prog = el.querySelector('.abp-progress');
-            if (prog) { prog.setAttribute('data-p', String(Math.round(p))); }
-            if (row.done) { el.setAttribute('data-done', '1'); } else { el.removeAttribute('data-done'); }
-          });
-          checkIcons(); stabilise(); fitBody(); startTick();
-          if (mode === 'marquee') { startMarquee(); }
-        })
-        .catch(function () { cartBusy = false; });
-    }
-    function queueCart() { clearTimeout(cartTimer); cartTimer = setTimeout(refreshCart, 300); }
-    var cartHooked = false;
-    function hookCart() {
-      if (cartHooked || !cartUrl || !window.jQuery || !bar.querySelector('.abp-item[data-fs="1"]')) { return; }
-      cartHooked = true;
-      window.jQuery(document).ajaxComplete(function (e, xhr, settings) {
-        var url = settings && typeof settings.url === 'string' ? settings.url : '';
-        if (/route=(checkout|common)(\/|%2F)cart|(checkout|common)\/cart[\/.|]/i.test(url)) { queueCart(); }
-      });
-    }
-    hookCart();
-    // Back/forward cache: the cart may have changed on another page.
-    window.addEventListener('pageshow', function (e) { if (e.persisted) { queueCart(); } });
 
     // Crossing the 768 px breakpoint (rotation, resize): rebuild from the messages meant for this screen size.
     if (mq) {
-      if (mq.addEventListener) { mq.addEventListener('change', refreshVisible); } else if (mq.addListener) { mq.addListener(refreshVisible); }
+      var onMq = function () { if (inDoc(bar)) { refreshVisible(); } };
+      if (mq.addEventListener) { mq.addEventListener('change', onMq); } else if (mq.addListener) { mq.addListener(onMq); }
     }
 
     applySchedule();
@@ -660,11 +809,154 @@
     // Custom colours: paint the styles now (no wait); Automatic colours need the theme's final CSS (load).
     if (bar.getAttribute('data-color') !== 'auto') { applyAutoColours(); }
     relayout();
+    armAutohide();
 
-    function afterLoad() { checkIcons(); applyAutoColours(); hookCart(); relayout(); }
-    // Web fonts, icons and theme colours are final only after load.
-    if (document.readyState === 'complete') { afterLoad(); } else { window.addEventListener('load', afterLoad); }
+    var api = {
+      bar: bar,
+      refresh: refreshVisible,
+      relayout: function () { checkIcons(); stabilise(); fitBody(); startTick(); if (mode === 'marquee') { startMarquee(); } },
+      afterLoad: function () { checkIcons(); applyAutoColours(); relayout(); }
+    };
+    bar.abpApi = api;
+    instances.push(api);
+    if (loaded) { api.afterLoad(); }
   }
 
-  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
+  /* ---------------- Free shipping, goals and cart conditions ----------------
+     After OpenCart's own AJAX cart requests (add / remove / update, both versions) the amounts are fetched from a
+     small read-only endpoint (same-origin GET, JSON) and every bar and box is updated in place. */
+  var cartTimer = null, cartBusy = false;
+  function cartItems() { return document.querySelectorAll('.abp .abp-item[data-fs="1"], .abp .abp-item[data-cc="1"]'); }
+  function refreshCart() {
+    var holder = document.querySelector('.abp[data-cart]'), url = holder ? holder.getAttribute('data-cart') : '';
+    var ids = [];
+    Array.prototype.forEach.call(cartItems(), function (el) { var id = el.getAttribute('data-id'); if (/^\d+$/.test(id) && ids.indexOf(id) === -1) { ids.push(id); } });
+    if (!url || !ids.length || !window.fetch || cartBusy) { return; }
+    cartBusy = true;
+    window.fetch(url + (url.indexOf('?') === -1 ? '?' : '&') + 'ids=' + ids.slice(0, 20).join(','), { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (json) {
+        cartBusy = false;
+        if (!json || typeof json.m !== 'object' || !json.m) { return; }
+        var touched = [];
+        Array.prototype.forEach.call(cartItems(), function (el) {
+          var row = json.m[String(parseInt(el.getAttribute('data-id'), 10))], bar = el.closest('.abp');
+          if (!row || typeof row !== 'object') {
+            // The cart conditions no longer hold (the server left the message out).
+            if (el.getAttribute('data-cc') === '1' && !el.hasAttribute('data-coff')) { el.setAttribute('data-coff', '1'); touched.push(bar); }
+            return;
+          }
+          ['a', 'b'].forEach(function (v) {
+            var txt = el.querySelector('.abp-v-' + v + ' .abp-txt');
+            if (txt && typeof row[v] === 'string') { txt.innerHTML = row[v]; } // server-sanitized HTML
+          });
+          var fill = el.querySelector('.abp-progress-fill'), p = Math.max(0, Math.min(100, parseFloat(row.p) || 0));
+          if (fill) { fill.style.width = p + '%'; }
+          var prog = el.querySelector('.abp-progress');
+          if (prog) {
+            prog.setAttribute('data-p', String(Math.round(p)));
+            var k = parseInt(row.k, 10) || 0;
+            Array.prototype.forEach.call(prog.querySelectorAll('.abp-step'), function (s, i) { s.classList.toggle('abp-step-done', i < k); });
+            if (prog.hasAttribute('data-k')) { prog.setAttribute('data-k', String(k)); }
+          }
+          if (row.done) { el.setAttribute('data-done', '1'); } else { el.removeAttribute('data-done'); }
+          if (el.getAttribute('data-cc') === '1' && (!!row.off) !== el.hasAttribute('data-coff')) {
+            if (row.off) { el.setAttribute('data-coff', '1'); } else { el.removeAttribute('data-coff'); }
+            touched.push(bar);
+          }
+          if (touched.indexOf(bar) === -1) { touched.push(bar); }
+        });
+        touched.forEach(function (bar) {
+          if (bar && bar.abpApi) { if (bar.style.display === 'none' || bar.querySelector('.abp-item[data-coff], .abp-item[data-cc]')) { bar.abpApi.refresh(); } bar.abpApi.relayout(); }
+        });
+      })
+      .catch(function () { cartBusy = false; });
+  }
+  function queueCart() { clearTimeout(cartTimer); cartTimer = setTimeout(refreshCart, 300); }
+
+  /* ---------------- E-mail sign-up (newsletter, double opt-in) ----------------
+     Checked here first (address, consent box), then sent with the page's form token; the answer replaces the form. */
+  document.addEventListener('submit', function (e) {
+    var form = e.target;
+    if (!form || !form.classList || !form.classList.contains('abp-form')) { return; }
+    e.preventDefault();
+    var email = form.querySelector('.abp-email'), consent = form.querySelector('input[name="consent"]'), msg = form.querySelector('.abp-form-msg');
+    var btn = form.querySelector('.abp-submit'), item = form.closest('.abp-item'), bar = form.closest('.abp');
+    var say = function (text, field) {
+      form.classList.toggle('abp-form-error', !!field);
+      if (email) { email.setAttribute('aria-invalid', field === 'email' ? 'true' : 'false'); }
+      if (consent) { consent.setAttribute('aria-invalid', field === 'consent' ? 'true' : 'false'); }
+      if (msg) { msg.textContent = ''; setTimeout(function () { msg.textContent = text || ''; }, 30); }
+      if (field === 'email' && email) { email.focus(); } else if (field === 'consent' && consent) { consent.focus(); }
+    };
+    var value = email ? email.value.trim() : '';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value) || value.length > 96) { say(form.getAttribute('data-err-email'), 'email'); return; }
+    if (!consent || !consent.checked) { say(form.getAttribute('data-err-consent'), 'consent'); return; }
+    if (form.abpBusy || !window.fetch || !window.FormData) { return; }
+    form.abpBusy = true;
+    if (btn) { btn.disabled = true; }
+    say(form.getAttribute('data-sending'), '');
+    var fd = new FormData(form);
+    fd.set('email', value);
+    fd.append('tok', form.getAttribute('data-tok') || '');
+    fd.append('id', item ? item.getAttribute('data-id') : '');
+    window.fetch(form.getAttribute('action'), { method: 'POST', body: fd, credentials: 'same-origin', headers: { Accept: 'application/json' } })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        form.abpBusy = false;
+        if (btn) { btn.disabled = false; }
+        if (j && j.ok) {
+          var done = document.createElement('span');
+          done.className = 'abp-form-done';
+          done.setAttribute('role', 'status');
+          done.tabIndex = -1;
+          done.textContent = j.msg || form.getAttribute('data-success') || '';
+          form.parentNode.replaceChild(done, form);
+          done.focus();
+          ga(bar, item, 'abp_subscribe');
+          if (bar && bar.abpApi) { bar.abpApi.relayout(); }
+        } else {
+          say((j && j.error) || form.getAttribute('data-err-failed'), (j && j.field) || 'form');
+        }
+      })
+      .catch(function () {
+        form.abpBusy = false;
+        if (btn) { btn.disabled = false; }
+        say(form.getAttribute('data-err-failed'), 'form');
+      });
+  }, true);
+
+  /* ---------------- Start ---------------- */
+  var loaded = false; // set by afterLoad(); boxes started later (mini-cart reload) run their load step at once
+  function scan() {
+    try { if (window.abpPre) { window.abpPre(); } } catch (e) { /* boxes still start without it */ }
+    Array.prototype.forEach.call(document.querySelectorAll('.abp[data-abp], #abp-bar'), function (bar) {
+      try { init(bar); } catch (e) { /* one broken box must not stop the others */ }
+    });
+  }
+  var hooked = false;
+  function hookAjax() {
+    if (hooked || !window.jQuery) { return; }
+    hooked = true;
+    window.jQuery(document).ajaxComplete(function (e, xhr, settings) {
+      var url = settings && typeof settings.url === 'string' ? settings.url : '';
+      if (/route=(checkout|common)(\/|%2F)cart|(checkout|common)\/cart[\/.|]/i.test(url)) {
+        queueCart();
+        setTimeout(scan, 60); // the mini-cart drop-down is reloaded with a new box
+      }
+    });
+  }
+
+  window.AnnouncementBarPro = { scan: scan, refreshCart: queueCart };
+
+  function start() {
+    scan();
+    hookAjax();
+  }
+  // Web fonts, icons and theme colours are final only after load.
+  function afterLoad() { loaded = true; hookAjax(); instances.forEach(function (api) { if (inDoc(api.bar)) { api.afterLoad(); } }); }
+  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', start); } else { start(); }
+  if (document.readyState === 'complete') { afterLoad(); } else { window.addEventListener('load', afterLoad); }
+  // Back/forward cache: the cart may have changed on another page.
+  window.addEventListener('pageshow', function (e) { if (e.persisted) { queueCart(); } });
 })();

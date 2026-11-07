@@ -2,10 +2,10 @@
 defined('VERSION') || exit; // not callable directly (in the universal package these files also sit, unused, inside OpenCart 4)
 /**
  * Announcement Bar Pro — admin controller (OpenCart 3.0.x)
- * @version 2.3.0
+ * @version 2.4.0
  */
 class ControllerExtensionModuleAnnouncementBarPro extends Controller {
-	const VERSION    = '2.3.0';
+	const VERSION    = '2.4.0';
 	const CODE       = 'module_announcement_bar_pro';
 	const EVENT_CODE = 'announcement_bar_pro';
 	const ROUTE      = 'extension/module/announcement_bar_pro';
@@ -19,6 +19,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 	const MAX_IMPORT_MESSAGES = 500;
 	const STYLES       = 'solid,gradient,soft,minimal,glass';
 	const AB_MIN_VIEWS = 100;
+	const MAX_CSS      = 10000;
 
 	/** Per-language text fields of a message. */
 	const TEXT_FIELDS = 'text,link_text,mobile_text,success_text,text_b,mobile_text_b,link_text_b';
@@ -28,6 +29,9 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 
 	/** @var \Announcementbarpro\Sanitizer  Declared property: kept out of the shared registry. */
 	private $abp;
+
+	/** @var \Announcementbarpro\Features  2.4.0 options, targeting and templates (shared with the catalog). */
+	private $fx;
 
 	/* ------------------------------------------------------------------ *
 	 * Settings + message list
@@ -55,6 +59,8 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		$data['export']     = $this->link(self::ROUTE . '/export');
 		$data['import']     = $this->link(self::ROUTE . '/import');
 		$data['reload']     = $this->link(self::ROUTE, '&tab=messages');
+		$data['export_subscribers'] = $this->link(self::ROUTE . '/exportSubscribers');
+		$data['erase_subscriber']   = $this->link(self::ROUTE . '/eraseSubscriber');
 		$data['error_warning']  = isset($this->error['warning']) ? $this->error['warning'] : '';
 		$data['error_settings'] = $this->error;
 
@@ -76,6 +82,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		$tab = isset($this->request->get['tab']) && is_string($this->request->get['tab']) ? $this->request->get['tab'] : '';
 		$data['active_tab'] = ($tab === 'settings' || $post) ? 'settings' : 'messages';
 		$data['styles']     = $this->styleList();
+		$data = array_merge($data, $this->settingsExtra());
 
 		$data['messages'] = $this->listRows();
 
@@ -87,7 +94,8 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			'confirm' => array(
 				'reset'  => $this->language->get('text_confirm_reset'),
 				'use_b'  => $this->language->get('text_confirm_use_b'),
-				'delete' => $this->language->get('text_confirm')
+				'delete' => $this->language->get('text_confirm'),
+				'erase'  => $this->language->get('text_confirm_erase')
 			),
 			'text'    => array('importing' => $this->language->get('text_importing'), 'error_import_file' => $this->language->get('error_import_file'))
 		));
@@ -141,6 +149,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			}
 
 			$schedule = $this->scheduleText($message['weekdays'], $message['time_start'], $message['time_end']);
+			$opt      = $this->fx->options(isset($message['options']) ? $message['options'] : '');
 
 			$rows[] = array(
 				'message_id' => (int)$message['message_id'],
@@ -154,10 +163,11 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 				'state_text' => $this->language->get('text_state_' . $state),
 				'missing'    => $missing ? sprintf($this->language->get('text_missing_language'), implode(', ', $missing)) : '',
 				'device'     => in_array($message['device'], array('desktop', 'mobile'), true) ? $message['device'] : 'all',
-				'fs'         => $message['type'] === 'free_shipping' ? sprintf($this->language->get('text_badge_fs'), $this->currency->format((float)$message['threshold'], $currency)) : '',
-				'coupon'     => $message['coupon'] !== '' ? sprintf($this->language->get('text_badge_coupon'), $message['coupon']) : '',
+				'fs'         => $message['type'] === 'free_shipping' ? ($opt['fs_oc'] ? $this->language->get('text_badge_fs_oc') : sprintf($this->language->get('text_badge_fs'), $this->currency->format((float)$message['threshold'], $currency))) : '',
+				'coupon'     => $message['coupon'] !== '' && !$opt['coupon_id'] ? sprintf($this->language->get('text_badge_coupon'), $message['coupon']) : '',
 				'schedule'   => $schedule !== '' ? sprintf($this->language->get('text_badge_schedule'), $schedule) : '',
 				'targeting'  => ($message['categories'] || $message['products']) ? $this->language->get('text_badge_targeting') : '',
+				'badges'     => $this->badges($message, $opt),
 				'style'      => $message['style'],
 				'ab'         => $ab,
 				'views'      => $views,
@@ -269,7 +279,9 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			'categories'      => array(),
 			'products'        => array(),
 			'style'           => '',
-			'button_style'    => 'filled'
+			'button_style'    => 'filled',
+			'placement'       => '',
+			'priority'        => 0
 		);
 
 		foreach ($defaults as $key => $default) {
@@ -287,6 +299,13 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		}
 
 		$data['threshold']   = $data['threshold'] !== '' && is_numeric($data['threshold']) && !$post ? rtrim(rtrim(number_format((float)$data['threshold'], 4, '.', ''), '0'), '.') : $data['threshold'];
+		if (!in_array($data['type'], \Announcementbarpro\Features::TYPES, true)) {
+			$data['type'] = 'standard';
+		}
+
+		// 2.4.0 options: posted values after a failed save, else the stored (clean) options.
+		$opt = $post ? $this->postedOptions($post_data) : (isset($message['options']) && is_array($message['options']) ? $message['options'] : $this->fx->defaults());
+		$data = array_merge($data, $this->optionData($opt));
 		$data['weekday_list'] = $this->weekdayList(is_array($data['weekdays']) ? $this->abp->weekdays($data['weekdays']) : (string)$data['weekdays']);
 		$data['category_chips'] = $this->model_extension_module_announcement_bar_pro->getCategoryNames($this->abp->idList($data['categories']), (int)$this->config->get('config_language_id'));
 		$data['product_chips']  = $this->model_extension_module_announcement_bar_pro->getProductNames($this->abp->idList($data['products']), (int)$this->config->get('config_language_id'));
@@ -305,11 +324,26 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			foreach (explode(',', self::TEXT_FIELDS) as $field) {
 				$data['message_description'][$id][$field] = isset($row[$field]) && is_string($row[$field]) ? $this->abp->decode($row[$field]) : '';
 			}
+
+			// Tier labels / texts and e-mail form texts (5 tier rows, empty ones left blank).
+			$extra = $post ? $row : (isset($row['extra']) && is_array($row['extra']) ? $row['extra'] : array());
+			foreach (array('tier_label', 'tier_text') as $field) {
+				$list = isset($extra[$field]) && is_array($extra[$field]) ? array_values($extra[$field]) : array();
+				for ($i = 0; $i < 5; $i++) {
+					$data['message_description'][$id][$field][$i] = isset($list[$i]) && is_scalar($list[$i]) ? $this->fx->plainText((string)$list[$i]) : '';
+				}
+			}
+			foreach (explode(',', \Announcementbarpro\Features::EXTRA_TEXTS) as $field) {
+				$data['message_description'][$id][$field] = isset($extra[$field]) && is_scalar($extra[$field]) ? $this->fx->plainText((string)$extra[$field]) : '';
+			}
 		}
+
+		$data['is_new'] = !$message_id;
+		$data['oc_free_shipping'] = $this->ocFreeShipping();
 
 		$data['admin_css']   = 'view/javascript/announcement_bar_pro/abp_admin.css?v=' . self::VERSION;
 		$data['admin_js']    = 'view/javascript/announcement_bar_pro/abp_admin.js?v=' . self::VERSION;
-		$data['config_json'] = $this->jsonForHtml($this->formConfig());
+		$data['config_json'] = $this->jsonForHtml($this->formConfig($languages));
 
 		$this->response->setOutput($this->load->view('extension/module/announcement_bar_pro_form', $data));
 	}
@@ -317,7 +351,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 	/**
 	 * Settings for the admin script: live preview (the shop's real bar script and styles), autocomplete URLs, texts.
 	 */
-	private function formConfig() {
+	private function formConfig(array $languages) {
 		$catalog = !empty($this->request->server['HTTPS']) && defined('HTTPS_CATALOG') ? HTTPS_CATALOG : (defined('HTTP_CATALOG') ? HTTP_CATALOG : '../');
 		$assets  = $catalog . 'catalog/view/javascript/announcement_bar_pro/';
 
@@ -343,14 +377,31 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			),
 			'autocomplete' => array(
 				'category' => str_replace('&amp;', '&', $this->link('catalog/category/autocomplete')),
-				'product'  => str_replace('&amp;', '&', $this->link('catalog/product/autocomplete'))
+				'product'  => str_replace('&amp;', '&', $this->link('catalog/product/autocomplete')),
+				'coupon'   => str_replace('&amp;', '&', $this->link(self::ROUTE . '/coupons'))
 			),
+			'zones'     => str_replace('&amp;', '&', $this->link(self::ROUTE . '/zones')),
+			'lists'     => array('country' => $this->model_extension_module_announcement_bar_pro->getCountries()),
+			'image_url' => $catalog . 'image/',
+			'filemanager' => str_replace('&amp;', '&', $this->link('common/filemanager')),
+			'templates' => $this->templatesFor($languages),
+			'oc_free'   => (float)$this->config->get('shipping_free_total'),
+			'fonts'     => $this->fontStacks(),
 			'text'     => array(
 				'copy'       => $this->language->get('text_copy'),
 				'close'      => $this->language->get('text_close'),
 				'remove'     => $this->language->get('button_remove'),
 				'no_results' => $this->language->get('text_no_results'),
-				'sample'     => $this->language->get('text_preview_sample')
+				'sample'     => $this->language->get('text_preview_sample'),
+				'all_zones'  => $this->language->get('text_all_zones'),
+				'confirm_template' => $this->language->get('text_confirm_template'),
+				'tier'       => $this->language->get('text_tier'),
+				'email_placeholder' => $this->language->get('text_email_placeholder_default'),
+				'email_button'      => $this->language->get('text_email_button_default'),
+				'email_consent'     => $this->language->get('text_email_consent_default'),
+				'privacy'    => $this->language->get('text_privacy_policy'),
+				'placement_inline' => $this->language->get('text_preview_inline'),
+				'trigger_note' => $this->language->get('text_preview_trigger')
 			)
 		);
 	}
@@ -371,7 +422,10 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			'style'       => $this->styleValue($get('style', 'solid'), 'solid'),
 			'transition'  => $get('transition', 'fade') === 'slide' ? 'slide' : 'fade',
 			'arrows'      => (bool)$get('arrows', 0),
-			'dismissible' => (bool)$get('dismissible', 1)
+			'dismissible' => (bool)$get('dismissible', 1),
+			'font'        => in_array($get('font', ''), \Announcementbarpro\Features::FONTS, true) ? $get('font', '') : '',
+			'pause'       => (bool)$get('pause_button', 1),
+			'privacy'     => (int)$get('privacy_id', 0) > 0
 		);
 	}
 
@@ -609,7 +663,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 	private function importPost(array $m, array $by_code, array &$unknown) {
 		$post = array();
 
-		foreach (array('sort_order', 'date_start', 'date_end', 'bg_color', 'text_color', 'link', 'icon', 'page_mode', 'page_routes', 'device', 'type', 'threshold', 'coupon', 'time_start', 'time_end', 'style', 'button_style') as $key) {
+		foreach (array('sort_order', 'date_start', 'date_end', 'bg_color', 'text_color', 'link', 'icon', 'page_mode', 'page_routes', 'device', 'type', 'threshold', 'coupon', 'time_start', 'time_end', 'style', 'button_style', 'placement', 'priority') as $key) {
 			if (isset($m[$key]) && is_scalar($m[$key])) {
 				$post[$key] = (string)$m[$key];
 			}
@@ -636,6 +690,11 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			}
 		}
 
+		// 2.4.0 options (same shape as the form's "opt"; validated like the form).
+		if (isset($m['options']) && is_array($m['options'])) {
+			$post['opt'] = $m['options'];
+		}
+
 		$post['message_description'] = array();
 
 		if (isset($m['texts']) && is_array($m['texts'])) {
@@ -649,8 +708,12 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 					continue;
 				}
 
-				foreach (explode(',', self::TEXT_FIELDS) as $field) {
+				foreach (explode(',', self::TEXT_FIELDS . ',' . \Announcementbarpro\Features::EXTRA_TEXTS) as $field) {
 					$post['message_description'][$by_code[$code]][$field] = isset($row[$field]) && is_scalar($row[$field]) ? (string)$row[$field] : '';
+				}
+
+				foreach (array('tier_label', 'tier_text') as $field) {
+					$post['message_description'][$by_code[$code]][$field] = isset($row[$field]) && is_array($row[$field]) ? array_values(array_filter($row[$field], 'is_scalar')) : array();
 				}
 			}
 		}
@@ -670,9 +733,12 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			$out[$key] = $m[$key] ? (string)$m[$key] : '';
 		}
 
-		foreach (array('bg_color', 'text_color', 'link', 'icon', 'page_mode', 'page_routes', 'device', 'type', 'coupon', 'weekdays', 'time_start', 'time_end', 'style', 'button_style') as $key) {
-			$out[$key] = (string)$m[$key];
+		foreach (array('bg_color', 'text_color', 'link', 'icon', 'page_mode', 'page_routes', 'device', 'type', 'coupon', 'weekdays', 'time_start', 'time_end', 'style', 'button_style', 'placement') as $key) {
+			$out[$key] = isset($m[$key]) ? (string)$m[$key] : '';
 		}
+
+		$out['priority'] = isset($m['priority']) ? (int)$m['priority'] : 0;
+		$out['options']  = isset($m['options']) && is_array($m['options']) ? $m['options'] : $this->fx->defaults();
 
 		$out['threshold'] = rtrim(rtrim(number_format((float)$m['threshold'], 4, '.', ''), '0'), '.');
 
@@ -685,6 +751,12 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		foreach ($m['texts'] as $code => $row) {
 			foreach (explode(',', self::TEXT_FIELDS) as $field) {
 				$out['texts'][$code][$field] = $this->abp->decode(isset($row[$field]) ? $row[$field] : '');
+			}
+
+			$extra = $this->fx->extraOf(isset($row['extra']) ? $row['extra'] : array());
+
+			foreach ($extra as $field => $value) {
+				$out['texts'][$code][$field] = $value;
 			}
 		}
 
@@ -752,6 +824,12 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		if (!$this->intInRange($this->postValue('dismiss_days'), 0, 365))                      $this->error['dismiss_days'] = sprintf($this->language->get('error_range'), 0, 365);
 		if (!$this->abp->color($this->postValue('default_bg_color')))                    $this->error['default_bg_color'] = $this->language->get('error_color');
 		if (!$this->abp->color($this->postValue('default_text_color')))                  $this->error['default_text_color'] = $this->language->get('error_color');
+		if (!$this->intInRange($this->postValue('max_messages'), 0, 20))                       $this->error['max_messages'] = sprintf($this->language->get('error_range'), 0, 20);
+		if (!$this->intInRange($this->postValue('autohide'), 0, 600))                          $this->error['autohide'] = sprintf($this->language->get('error_range'), 0, 600);
+		if (!in_array($this->postValue('font'), \Announcementbarpro\Features::FONTS, true))     $this->error['font'] = $this->language->get('error_value');
+		if (!in_array($this->postValue('geo_fallback'), array('store', 'none'), true))         $this->error['geo_fallback'] = $this->language->get('error_value');
+		if (!$this->validPrivacyId($this->postValue('privacy_id')))                            $this->error['privacy_id'] = $this->language->get('error_value');
+		if (strlen($this->postValue('custom_css')) > self::MAX_CSS * 2)                         $this->error['custom_css'] = sprintf($this->language->get('error_text_length'), self::MAX_CSS);
 
 		if ($this->error) {
 			$this->error['warning'] = $this->language->get('error_form');
@@ -770,7 +848,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		$descs      = isset($p['message_description']) && is_array($p['message_description']) ? $p['message_description'] : array();
 		$has_text   = false;
 		$has_text_b = false;
-		$free_ship  = isset($p['type']) && $p['type'] === 'free_shipping';
+		$free_ship  = isset($p['type']) && in_array($p['type'], array('free_shipping', 'tiers'), true); // both need the "reached" text
 		$ab_test    = !empty($p['ab_test']);
 
 		foreach ($languages as $language) {
@@ -846,7 +924,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			$this->error['date_end'] = $this->language->get('error_date_order');
 		}
 
-		if (!empty($p['countdown']) && !$end) {
+		if (!empty($p['countdown']) && !$end && (empty($p['opt']['recur']) || !is_string($p['opt']['recur']))) {
 			$this->error['countdown'] = $this->language->get('error_countdown');
 		}
 
@@ -889,6 +967,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		}
 
 		$this->validateMessage230($p);
+		$this->validateMessage240($p, $languages);
 
 		if ($this->error && !isset($this->error['warning'])) {
 			$this->error['warning'] = $this->language->get('error_form');
@@ -901,9 +980,9 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 	private function validateMessage230(array $p) {
 		$type = isset($p['type']) ? $p['type'] : 'standard';
 
-		if (!in_array($type, array('standard', 'free_shipping'), true)) {
+		if (!in_array($type, \Announcementbarpro\Features::TYPES, true)) {
 			$this->error['type'] = $this->language->get('error_value');
-		} elseif ($type === 'free_shipping') {
+		} elseif ($type === 'free_shipping' && empty($p['opt']['fs_oc'])) {
 			$amount = $this->abp->amount(isset($p['threshold']) ? $p['threshold'] : '');
 
 			if ($amount === false || (float)$amount <= 0) {
@@ -953,6 +1032,48 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		}
 	}
 
+	/**
+	 * 2.4.0 fields: placement, priority and the options (countries, free-shipping overrides, OpenCart coupon, tiers,
+	 * cart conditions, campaign / visitor, trigger, recurring countdown, e-mail capture, image, font) + extra texts.
+	 */
+	private function validateMessage240(array $p, array $languages) {
+		$type = isset($p['type']) && in_array($p['type'], \Announcementbarpro\Features::TYPES, true) ? $p['type'] : 'standard';
+
+		list($opt, $errors) = $this->fx->validate(isset($p['opt']) ? $p['opt'] : array(), $this->lookup(), $this->currencyCodes(), $type);
+
+		foreach ($errors as $field => $key) {
+			$this->error['opt_' . $field] = $this->language->get($key);
+		}
+
+		if (!in_array(isset($p['placement']) ? $p['placement'] : '', \Announcementbarpro\Features::PLACEMENTS, true)) {
+			$this->error['placement'] = $this->language->get('error_value');
+		}
+
+		if (isset($p['priority']) && trim($p['priority']) !== '' && (!preg_match('/^\d{1,3}$/', trim($p['priority'])) || (int)$p['priority'] > 100)) {
+			$this->error['priority'] = sprintf($this->language->get('error_range'), 0, 100);
+		}
+
+		$descs = isset($p['message_description']) && is_array($p['message_description']) ? $p['message_description'] : array();
+		$index = $this->fx->tierIndexes(isset($p['opt']['tiers']) ? $p['opt']['tiers'] : array());
+		$allow = (bool)$this->config->get(self::CODE . '_allow_html');
+
+		foreach ($languages as $language) {
+			$id     = (int)$language['language_id'];
+			$row    = isset($descs[$id]) && is_array($descs[$id]) ? $descs[$id] : array();
+			$errors = array();
+			$extra  = $this->fx->extra($row, $index, $errors);
+
+			foreach ($errors as $field => $key) {
+				$this->error[$field][$id] = sprintf($this->language->get($key), $field === 'tier_text' || $field === 'email_consent' ? \Announcementbarpro\Features::MAX_TIER_TEXT : \Announcementbarpro\Features::MAX_EXTRA);
+			}
+
+			// Tiers: every language that has a text needs a label per tier (shown for {goal} and under the bar).
+			if ($type === 'tiers' && $this->filled(isset($row['text']) ? $row['text'] : '', $allow) && in_array('', $extra['tier_label'], true) && !isset($this->error['tier_label'][$id])) {
+				$this->error['tier_label'][$id] = $this->language->get('error_tier_label');
+			}
+		}
+	}
+
 	/* ------------------------------------------------------------------ *
 	 * Sanitizing (whitelists only known keys)
 	 * ------------------------------------------------------------------ */
@@ -975,7 +1096,18 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			'color_mode'         => $this->postValue('color_mode'),
 			'style'              => $this->postValue('style'),
 			'transition'         => $this->postValue('transition'),
-			'arrows'             => !empty($p[self::CODE . '_arrows']) ? 1 : 0
+			'arrows'             => !empty($p[self::CODE . '_arrows']) ? 1 : 0,
+			// 2.4.0
+			'max_messages'       => (int)$this->postValue('max_messages'),
+			'autohide'           => (int)$this->postValue('autohide'),
+			'pause_button'       => !empty($p[self::CODE . '_pause_button']) ? 1 : 0,
+			'font'               => $this->postValue('font'),
+			'custom_css'         => $this->fx->css(html_entity_decode($this->postValue('custom_css'), ENT_QUOTES, 'UTF-8')),
+			'ga4'                => !empty($p[self::CODE . '_ga4']) ? 1 : 0,
+			'geo_cf'             => !empty($p[self::CODE . '_geo_cf']) ? 1 : 0,
+			'geo_fallback'       => $this->postValue('geo_fallback'),
+			'privacy_id'         => (int)$this->postValue('privacy_id'),
+			'double_optin'       => !empty($p[self::CODE . '_double_optin']) ? 1 : 0
 		);
 
 		$data = array();
@@ -990,9 +1122,15 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		$allow_html = (bool)$this->config->get(self::CODE . '_allow_html');
 		$descs      = isset($p['message_description']) && is_array($p['message_description']) ? $p['message_description'] : array();
 		$ab_test    = !empty($p['ab_test']);
-		$free_ship  = isset($p['type']) && $p['type'] === 'free_shipping';
+		$type       = isset($p['type']) && in_array($p['type'], \Announcementbarpro\Features::TYPES, true) ? $p['type'] : 'standard';
+		$free_ship  = $type === 'free_shipping';
+		$goal_text  = $type !== 'standard';
+		$index      = $this->fx->tierIndexes(isset($p['opt']['tiers']) ? $p['opt']['tiers'] : array());
+
+		list($options) = $this->fx->validate(isset($p['opt']) ? $p['opt'] : array(), null, $this->currencyCodes(), $type);
 
 		$description = array();
+		$ignored     = array();
 		foreach ($languages as $language) {
 			$id  = (int)$language['language_id'];
 			$row = isset($descs[$id]) && is_array($descs[$id]) ? $descs[$id] : array();
@@ -1013,10 +1151,11 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 				'text'          => $this->abp->encode4byte($allow_html ? $this->abp->html($get('text')) : $this->abp->plain($get('text'))),
 				'link_text'     => $button($get('link_text')),
 				'mobile_text'   => $html($get('mobile_text')),
-				'success_text'  => $free_ship ? $html($get('success_text')) : '',
+				'success_text'  => $goal_text ? $html($get('success_text')) : '',
 				'text_b'        => $ab_test ? $html($get('text_b')) : '',
 				'mobile_text_b' => $ab_test ? $html($get('mobile_text_b')) : '',
-				'link_text_b'   => $ab_test ? $button($get('link_text_b')) : ''
+				'link_text_b'   => $ab_test ? $button($get('link_text_b')) : '',
+				'extra'         => $this->fx->extra($row, $type === 'tiers' ? $index : array(), $ignored)
 			);
 		}
 
@@ -1044,7 +1183,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			'page_mode'           => $mode,
 			'page_routes'         => $routes,
 			'device'              => isset($p['device']) && in_array($p['device'], array('desktop', 'mobile'), true) ? $p['device'] : 'all',
-			'type'                => $free_ship ? 'free_shipping' : 'standard',
+			'type'                => $type,
 			'threshold'           => $free_ship && $amount !== false ? $amount : '0',
 			'progress_bar'        => !empty($p['progress_bar']) ? 1 : 0,
 			'coupon'              => $this->abp->coupon(isset($p['coupon']) ? $p['coupon'] : ''),
@@ -1056,6 +1195,9 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			'products'            => $this->abp->idList(isset($p['products']) ? $p['products'] : array(), self::MAX_TARGETS),
 			'style'               => isset($p['style']) && in_array($p['style'], explode(',', self::STYLES), true) ? $p['style'] : '',
 			'button_style'        => isset($p['button_style']) && in_array($p['button_style'], array('filled', 'outline', 'link'), true) ? $p['button_style'] : 'filled',
+			'placement'           => isset($p['placement']) && in_array($p['placement'], \Announcementbarpro\Features::PLACEMENTS, true) ? $p['placement'] : '',
+			'priority'            => isset($p['priority']) ? max(0, min(100, (int)$p['priority'])) : 0,
+			'options'             => $options,
 			'message_description' => $description
 		);
 	}
@@ -1071,7 +1213,9 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		$this->load->model('localisation/language');
 		$this->load->model(self::ROUTE);
 		require_once(DIR_SYSTEM . 'library/announcementbarpro/sanitizer.php');
+		require_once(DIR_SYSTEM . 'library/announcementbarpro/features.php');
 		$this->abp = new \Announcementbarpro\Sanitizer();
+		$this->fx  = new \Announcementbarpro\Features();
 
 		// Creating/migrating tables writes to the DB: only for users with "modify" permission.
 		if ($this->user->hasPermission('modify', self::ROUTE)) {
@@ -1096,7 +1240,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 	private function normalizeMessagePost(array $post) {
 		$out = array();
 
-		foreach (array('status', 'sort_order', 'date_start', 'date_end', 'bg_color', 'text_color', 'link', 'link_new_tab', 'icon', 'countdown', 'page_mode', 'page_routes', 'end_all_day', 'device', 'type', 'threshold', 'progress_bar', 'coupon', 'ab_test', 'time_start', 'time_end', 'style', 'button_style') as $key) {
+		foreach (array('status', 'sort_order', 'date_start', 'date_end', 'bg_color', 'text_color', 'link', 'link_new_tab', 'icon', 'countdown', 'page_mode', 'page_routes', 'end_all_day', 'device', 'type', 'threshold', 'progress_bar', 'coupon', 'ab_test', 'time_start', 'time_end', 'style', 'button_style', 'placement', 'priority') as $key) {
 			if (isset($post[$key])) {
 				$out[$key] = is_string($post[$key]) ? $post[$key] : '';
 			}
@@ -1108,12 +1252,19 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			}
 		}
 
+		// 2.4.0 options: strings and lists of strings only (2 levels, e.g. fs_zones[0][amount]); checked in Features::validate().
+		$out['opt'] = isset($post['opt']) && is_array($post['opt']) ? $this->tree($post['opt'], 2) : array();
+
 		$out['message_description'] = array();
 		if (isset($post['message_description']) && is_array($post['message_description'])) {
 			foreach ($post['message_description'] as $language_id => $row) {
 				if (is_array($row)) {
-					foreach (explode(',', self::TEXT_FIELDS) as $field) {
+					foreach (explode(',', self::TEXT_FIELDS . ',' . \Announcementbarpro\Features::EXTRA_TEXTS) as $field) {
 						$out['message_description'][(int)$language_id][$field] = isset($row[$field]) && is_string($row[$field]) ? $row[$field] : '';
+					}
+
+					foreach (array('tier_label', 'tier_text') as $field) {
+						$out['message_description'][(int)$language_id][$field] = isset($row[$field]) && is_array($row[$field]) ? array_map('strval', array_values(array_filter($row[$field], 'is_string'))) : array();
 					}
 				}
 			}
@@ -1160,7 +1311,8 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 	}
 
 	private function settingKeys() {
-		return array('status', 'position', 'sticky', 'mode', 'interval', 'speed', 'font_size', 'padding', 'dismissible', 'dismiss_days', 'allow_html', 'default_bg_color', 'default_text_color', 'delete_data', 'color_mode', 'style', 'transition', 'arrows');
+		return array('status', 'position', 'sticky', 'mode', 'interval', 'speed', 'font_size', 'padding', 'dismissible', 'dismiss_days', 'allow_html', 'default_bg_color', 'default_text_color', 'delete_data', 'color_mode', 'style', 'transition', 'arrows',
+			'max_messages', 'autohide', 'pause_button', 'font', 'custom_css', 'ga4', 'geo_cf', 'geo_fallback', 'privacy_id', 'double_optin');
 	}
 
 	private function styleList() {
@@ -1344,6 +1496,414 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		$views = (int)$views;
 
 		return $views > 0 ? number_format(min(100, (int)$clicks * 100 / $views), 1, '.', '') : '';
+	}
+
+	/* ------------------------------------------------------------------ *
+	 * 2.4.0 AJAX helpers for the form (read-only, GET)
+	 * ------------------------------------------------------------------ */
+
+	/** Zones of a country (free-shipping amount per region). */
+	public function zones() {
+		$this->bootstrap();
+
+		$raw = isset($this->request->get['country_id']) && is_string($this->request->get['country_id']) ? $this->request->get['country_id'] : '';
+
+		$this->json(preg_match('/^\d{1,10}$/', $raw) ? $this->model_extension_module_announcement_bar_pro->getZones((int)$raw) : array());
+	}
+
+	/** Coupon autocomplete: "CODE — name (disabled / expired)". */
+	public function coupons() {
+		$this->bootstrap();
+
+		$filter = isset($this->request->get['filter_name']) && is_string($this->request->get['filter_name']) ? $this->abp->plain($this->abp->decode($this->request->get['filter_name'])) : '';
+		$out    = array();
+
+		if ($filter !== '') {
+			foreach ($this->model_extension_module_announcement_bar_pro->searchCoupons($this->substr($filter, 64)) as $row) {
+				$out[] = array('coupon_id' => (int)$row['coupon_id'], 'name' => $this->couponLabel($row));
+			}
+		}
+
+		$this->json($out);
+	}
+
+	/* ------------------------------------------------------------------ *
+	 * 2.4.0 newsletter sign-ups: CSV export (GET) and erasure (POST)
+	 * Personal data: both need the "modify" permission.
+	 * ------------------------------------------------------------------ */
+	public function exportSubscribers() {
+		$this->bootstrap();
+
+		if (!$this->user->hasPermission('modify', self::ROUTE)) {
+			$this->session->data['abp_error'] = $this->language->get('error_permission');
+			$this->response->redirect($this->link(self::ROUTE, '&tab=settings'));
+		}
+
+		$states = array(0 => 'pending', 1 => 'confirmed', 2 => 'unsubscribed');
+		$lines  = array(implode(',', array_map(array($this->fx, 'csvCell'), array('email', 'status', 'store_id', 'language', 'message_id', 'consent_text', 'date_added', 'date_confirmed'))));
+
+		foreach ($this->model_extension_module_announcement_bar_pro->getSubscribers() as $row) {
+			$lines[] = implode(',', array_map(array($this->fx, 'csvCell'), array(
+				$row['email'],
+				isset($states[(int)$row['status']]) ? $states[(int)$row['status']] : '',
+				(int)$row['store_id'],
+				(string)$row['language'],
+				(int)$row['message_id'],
+				(string)$row['consent'],
+				(string)$row['date_added'],
+				(string)$row['date_confirmed']
+			)));
+		}
+
+		$this->response->addHeader('Content-Type: text/csv; charset=utf-8');
+		$this->response->addHeader('Content-Disposition: attachment; filename="announcement-bar-pro-subscribers-' . date('Ymd-Hi') . '.csv"');
+		$this->response->addHeader('Cache-Control: no-store');
+		$this->response->addHeader('X-Content-Type-Options: nosniff');
+		$this->response->setOutput("\xEF\xBB\xBF" . implode("\r\n", $lines) . "\r\n");
+	}
+
+	public function eraseSubscriber() {
+		$this->bootstrap();
+
+		$json = array();
+
+		if ($this->request->server['REQUEST_METHOD'] != 'POST') {
+			$json['error'] = $this->language->get('error_value');
+		} elseif (!$this->user->hasPermission('modify', self::ROUTE)) {
+			$json['error'] = $this->language->get('error_permission');
+		} else {
+			$email = $this->fx->email(isset($this->request->post['email']) && is_string($this->request->post['email']) ? html_entity_decode($this->request->post['email'], ENT_QUOTES, 'UTF-8') : '');
+
+			if ($email === '') {
+				$json['error'] = $this->language->get('error_email');
+			} else {
+				$count = $this->model_extension_module_announcement_bar_pro->deleteSubscriber($email);
+				$json['success'] = $count ? sprintf($this->language->get('text_erased'), $count) : $this->language->get('text_erase_none');
+			}
+		}
+
+		$this->json($json);
+	}
+
+	/* ------------------------------------------------------------------ *
+	 * 2.4.0 helpers
+	 * ------------------------------------------------------------------ */
+
+	/** Existence checks for Features::validate() (countries, zones, coupons, products, categories, images). */
+	private function lookup() {
+		return function ($kind, $values) {
+			return $this->model_extension_module_announcement_bar_pro->lookup($kind, $values);
+		};
+	}
+
+	/** Currency codes of the shop. */
+	private function currencyCodes() {
+		$this->load->model('localisation/currency');
+
+		return array_values(array_map('strval', array_keys($this->model_localisation_currency->getCurrencies())));
+	}
+
+	/** Posted tree → strings and arrays only, at most $depth levels (crafted input is neutralised). */
+	private function tree(array $value, $depth) {
+		$out = array();
+
+		foreach ($value as $key => $item) {
+			if (is_array($item)) {
+				if ($depth > 0) {
+					$out[$key] = $this->tree($item, $depth - 1);
+				}
+			} elseif (is_scalar($item)) {
+				$out[$key] = (string)$item;
+			}
+		}
+
+		return $out;
+	}
+
+	/** Options for re-showing a form that did not save: clean values, with the raw text where a field had an error. */
+	private function postedOptions(array $p) {
+		$raw = isset($p['opt']) && is_array($p['opt']) ? $p['opt'] : array();
+
+		list($opt) = $this->fx->validate($raw, null, $this->currencyCodes(), null);
+
+		foreach (array('utm_source', 'utm_medium', 'utm_campaign', 'referrer', 'cart_subtotal_min', 'cart_subtotal_max', 'cart_qty_min', 'cart_qty_max', 'trigger_value', 'recur_time', 'overlay') as $key) {
+			if (isset($raw[$key]) && is_string($raw[$key])) {
+				$opt[$key] = $this->abp->decode($raw[$key]);
+			}
+		}
+
+		$opt['tiers'] = array();
+		foreach (isset($raw['tiers']) && is_array($raw['tiers']) ? array_slice(array_values($raw['tiers']), 0, 5) : array() as $value) {
+			$opt['tiers'][] = is_string($value) ? $value : '';
+		}
+
+		return $opt;
+	}
+
+	/** Twig data for the 2.4.0 fields of the form. */
+	private function optionData(array $opt) {
+		$language_id = (int)$this->config->get('config_language_id');
+		$model       = $this->model_extension_module_announcement_bar_pro;
+		$short       = function ($amount) {
+			return $amount === '' || !is_numeric($amount) ? (string)$amount : rtrim(rtrim(number_format((float)$amount, 4, '.', ''), '0'), '.');
+		};
+
+		$countries = array();
+		foreach ($model->getCountries() as $country) {
+			$countries[$country['id']] = $country['name'];
+		}
+
+		$data = array('opt' => $opt, 'country_list' => $countries);
+
+		$data['country_chips'] = array();
+		foreach ($opt['countries'] as $id) {
+			if (isset($countries[$id])) {
+				$data['country_chips'][$id] = $countries[$id];
+			}
+		}
+
+		$data['cart_category_chips'] = $model->getCategoryNames($opt['cart_categories'], $language_id);
+		$data['cart_product_chips']  = $model->getProductNames($opt['cart_products'], $language_id);
+
+		$data['coupon_chip'] = array();
+		if ($opt['coupon_id']) {
+			$coupon = $model->getCoupon($opt['coupon_id']);
+
+			if ($coupon) {
+				$data['coupon_chip'][(int)$coupon['coupon_id']] = $this->couponLabel($coupon);
+			}
+		}
+
+		// Free shipping per country / region: the saved rows + empty ones (at least 3 rows on screen).
+		$data['fs_zone_rows'] = array();
+		foreach ($opt['fs_zones'] as $row) {
+			$data['fs_zone_rows'][] = array('country_id' => (int)$row['country_id'], 'zone_id' => (int)$row['zone_id'], 'amount' => $short($row['amount']), 'zones' => $row['country_id'] ? $model->getZones($row['country_id']) : array());
+		}
+		for ($i = count($data['fs_zone_rows']); $i < max(3, count($opt['fs_zones']) + 1); $i++) {
+			$data['fs_zone_rows'][] = array('country_id' => 0, 'zone_id' => 0, 'amount' => '', 'zones' => array());
+		}
+
+		// Fixed amount per currency (all currencies except the default one).
+		$this->load->model('localisation/currency');
+		$data['currency_rows'] = array();
+		foreach ($this->model_localisation_currency->getCurrencies() as $code => $currency) {
+			if ($code !== $this->config->get('config_currency')) {
+				$data['currency_rows'][] = array('code' => $code, 'title' => $currency['title'], 'amount' => isset($opt['fs_currencies'][$code]) ? $short($opt['fs_currencies'][$code]) : '');
+			}
+		}
+
+		$data['tier_rows'] = array();
+		for ($i = 0; $i < 5; $i++) {
+			$data['tier_rows'][] = isset($opt['tiers'][$i]) ? $short($opt['tiers'][$i]) : '';
+		}
+
+		foreach (array('cart_subtotal_min', 'cart_subtotal_max') as $key) {
+			$data['opt'][$key] = $short($opt[$key]);
+		}
+
+		$data['recur_skip_list'] = $this->weekdayList((string)$opt['recur_skip']);
+		$this->load->model('tool/image');
+		$data['placeholder']     = $this->model_tool_image->resize('no_image.png', 100, 100);
+		$data['image_thumb']     = $opt['image'] !== '' && defined('DIR_IMAGE') && is_file(DIR_IMAGE . $opt['image']) ? $this->model_tool_image->resize($opt['image'], 100, 100) : $data['placeholder'];
+		$data['font_list']       = $this->fontStacks();
+		$data['placements']      = \Announcementbarpro\Features::PLACEMENTS;
+
+		return $data;
+	}
+
+	/** Settings tab: privacy pages, sign-up counts, mail check, fonts. */
+	private function settingsExtra() {
+		$this->load->model('catalog/information');
+
+		$pages = array();
+		foreach ($this->model_catalog_information->getInformations() as $page) {
+			$pages[] = array('id' => (int)$page['information_id'], 'title' => html_entity_decode((string)$page['title'], ENT_QUOTES, 'UTF-8'));
+		}
+
+		return array(
+			'information_pages' => $pages,
+			'subscriber_counts' => $this->model_extension_module_announcement_bar_pro->countSubscribers(),
+			'mail_ready'        => (string)$this->config->get('config_mail_engine') !== '' && (string)$this->config->get('config_email') !== '',
+			'font_list'         => $this->fontStacks()
+		);
+	}
+
+	private function validPrivacyId($value) {
+		if ($value === '0' || $value === '') {
+			return true;
+		}
+
+		if (!preg_match('/^\d{1,10}$/', $value)) {
+			return false;
+		}
+
+		$this->load->model('catalog/information');
+
+		return (bool)$this->model_catalog_information->getInformation((int)$value);
+	}
+
+	/** Templates with their texts for every shop language (lv / ru by language code, English for the rest). */
+	private function templatesFor(array $languages) {
+		$admin = substr((string)$this->config->get('config_admin_language'), 0, 2);
+		$out   = array();
+
+		foreach ($this->fx->templates() as $key => $t) {
+			$pick = function (array $texts, $code) {
+				$code = substr((string)$code, 0, 2);
+
+				return isset($texts[$code]) ? $texts[$code] : $texts['en'];
+			};
+
+			$item = array('key' => $key, 'name' => $pick($t['name'], $admin), 'texts' => array());
+
+			foreach (array('icon', 'bg', 'fg', 'type', 'threshold', 'coupon', 'countdown', 'end_days', 'recur', 'recur_time', 'recur_skip', 'email', 'style', 'weekdays', 'trigger', 'placement', 'tiers') as $field) {
+				if (isset($t[$field])) {
+					$item[$field] = $t[$field];
+				}
+			}
+
+			foreach ($languages as $language) {
+				$row = array();
+
+				foreach (array('text', 'success_text', 'link_text') as $field) {
+					$row[$field] = isset($t[$field]) ? $pick($t[$field], $language['code']) : '';
+				}
+
+				$row['tier_label'] = array();
+				foreach (isset($t['tier_label']) ? $t['tier_label'] : array() as $label) {
+					$row['tier_label'][] = $pick($label, $language['code']);
+				}
+
+				$item['texts'][(int)$language['language_id']] = $row;
+			}
+
+			$out[] = $item;
+		}
+
+		return $out;
+	}
+
+	/** Font choices: value, name, CSS stack. */
+	private function fontStacks() {
+		$out = array();
+
+		foreach (\Announcementbarpro\Features::FONTS as $font) {
+			$out[] = array('value' => $font, 'name' => $this->language->get('text_font_' . ($font === '' ? 'theme' : $font)), 'stack' => \Announcementbarpro\Features::fontStack($font));
+		}
+
+		return $out;
+	}
+
+	/** OpenCart's own Free Shipping method (status + amount) for the help text. */
+	private function ocFreeShipping() {
+		$total = (float)$this->config->get('shipping_free_total');
+
+		return array(
+			'status' => (bool)$this->config->get('shipping_free_status'),
+			'total'  => $this->currency->format($total, $this->config->get('config_currency'))
+		);
+	}
+
+	private function couponLabel(array $row) {
+		$label = $row['code'] . ' — ' . html_entity_decode((string)$row['name'], ENT_QUOTES, 'UTF-8');
+
+		if (!$row['status']) {
+			$label .= ' (' . $this->language->get('text_disabled') . ')';
+		} elseif (!empty($row['date_end']) && $row['date_end'] !== '0000-00-00' && $row['date_end'] < date('Y-m-d')) {
+			$label .= ' (' . $this->language->get('text_state_expired') . ')';
+		}
+
+		return $label;
+	}
+
+	/** Shop URL (for image previews). */
+	private function catalogUrl() {
+		return !empty($this->request->server['HTTPS']) && defined('HTTPS_CATALOG') ? HTTPS_CATALOG : (defined('HTTP_CATALOG') ? HTTP_CATALOG : '../');
+	}
+
+	/**
+	 * Badges of the message list: every feature in use gets an icon AND a short visible label (2.4.0: no icon-only badges).
+	 * Each: icon, label, title (longer tooltip), class.
+	 */
+	private function badges(array $m, array $opt) {
+		$out = array();
+		$add = function ($icon, $label, $title = '', $class = '') use (&$out) {
+			$out[] = array('icon' => $icon, 'label' => $label, 'title' => $title !== '' ? $title : $label, 'class' => $class);
+		};
+
+		if (!empty($m['placement'])) {
+			$icons = array('top' => 'fa-arrow-up', 'bottom' => 'fa-arrow-down', 'cart' => 'fa-shopping-cart', 'product' => 'fa-tag', 'minicart' => 'fa-shopping-basket');
+			$add(isset($icons[$m['placement']]) ? $icons[$m['placement']] : 'fa-map-marker', $this->language->get('text_placement_' . $m['placement']), $this->language->get('entry_placement'), 'abp-b-place');
+		}
+
+		if ((int)$m['priority'] > 0) {
+			$add('fa-sort-amount-desc', sprintf($this->language->get('text_badge_priority'), (int)$m['priority']), $this->language->get('entry_priority'));
+		}
+
+		if ($m['type'] === 'tiers') {
+			$add('fa-trophy', sprintf($this->language->get('text_badge_tiers'), count($opt['tiers'])), '', 'abp-b-fs');
+		}
+
+		if ($opt['coupon_id']) {
+			$coupon = $this->model_extension_module_announcement_bar_pro->getCoupon($opt['coupon_id']);
+			$add('fa-ticket', $coupon ? $coupon['code'] : '?', $this->language->get('text_badge_oc_coupon'), 'abp-b-coupon');
+		}
+
+		if ($opt['countries_mode'] !== 'all' && $opt['countries']) {
+			$iso = array();
+			foreach ($this->countryIso() as $country) {
+				if (in_array($country['id'], $opt['countries'], true)) {
+					$iso[] = $country['iso'];
+				}
+			}
+			$label = ($opt['countries_mode'] === 'exclude' ? '≠ ' : '') . implode(', ', array_slice($iso, 0, 3)) . (count($iso) > 3 ? ' +' . (count($iso) - 3) : '');
+			$add('fa-globe', $label, $this->language->get('text_countries_' . $opt['countries_mode']) . ': ' . implode(', ', $iso), 'abp-b-target');
+		}
+
+		if ($opt['fs_zones'] || $opt['fs_currencies']) {
+			$add('fa-map-marker', $this->language->get('text_badge_fs_overrides'), '', 'abp-b-fs');
+		}
+
+		if ($this->fx->hasCartRules($opt)) {
+			$add('fa-shopping-cart', $this->language->get('text_badge_cart'), '', 'abp-b-target');
+		}
+
+		if ($opt['utm_source'] !== '' || $opt['utm_medium'] !== '' || $opt['utm_campaign'] !== '' || $opt['referrer'] !== '') {
+			$add('fa-bullseye', $this->language->get('text_badge_campaign'), '', 'abp-b-target');
+		}
+
+		if ($opt['visitor'] !== 'all') {
+			$add('fa-user', $this->language->get('text_visitor_' . $opt['visitor']), $this->language->get('entry_visitor'), 'abp-b-target');
+		}
+
+		if ($opt['trigger'] !== 'none') {
+			$add('fa-bolt', sprintf($this->language->get('text_badge_trigger_' . $opt['trigger']), (int)$opt['trigger_value']), $this->language->get('entry_trigger'), 'abp-b-schedule');
+		}
+
+		if ($opt['recur'] !== '') {
+			$add('fa-repeat', sprintf($this->language->get('text_badge_recur_' . $opt['recur']), $opt['recur_time'], $this->language->get('text_wd_' . (int)$opt['recur_day'])), $this->language->get('entry_recur'), 'abp-b-schedule');
+		}
+
+		if ($opt['email']) {
+			$add('fa-envelope', $this->language->get('text_badge_email'), '', 'abp-b-ab');
+		}
+
+		if ($opt['image'] !== '') {
+			$add('fa-picture-o', $this->language->get('text_badge_image'));
+		}
+
+		return $out;
+	}
+
+	/** id + ISO code of every country (badges); loaded once. */
+	private function countryIso() {
+		static $list = null;
+
+		if ($list === null) {
+			$list = $this->model_extension_module_announcement_bar_pro->getCountries();
+		}
+
+		return $list;
 	}
 
 	private function strlen($value) {

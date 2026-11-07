@@ -109,4 +109,53 @@ const an=await fr().evaluate(()=>getComputedStyle(document.querySelector('.abp-i
 ok('arrows: next / previous (keyboard), slide animation',x1!==x0&&x2===x0&&/abp-slide/.test(an),x0+x1+x2+' '+an);
 await p.click('[data-mode=stack]');await p.waitForTimeout(800);await p.screenshot({path:'shot-v23.png'});
 
+// ---------------- 2.4.0: several bars + box, trigger, tiers, pause, "messages per bar", auto-hide, GA4, form, cut-off ----------------
+await fr().evaluate(()=>{
+ window.__ga=[];window.gtag=function(){window.__ga.push([].slice.call(arguments));};
+ document.querySelectorAll('.abp,.abp-tab').forEach(e=>e.remove());
+ const now=Date.now(),item=(id,txt,extra,inner)=>'<div class="abp-item" data-id="'+id+'" data-key="'+String(id).padStart(12,'0')+'" data-style="solid" data-c="#1e3a8a" data-t="#ffffff" '+(extra||'')+' style="background-color:#1e3a8a;color:#ffffff;--abp-btn-bg:#ffffff;--abp-btn-fg:#1e3a8a;--abp-accent:#ffffff;padding:8px 0;"><div class="abp-inner"><span class="abp-v abp-v-a"><span class="abp-body"><span class="abp-txt"><span class="abp-text">'+txt+'</span></span></span></span>'+(inner||'')+'</div></div>';
+ const bar=(id,cls,attrs,items,btns)=>'<div id="'+id+'" class="abp '+cls+'" data-abp="'+(cls.indexOf('abp-inline')>=0?'inline':'bar')+'" data-place="'+(cls.match(/abp-pos-(\w+)|abp-inline-(\w+)/)||[]).slice(1).filter(Boolean)[0]+'" role="region" aria-label="Paziņojums" data-mode="'+(cls.match(/abp-mode-(\w+)/)||[])[1]+'" data-interval="2" data-now="'+now+'" data-tz="7200" data-color="custom" data-dismissible="0" data-days-label="d." data-ga="1" '+attrs+' style="font-size:15px;background-color:#1e3a8a;color:#fff;"><div class="abp-viewport"><div class="abp-track">'+items+'</div></div>'+(btns||'')+'</div>';
+ const steps='<span class="abp-progress abp-steps" aria-hidden="true" data-p="40" data-k="1"><span class="abp-progress-fill" style="width:40%"></span><span class="abp-step abp-step-done" style="left:33.33%"><span class="abp-step-label">Piegāde</span></span><span class="abp-step" style="left:66.67%"><span class="abp-step-label">Dāvana</span></span><span class="abp-step abp-step-last" style="left:100%"><span class="abp-step-label">−10%</span></span></span>';
+ const pause='<button type="button" class="abp-pause" aria-pressed="false" aria-label="Apturēt"><svg class="abp-i-pause" viewBox="0 0 16 16"></svg><svg class="abp-i-play" viewBox="0 0 16 16"></svg></button>';
+ const form='<form class="abp-form" action="https://demo.invalid/sub" method="post" novalidate data-tok="1.x" data-err-email="Nederīga adrese" data-err-consent="Atzīmē piekrišanu" data-err-failed="Kļūda"><span class="abp-fields"><input type="email" name="email" class="abp-email" aria-label="E-pasts" placeholder="E-pasts"><button type="submit" class="abp-submit">Pieteikties</button></span><label class="abp-consent"><input type="checkbox" name="consent" value="1"> <span>Piekrītu</span></label><span class="abp-form-msg" role="status"></span></form>';
+ document.body.insertAdjacentHTML('afterbegin',
+  bar('abp-x-top','abp-bar abp-pos-top abp-mode-rotate abp-has-pause','data-autohide="2" data-l-show="Rādīt" data-l-pause="Apturēt" data-l-play="Turpināt"',
+   item(11,'Augšējā josla A')+item(12,'Augšējā josla B')+item(13,'Parādās pēc 1 s','data-trig="delay:1" data-toff="1"'),pause)
+  +bar('abp-x-bottom','abp-bar abp-pos-bottom abp-mode-stack','data-max="1"',item(21,'Apakšā: pirmais')+item(22,'Apakšā: otrais (virs limita)'))
+  +bar('abp-x-inline','abp-inline abp-inline-product abp-mode-stack','',item(31,'Pievieno vēl <span class="abp-remaining">30,00 €</span> un saņem: <span class="abp-goal">Dāvana</span>','data-fs="1"',form)
+   .replace('</div></div>',' <span class="abp-countdown" data-end="'+(now-1000)+'" data-recur="d|14:00|"></span></div>'+steps+'</div>')));
+ window.abpPre();window.AnnouncementBarPro.scan();
+});
+await p.waitForTimeout(500);
+const s24=()=>fr().evaluate(()=>{const vis=e=>!!e&&getComputedStyle(e).display!=='none';const q=s=>document.querySelector(s);
+ return {top:vis(q('#abp-x-top')),bottom:vis(q('#abp-x-bottom')),inline:vis(q('#abp-x-inline')),b1:vis(q('[data-id="21"]')),b2:vis(q('[data-id="22"]')),trig:!q('[data-id="13"]').hasAttribute('data-toff'),
+  steps:document.querySelectorAll('#abp-x-inline .abp-step').length,labels:[...document.querySelectorAll('#abp-x-inline .abp-step-label')].filter(vis).length,cd:(q('#abp-x-inline .abp-countdown')||{}).textContent,
+  pause:q('#abp-x-top .abp-pause')&&q('#abp-x-top .abp-pause').getAttribute('aria-pressed'),tab:vis(q('.abp-tab')),ga:window.__ga.filter(x=>x[1]==='abp_view').map(x=>x[2].abp_message_id+':'+x[2].abp_placement)}});
+let z=await s24();
+ok('2.4.0: top bar, bottom bar and product box at once',z.top&&z.bottom&&z.inline,JSON.stringify(z));
+ok('2.4.0: "messages per bar" = 1 → second bottom message waits',z.b1&&!z.b2,JSON.stringify(z));
+ok('2.4.0: delay trigger not fired yet',!z.trig,JSON.stringify(z));
+ok('2.4.0: tiers: 3 markers with reward names (computer)',z.steps===3&&z.labels===3,JSON.stringify(z));
+ok('2.4.0: daily cut-off countdown restarts instead of hiding the message',/^\d{2}:\d{2}:\d{2}$|^\dd\. /.test(z.cd||''),z.cd);
+ok('2.4.0: GA4 abp_view through gtag with id + placement',z.ga.indexOf('31:product')!==-1&&z.ga.indexOf('21:bottom')!==-1,z.ga.join());
+await fr().click('#abp-x-top .abp-pause');z=await s24();ok('2.4.0: pause button → aria-pressed true',z.pause==='true',z.pause);
+await fr().click('#abp-x-top .abp-pause');
+await p.waitForTimeout(900);z=await s24();ok('2.4.0: delay trigger fired after 1 s',z.trig,JSON.stringify(z));
+await fr().click('#abp-x-inline .abp-submit');await p.waitForTimeout(200);
+const fm=await fr().evaluate(()=>({msg:document.querySelector('.abp-form-msg').textContent,inv:document.querySelector('.abp-email').getAttribute('aria-invalid'),focus:document.activeElement&&document.activeElement.className}));
+ok('2.4.0: e-mail form checks the address first (message, aria-invalid, focus)',fm.msg==='Nederīga adrese'&&fm.inv==='true'&&/abp-email/.test(fm.focus),JSON.stringify(fm));
+await fr().fill('#abp-x-inline .abp-email','a@b.lv');await fr().click('#abp-x-inline .abp-submit');await p.waitForTimeout(200);
+ok('2.4.0: consent box required',(await fr().evaluate(()=>document.querySelector('.abp-form-msg').textContent))==='Atzīmē piekrišanu');
+const ec=await fr().evaluate(()=>{const e=document.querySelector('.abp-email'),s=getComputedStyle(e);return [s.color,s.backgroundColor]});
+const rgb=c=>c.match(/\d+/g).slice(0,3).map(Number),L=a=>{a=a.map(v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)});return .2126*a[0]+.7152*a[1]+.0722*a[2]},cr=(a,b)=>{const x=L(rgb(a)),y=L(rgb(b));return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)};
+ok('2.4.0: e-mail field contrast ≥ 4.5:1',cr(ec[0],ec[1])>=4.5,ec.join(' / '));
+await fr().evaluate(()=>{const f=document.querySelector('#abp-x-top');f.dispatchEvent(new PointerEvent('pointerleave',{pointerType:'mouse'}));document.activeElement&&document.activeElement.blur();});
+await p.waitForTimeout(2600);z=await s24();ok('2.4.0: auto-hide folds the bar into a tab',!z.top&&z.tab,JSON.stringify(z));
+await p.screenshot({path:'shot-v24.png'});
+await fr().click('.abp-tab');await p.waitForTimeout(300);z=await s24();ok('2.4.0: the tab opens the bar again',z.top&&!z.tab,JSON.stringify(z));
+await p.setViewportSize({width:390,height:844});await p.waitForTimeout(700);z=await s24();
+const sw24=await fr().evaluate(()=>document.documentElement.scrollWidth);
+ok('2.4.0 @390: reward names hidden under the bar, no horizontal scroll',z.labels===0&&sw24<=390,z.labels+' '+sw24);
+await p.screenshot({path:'shot-v24-mobile.png'});
+
 console.log(R.join('\n'));console.log('errors',errs);console.log(R.filter(x=>x.startsWith('PASS')).length+' passed, '+R.filter(x=>x.startsWith('FAIL')).length+' failed');await b.close();})();

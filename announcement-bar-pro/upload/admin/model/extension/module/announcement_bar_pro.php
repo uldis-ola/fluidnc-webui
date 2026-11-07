@@ -2,12 +2,15 @@
 defined('VERSION') || exit; // not callable directly (in the universal package these files also sit, unused, inside OpenCart 4)
 /**
  * Announcement Bar Pro — admin model (OpenCart 3.0.x)
- * Tables: {prefix}abp_message, {prefix}abp_message_description
- * @version 2.3.0
+ * Tables: {prefix}abp_message, {prefix}abp_message_description, {prefix}abp_subscriber, {prefix}abp_rate
+ * @version 2.4.0
  */
 class ModelExtensionModuleAnnouncementBarPro extends Model {
 	const CODE           = 'module_announcement_bar_pro';
-	const SCHEMA_VERSION = 7;
+	const SCHEMA_VERSION = 8;
+
+	/** @var \Announcementbarpro\Features|null */
+	private $abpFeatures = null;
 
 	/**
 	 * Creates tables (if missing), migrates v1 settings, fills missing default settings.
@@ -57,6 +60,10 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 			`products` TEXT NOT NULL,
 			`style` VARCHAR(16) NOT NULL DEFAULT '',
 			`button_style` VARCHAR(16) NOT NULL DEFAULT 'outline',
+			`placement` VARCHAR(16) NOT NULL DEFAULT '',
+			`priority` INT(11) NOT NULL DEFAULT '0',
+			`options` TEXT NOT NULL,
+			`subscribes` INT(10) UNSIGNED NOT NULL DEFAULT '0',
 			`date_added` DATETIME NOT NULL,
 			`date_modified` DATETIME NOT NULL,
 			PRIMARY KEY (`message_id`),
@@ -73,8 +80,11 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 			`text_b` TEXT NOT NULL,
 			`mobile_text_b` TEXT NOT NULL,
 			`link_text_b` TEXT NOT NULL,
+			`extra` TEXT NOT NULL,
 			PRIMARY KEY (`message_id`, `language_id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+
+		$this->createSubscriberTables();
 
 		// Schema 3: link_text VARCHAR(64) → TEXT (emoji are stored as entities and can exceed 64 bytes).
 		$this->db->query("ALTER TABLE `" . DB_PREFIX . "abp_message_description` MODIFY `link_text` TEXT NOT NULL");
@@ -135,6 +145,14 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 		}
 
 		$settings = array_merge($defaults, $settings);
+
+		// Key for the e-mail form tokens (HMAC); created once, never shown.
+		if (empty($settings[self::CODE . '_secret']) || !is_string($settings[self::CODE . '_secret']) || strlen($settings[self::CODE . '_secret']) < 32) {
+			$settings[self::CODE . '_secret'] = bin2hex(random_bytes(32));
+		}
+
+		// Written last: the storefront uses the 2.4.0 columns only once the schema value says they exist.
+		unset($settings[self::CODE . '_schema']);
 		$settings[self::CODE . '_schema'] = self::SCHEMA_VERSION;
 
 		$this->model_setting_setting->editSetting(self::CODE, $settings);
@@ -159,10 +177,45 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 		$this->model_setting_event->addEvent('announcement_bar_pro', 'catalog/view/common/header/after', 'extension/module/announcement_bar_pro/injectBar');
 		$this->model_setting_event->addEvent('announcement_bar_pro', 'catalog/view/common/footer/after', 'extension/module/announcement_bar_pro/injectBarFooter');
 		$this->model_setting_event->addEvent('announcement_bar_pro', 'catalog/view/*/after', 'extension/module/announcement_bar_pro/resolveFallback');
+		// 2.4.0 inline placements (cart page, under the product price, mini-cart); each fails silently without its hook.
+		$this->model_setting_event->addEvent('announcement_bar_pro', 'catalog/view/checkout/cart/after', 'extension/module/announcement_bar_pro/injectCart');
+		$this->model_setting_event->addEvent('announcement_bar_pro', 'catalog/view/product/product/after', 'extension/module/announcement_bar_pro/injectProduct');
+		$this->model_setting_event->addEvent('announcement_bar_pro', 'catalog/view/common/cart/after', 'extension/module/announcement_bar_pro/injectMiniCart');
 	}
 
 	/**
-	 * Columns added by schema 6 (2.2.0) and 7 (2.3.0): array(table, column, definition). Fresh installs get them in CREATE TABLE.
+	 * Schema 8: newsletter sign-ups (double opt-in) and the rate limiter of the public endpoints.
+	 * Only hashes of the confirmation / unsubscribe tokens are stored.
+	 */
+	private function createSubscriberTables() {
+		$this->db->query("CREATE TABLE IF NOT EXISTS `" . DB_PREFIX . "abp_subscriber` (
+			`subscriber_id` INT(11) NOT NULL AUTO_INCREMENT,
+			`email` VARCHAR(96) NOT NULL,
+			`store_id` INT(11) NOT NULL DEFAULT '0',
+			`language_id` INT(11) NOT NULL DEFAULT '0',
+			`message_id` INT(11) NOT NULL DEFAULT '0',
+			`status` TINYINT(1) NOT NULL DEFAULT '0',
+			`token` CHAR(64) NOT NULL DEFAULT '',
+			`unsubscribe` CHAR(64) NOT NULL DEFAULT '',
+			`consent` VARCHAR(400) NOT NULL DEFAULT '',
+			`date_added` DATETIME NOT NULL,
+			`date_confirmed` DATETIME NULL DEFAULT NULL,
+			PRIMARY KEY (`subscriber_id`),
+			UNIQUE KEY `email_store` (`email`, `store_id`),
+			KEY `token` (`token`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+
+		$this->db->query("CREATE TABLE IF NOT EXISTS `" . DB_PREFIX . "abp_rate` (
+			`bucket` CHAR(40) NOT NULL,
+			`hits` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+			`expires` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+			PRIMARY KEY (`bucket`),
+			KEY `expires` (`expires`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+	}
+
+	/**
+	 * Columns added by schema 6 (2.2.0), 7 (2.3.0) and 8 (2.4.0): array(table, column, definition). Fresh installs get them in CREATE TABLE.
 	 * TEXT columns are "TEXT NOT NULL" without a DEFAULT: MySQL (unlike MariaDB) refuses a literal default on
 	 * TEXT; existing rows get '' when the column is added, and every INSERT sets the value.
 	 */
@@ -192,7 +245,13 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 			array('abp_message_description', 'success_text', 'TEXT NOT NULL'),
 			array('abp_message_description', 'text_b', 'TEXT NOT NULL'),
 			array('abp_message_description', 'mobile_text_b', 'TEXT NOT NULL'),
-			array('abp_message_description', 'link_text_b', 'TEXT NOT NULL')
+			array('abp_message_description', 'link_text_b', 'TEXT NOT NULL'),
+			// 2.4.0
+			array('abp_message', 'placement', "VARCHAR(16) NOT NULL DEFAULT ''"),
+			array('abp_message', 'priority', "INT(11) NOT NULL DEFAULT '0'"),
+			array('abp_message', 'options', 'TEXT NOT NULL'),
+			array('abp_message', 'subscribes', "INT(10) UNSIGNED NOT NULL DEFAULT '0'"),
+			array('abp_message_description', 'extra', 'TEXT NOT NULL')
 		);
 	}
 
@@ -237,6 +296,17 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 			self::CODE . '_style'              => 'solid',
 			self::CODE . '_transition'         => 'fade',
 			self::CODE . '_arrows'             => 0,
+			// 2.4.0
+			self::CODE . '_max_messages'       => 0,
+			self::CODE . '_autohide'           => 0,
+			self::CODE . '_pause_button'       => 1,
+			self::CODE . '_font'               => '',
+			self::CODE . '_custom_css'         => '',
+			self::CODE . '_ga4'                => 1,
+			self::CODE . '_geo_cf'             => 0,
+			self::CODE . '_geo_fallback'       => 'store',
+			self::CODE . '_privacy_id'         => 0,
+			self::CODE . '_double_optin'       => 1,
 			self::CODE . '_schema'             => self::SCHEMA_VERSION
 		);
 	}
@@ -256,6 +326,8 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 	 * Drops module tables. Only called when the admin explicitly enabled "delete data on uninstall".
 	 */
 	public function dropTables() {
+		$this->db->query("DROP TABLE IF EXISTS `" . DB_PREFIX . "abp_subscriber`");
+		$this->db->query("DROP TABLE IF EXISTS `" . DB_PREFIX . "abp_rate`");
 		$this->db->query("DROP TABLE IF EXISTS `" . DB_PREFIX . "abp_message_description`");
 		$this->db->query("DROP TABLE IF EXISTS `" . DB_PREFIX . "abp_message`");
 	}
@@ -270,7 +342,7 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 	}
 
 	public function tablesExist() {
-		foreach (array('abp_message', 'abp_message_description') as $table) {
+		foreach (array('abp_message', 'abp_message_description', 'abp_subscriber', 'abp_rate') as $table) {
 			// Escape LIKE wildcards: "_" in the prefix/table name must match literally.
 			$query = $this->db->query("SHOW TABLES LIKE '" . $this->db->escape(addcslashes(DB_PREFIX . $table, '_%')) . "'");
 
@@ -309,7 +381,7 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 	}
 
 	public function resetStatistics($message_id) {
-		$this->db->query("UPDATE `" . DB_PREFIX . "abp_message` SET `views` = '0', `clicks` = '0', `copies` = '0', `views_b` = '0', `clicks_b` = '0', `copies_b` = '0' WHERE `message_id` = '" . (int)$message_id . "'");
+		$this->db->query("UPDATE `" . DB_PREFIX . "abp_message` SET `views` = '0', `clicks` = '0', `copies` = '0', `views_b` = '0', `clicks_b` = '0', `copies_b` = '0', `subscribes` = '0' WHERE `message_id` = '" . (int)$message_id . "'");
 	}
 
 	/**
@@ -356,6 +428,7 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 		}
 
 		$message = $this->decodeRow($query->row);
+		$message['options'] = $this->features()->options(isset($message['options']) ? $message['options'] : '');
 		$message['message_description'] = array();
 
 		$query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "abp_message_description` WHERE `message_id` = '" . (int)$message_id . "'");
@@ -368,7 +441,8 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 				'success_text'  => isset($row['success_text']) ? $row['success_text'] : '',
 				'text_b'        => isset($row['text_b']) ? $row['text_b'] : '',
 				'mobile_text_b' => isset($row['mobile_text_b']) ? $row['mobile_text_b'] : '',
-				'link_text_b'   => isset($row['link_text_b']) ? $row['link_text_b'] : ''
+				'link_text_b'   => isset($row['link_text_b']) ? $row['link_text_b'] : '',
+				'extra'         => $this->features()->extraOf(isset($row['extra']) ? $row['extra'] : '')
 			);
 		}
 
@@ -385,7 +459,7 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 				(SELECT GROUP_CONCAT(y.`language_id`) FROM `" . DB_PREFIX . "abp_message_description` y WHERE y.`message_id` = m.`message_id` AND y.`text` <> '') AS `languages_with_text`
 			FROM `" . DB_PREFIX . "abp_message` m
 			LEFT JOIN `" . DB_PREFIX . "abp_message_description` md ON (m.`message_id` = md.`message_id` AND md.`language_id` = '" . (int)$language_id . "')
-			ORDER BY m.`sort_order` ASC, m.`message_id` ASC");
+			ORDER BY m.`priority` DESC, m.`sort_order` ASC, m.`message_id` ASC");
 
 		$rows = array();
 
@@ -408,7 +482,7 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 		}
 
 		$out   = array();
-		$query = $this->db->query("SELECT `message_id` FROM `" . DB_PREFIX . "abp_message` ORDER BY `sort_order` ASC, `message_id` ASC");
+		$query = $this->db->query("SELECT `message_id` FROM `" . DB_PREFIX . "abp_message` ORDER BY `priority` DESC, `sort_order` ASC, `message_id` ASC");
 
 		foreach ($query->rows as $row) {
 			$message = $this->getMessage((int)$row['message_id']);
@@ -504,7 +578,7 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 			"`page_routes` = '" . $this->db->escape((string)$data['page_routes']) . "'",
 			"`device` = '" . $this->db->escape($device) . "'",
 			// 2.3.0 (missing keys get neutral values, e.g. in the v1 migration)
-			"`type` = '" . (isset($data['type']) && $data['type'] === 'free_shipping' ? 'free_shipping' : 'standard') . "'",
+			"`type` = '" . (isset($data['type']) && in_array($data['type'], array('free_shipping', 'tiers'), true) ? $data['type'] : 'standard') . "'",
 			"`threshold` = '" . (isset($data['threshold']) ? number_format(max(0, (float)$data['threshold']), 4, '.', '') : '0.0000') . "'",
 			"`progress_bar` = '" . (isset($data['progress_bar']) ? (int)!empty($data['progress_bar']) : 1) . "'",
 			"`coupon` = '" . $this->db->escape(isset($data['coupon']) && preg_match('/^[A-Z0-9_-]{0,32}$/', (string)$data['coupon']) ? (string)$data['coupon'] : '') . "'",
@@ -515,7 +589,11 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 			"`categories` = '" . $this->db->escape(json_encode(array_values(array_map('intval', isset($data['categories']) ? (array)$data['categories'] : array())))) . "'",
 			"`products` = '" . $this->db->escape(json_encode(array_values(array_map('intval', isset($data['products']) ? (array)$data['products'] : array())))) . "'",
 			"`style` = '" . (isset($data['style']) && in_array($data['style'], $styles, true) ? $data['style'] : '') . "'",
-			"`button_style` = '" . (isset($data['button_style']) && in_array($data['button_style'], array('filled', 'outline', 'link'), true) ? $data['button_style'] : 'outline') . "'"
+			"`button_style` = '" . (isset($data['button_style']) && in_array($data['button_style'], array('filled', 'outline', 'link'), true) ? $data['button_style'] : 'outline') . "'",
+			// 2.4.0
+			"`placement` = '" . (isset($data['placement']) && in_array($data['placement'], array('top', 'bottom', 'cart', 'product', 'minicart'), true) ? $data['placement'] : '') . "'",
+			"`priority` = '" . (isset($data['priority']) ? max(0, min(100, (int)$data['priority'])) : 0) . "'",
+			"`options` = '" . $this->db->escape($this->features()->encode($this->features()->options(isset($data['options']) ? $data['options'] : array()))) . "'"
 		);
 
 		return implode(', ', $fields);
@@ -529,8 +607,137 @@ class ModelExtensionModuleAnnouncementBarPro extends Model {
 				$fields .= ", `" . $key . "` = '" . $this->db->escape(isset($value[$key]) ? (string)$value[$key] : '') . "'";
 			}
 
+			// 2.4.0: tier labels / texts and e-mail form texts as ASCII-only JSON (\u escapes survive a 3-byte utf8 link).
+			$fields .= ", `extra` = '" . $this->db->escape(json_encode($this->features()->extraOf(isset($value['extra']) ? $value['extra'] : array()))) . "'";
+
 			$this->db->query("INSERT INTO `" . DB_PREFIX . "abp_message_description` SET " . $fields);
 		}
+	}
+
+	/* ------------------------------------------------------------------ *
+	 * 2.4.0: lookups for the form and newsletter sign-ups
+	 * ------------------------------------------------------------------ */
+
+	/** @return \Announcementbarpro\Features */
+	public function features() {
+		if (!$this->abpFeatures) {
+			require_once(DIR_SYSTEM . 'library/announcementbarpro/features.php');
+			$this->abpFeatures = new \Announcementbarpro\Features();
+		}
+
+		return $this->abpFeatures;
+	}
+
+	/** Countries with status on: id, name, ISO code (country chips of the form). */
+	public function getCountries() {
+		$query = $this->db->query("SELECT `country_id` AS `id`, `name`, `iso_code_2` AS `iso` FROM `" . DB_PREFIX . "country` WHERE `status` = '1' ORDER BY `name` ASC");
+		$out   = array();
+
+		foreach ($query->rows as $row) {
+			$out[] = array('id' => (int)$row['id'], 'name' => html_entity_decode((string)$row['name'], ENT_QUOTES, 'UTF-8'), 'iso' => (string)$row['iso']);
+		}
+
+		return $out;
+	}
+
+	/** Zones (regions) of one country: id + name. */
+	public function getZones($country_id) {
+		$query = $this->db->query("SELECT `zone_id` AS `id`, `name` FROM `" . DB_PREFIX . "zone` WHERE `country_id` = '" . (int)$country_id . "' AND `status` = '1' ORDER BY `name` ASC");
+		$out   = array();
+
+		foreach ($query->rows as $row) {
+			$out[] = array('id' => (int)$row['id'], 'name' => html_entity_decode((string)$row['name'], ENT_QUOTES, 'UTF-8'));
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Existence checks for Features::validate(): country / coupon / product / category → the IDs that exist,
+	 * zone → array(zone_id => country_id), image → true when the file exists under image/.
+	 */
+	public function lookup($kind, $values) {
+		if ($kind === 'image') {
+			return defined('DIR_IMAGE') && is_string($values) && $this->features()->imagePath($values) && is_file(DIR_IMAGE . $values);
+		}
+
+		$ids = array_values(array_filter(array_map('intval', (array)$values)));
+
+		if (!$ids) {
+			return array();
+		}
+
+		$in = implode(',', $ids);
+
+		if ($kind === 'zone') {
+			$query = $this->db->query("SELECT `zone_id`, `country_id` FROM `" . DB_PREFIX . "zone` WHERE `zone_id` IN (" . $in . ")");
+			$out   = array();
+
+			foreach ($query->rows as $row) {
+				$out[(int)$row['zone_id']] = (int)$row['country_id'];
+			}
+
+			return $out;
+		}
+
+		$tables = array('country' => 'country', 'coupon' => 'coupon', 'product' => 'product', 'category' => 'category');
+
+		if (!isset($tables[$kind])) {
+			return array();
+		}
+
+		$query = $this->db->query("SELECT `" . $kind . "_id` AS `id` FROM `" . DB_PREFIX . $tables[$kind] . "` WHERE `" . $kind . "_id` IN (" . $in . ")");
+
+		return array_map('intval', array_column($query->rows, 'id'));
+	}
+
+	/** Coupons whose name or code contains $filter (autocomplete), at most 10, active ones first. */
+	public function searchCoupons($filter) {
+		$like  = $this->db->escape(addcslashes((string)$filter, '%_\\'));
+		$query = $this->db->query("SELECT `coupon_id`, `name`, `code`, `status`, `date_end` FROM `" . DB_PREFIX . "coupon` WHERE `name` LIKE '%" . $like . "%' OR `code` LIKE '%" . $like . "%' ORDER BY `status` DESC, `date_end` DESC LIMIT 10");
+
+		return $query->rows;
+	}
+
+	/** One coupon (chip of the form), or array(). */
+	public function getCoupon($coupon_id) {
+		$query = $this->db->query("SELECT `coupon_id`, `name`, `code`, `status`, `date_start`, `date_end` FROM `" . DB_PREFIX . "coupon` WHERE `coupon_id` = '" . (int)$coupon_id . "'");
+
+		return $query->row;
+	}
+
+	/** Sign-ups by status: array(0 => waiting for confirmation, 1 => confirmed, 2 => unsubscribed). */
+	public function countSubscribers() {
+		$out = array(0 => 0, 1 => 0, 2 => 0);
+
+		if (!$this->tablesExist()) {
+			return $out;
+		}
+
+		$query = $this->db->query("SELECT `status`, COUNT(*) AS `total` FROM `" . DB_PREFIX . "abp_subscriber` GROUP BY `status`");
+
+		foreach ($query->rows as $row) {
+			$out[(int)$row['status']] = (int)$row['total'];
+		}
+
+		return $out;
+	}
+
+	/** Every sign-up for the CSV export (never the token hashes). */
+	public function getSubscribers() {
+		$query = $this->db->query("SELECT s.`email`, s.`status`, s.`store_id`, l.`code` AS `language`, s.`message_id`, s.`consent`, s.`date_added`, s.`date_confirmed` FROM `" . DB_PREFIX . "abp_subscriber` s LEFT JOIN `" . DB_PREFIX . "language` l ON (l.`language_id` = s.`language_id`) ORDER BY s.`subscriber_id` ASC");
+
+		return $query->rows;
+	}
+
+	/** Erases every sign-up of one e-mail address (all stores); returns how many rows existed. */
+	public function deleteSubscriber($email) {
+		$email = $this->db->escape((string)$email);
+		$query = $this->db->query("SELECT COUNT(*) AS `total` FROM `" . DB_PREFIX . "abp_subscriber` WHERE `email` = '" . $email . "'");
+
+		$this->db->query("DELETE FROM `" . DB_PREFIX . "abp_subscriber` WHERE `email` = '" . $email . "'");
+
+		return (int)$query->row['total'];
 	}
 
 	private function dateOrNull($value) {

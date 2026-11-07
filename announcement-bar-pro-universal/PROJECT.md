@@ -9,7 +9,7 @@ Paziņojumu josla (announcement bar) OpenCart veikalam: josla lapas augšā vai 
 piegādes info, atpakaļskaitīšanu u. tml. Viena instalācijas paka der **OpenCart 3.0.x, 4.0.x un 4.1.x**.
 Josla automātiski pielāgojas veikala tēmai.
 
-- Versija: **2.3.0 „Pro Max”**, DB shēma **7**
+- Versija: **2.4.0**, DB shēma **8**
 - Licence: GPL-3.0 (LICENSE.txt no OpenCart pirmkoda)
 - Valodas: LV, EN, RU (admin + veikals). Ja veikala valodai tulkojuma nav → angļu.
 - Marketplace-gatavs. Autors `3DP SIA`, saite `mailto:extension@3dp.lv` (no 2.3.0; Ulda izvēle 07.11.2026 — moduļi nav saistīti ar 3dp.lv).
@@ -32,7 +32,7 @@ index.html                       repo vecais saturs, ar moduli nav saistīts
 
 ```bash
 cd announcement-bar-pro-universal && ./build.sh
-# → dist/v2.3.0/announcement_bar_pro.ocmod.zip
+# → dist/v2.4.0/announcement_bar_pro.ocmod.zip
 ```
 Universālā paka satur abus komplektus vienā zip:
 - OC3 instalētājs ņem tikai `upload/` + `install.xml`;
@@ -57,6 +57,21 @@ link_new_tab, icon, countdown, stores, customer_groups, page_mode, page_routes, 
 date_modified), `oc_abp_message_description` (message_id, language_id, text, link_text, mobile_text). Shēmas migrācija
 no v1 automātiska (tikai lietotājam ar modify tiesībām); shēma 6 pievieno kolonnas ar `SHOW COLUMNS` pārbaudi
 (`schemaColumns()` + `addColumnIfMissing()` admin modelī). `mobile_text` ir `TEXT NOT NULL` bez DEFAULT (MySQL to neatļauj).
+
+**2.4.0 (shēma 8):** jauna bibliotēka `system/library/…/features.php` (klases ķermenis abos komplektos baitu identisks, `build.sh` to pārbauda):
+opciju validācija (`validate()` ar `lookup` atzvanu uz DB), valsts / zonas / valūtas sliekšņi, pakāpes, groza nosacījumi, termiņa atskaite
+(`nextCutoff`), CSS filtrs, formas tokeni (HMAC ar `module_announcement_bar_pro_secret`), CSV, 13 veidnes.
+- *Kolonnas:* `abp_message.placement` (''|top|bottom|cart|product|minicart), `priority` (0–100, kārtošana DESC), `options` (JSON, ASCII),
+  `subscribes`; `abp_message_description.extra` (JSON: pakāpju nosaukumi/teksti, e-pasta formas teksti). Tabulas `abp_subscriber` (tikai tokenu
+  SHA-256), `abp_rate` (ar atslēgu jaukts IP + logs). `_schema` tiek ierakstīts pēdējais (unset + set).
+- *Vietas:* notikumi `checkout/cart`, `product/product`, `common/cart` view/after (6 notikumi kopā); `prepare()` statiski kešo visas ziņas
+  pieprasījumā; resursi (CSS/JS) vienreiz lapā; ar vienu joslu id `abp-bar`, ar divām — `abp-bar-bottom`. Inline: režīms stack, bez aizvēršanas.
+- *Klienta puses vārti:* `data-off` (grafiks), `data-coff` (groza nosacījumi, atjauno `…/cart`), `data-uoff` (UTM/atnākšana/jauns-atgriezies,
+  izlemj pre.js), `data-toff` (trigeris), `data-over` (virs „Paziņojumi joslā”). pre.js apstrādā visus `.abp[data-abp]` + `#abp-bar`, `window.abpPre()`.
+- *Endpointi:* `subscribe` (POST, same-origin, tokens, honeypot, 10/h/IP, 200/h kopā), `confirm` / `unsubscribe` (GET rāda pogu, POST maina),
+  `cart` un `track` ar ātruma ierobežojumu (300/10 min). Pasts: OC3 `new Mail(engine)`, OC4 `new \Opencart\System\Library\Mail(engine, opts)`.
+- *Valsts:* sesijas piegādes/maksātāja adrese → klienta adrese → `CF-IPCountry` (tikai ja `geo_cf`) → veikala valsts / nezināma (`geo_fallback`).
+- *Iestatījumi:* max_messages, autohide, pause_button, font, custom_css, ga4, geo_cf, geo_fallback, privacy_id, double_optin (+ iekšējais secret).
 
 **2.3.0 „Pro Max” (shēma 7):**
 - *Bezmaksas piegāde:* `type` = standard|free_shipping, `threshold` DECIMAL(15,4) (pamatvalūtā), `progress_bar`; teksts = progresa teksts ar
@@ -124,7 +139,23 @@ OC4 admin formas ir AJAX (JSON kļūdas → `#error-*`; 2.3.0 kontrolieris kļū
 starp `{{ column_left }}` un `<div id="content">` (OC3 CSS `#column-left + #content`). OC 4.1 `#container` ir `position:absolute` (apakšējai joslai spacer).
 OC 4.1 valodas atslēga `config_language_catalog`, citur `config_language`.
 
-## 7. Pārbaudes stāvoklis (2.1.0)
+## 7. Pārbaudes stāvoklis
+
+**2.4.0 (07.11.2026), īsts OpenCart + MariaDB 11.4 (`abp-testenv`), Playwright Chromium, SMTP sink :2525:**
+
+| Pārbaude | Rezultāts |
+|---|---|
+| OC 3.0.5.1: 2.3.0 ar 3 ziņām → 2.4.0 caur Extension Installer, migrācija 7→8, visas 15 iespējas caur admin UI + veikals 1366/390 | 115/115 |
+| OC 4.1.0.4: jauna 2.4.0 instalācija, tās pašas pārbaudes | 105/105 |
+| `tests/unit/schema_test.php` (shēma 8: jauna, 5→8, 6→8, 7→8, pārtraukta, atkārtota; SQL; features.php abos komplektos) | 163/163 |
+| `tests/demo/test.js` (2.2/2.3 + vairākas joslas, trigeris, pakāpes, pauze, limits, auto-hide, GA4, forma, termiņš) | 64/64 |
+| `php -l` visiem PHP failiem, `build.sh` | OK |
+
+Skripti: `tests/e2e/abp24-e2e.js` (kopija `abp-testenv/scripts/`), `abp-testenv/scripts/runall24.sh` (jauni veikali + abi testi), `serve.sh`, `smtp-sink.js`.
+Ekrānuzņēmumi: `abp-testenv/shots/v24/`. **Netestēts:** OC 4.0.x, īsts PHP 7.x, MySQL 8, Firefox/Safari, komerctēmas, īsts CloudFlare,
+īsts pasta serveris (tikai SMTP sink), OC4 jaunināšana 2.3.0 → 2.4.0 (atinstalēt/instalēt ceļš), attēlu pārvaldnieka dialogs (lauks aizpildīts tāpat kā to dara pārvaldnieks).
+
+### 2.1.0
 
 Pārbaudīts ar īstu OpenCart, paka instalēta caur Extension Installer, Playwright Chromium:
 

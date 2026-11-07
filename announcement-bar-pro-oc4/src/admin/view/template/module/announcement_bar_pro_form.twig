@@ -19,6 +19,14 @@
     <div id="abp-alerts"></div>
     <form id="form-message" action="{{ save }}" method="post" data-oc-toggle="ajax">
 
+{# ---------- Templates (new messages only) ---------- #}
+      {% if is_new %}
+      <div class="card abp-card" id="abp-card-templates">
+        <div class="card-header"><span class="abp-card-title"><span class="abp-ico-badge"><i class="fa-solid fa-wand-magic-sparkles"></i></span> {{ text_section_templates }} <small>{{ help_templates }}</small></span></div>
+        <div class="card-body"><div class="abp-tpl-grid" id="abp-templates" role="list"></div></div>
+      </div>
+      {% endif %}
+
       {# ---------- Live preview (sticky) ---------- #}
       <div class="card abp-card abp-preview-card">
         <div class="card-header"><span class="abp-card-title"><span class="abp-ico-badge"><i class="fa-solid fa-eye"></i></span> {{ text_preview }} <small>{{ text_form }}</small></span></div>
@@ -33,7 +41,7 @@
             <span class="abp-seg" id="abp-pv-cart" role="group" aria-label="{{ text_preview_cart|e }}"><button type="button" class="active" data-abp-pv="cart" data-value="below" aria-pressed="true">{{ text_preview_cart_below }}</button><button type="button" data-abp-pv="cart" data-value="done" aria-pressed="false">{{ text_preview_cart_done }}</button></span>
           </div>
           <div id="abp-preview-wrap"><iframe id="abp-preview-frame" title="{{ text_preview|e }}" sandbox="allow-scripts"></iframe></div>
-          <p class="abp-pv-note"><i class="fa-solid fa-circle-info"></i> {{ text_preview_note }}{% if color_auto %} {{ text_preview_auto }}{% endif %}</p>
+          <p class="abp-pv-note"><i class="fa-solid fa-circle-info"></i> {{ text_preview_note }}{% if color_auto %} {{ text_preview_auto }}{% endif %} <span id="abp-pv-extra"></span></p>
           <div id="abp-contrast" class="text-warning" hidden><i class="fa-solid fa-triangle-exclamation"></i> {{ text_low_contrast }}</div>
         </div>
       </div>
@@ -55,7 +63,7 @@
             <label for="input-type" class="col-sm-2 col-form-label">{{ entry_type }}</label>
             <div class="col-sm-10">
               <select name="type" id="input-type" class="form-select" style="max-width:320px;">
-                {% for value in ['standard', 'free_shipping'] %}
+                {% for value in ['standard', 'free_shipping', 'tiers'] %}
                   <option value="{{ value }}"{% if type == value %} selected{% endif %}>{{ attribute(_context, 'text_type_' ~ value) }}</option>
                 {% endfor %}
               </select>
@@ -64,6 +72,7 @@
             </div>
           </div>
           <p class="abp-hint" data-abp-show="type=free_shipping"><i class="fa-regular fa-lightbulb"></i> {{ help_shipping_text }}</p>
+          <p class="abp-hint" data-abp-show="type=tiers"><i class="fa-regular fa-lightbulb"></i> {{ help_tiers_text }}</p>
           {% for language in languages %}
             {% set lid = language.language_id %}
             <div class="abp-lang-pane" data-lang="{{ lid }}">
@@ -138,6 +147,18 @@
             </div>
           </div>
           <div class="row mb-3">
+            <label for="input-coupon-id" class="col-sm-2 col-form-label">{{ entry_coupon_id }}</label>
+            <div class="col-sm-10">
+              <div class="abp-chips" id="input-coupon-id" data-abp-ac="coupon" data-name="opt[coupon_id]" data-max="1">
+                {% for id, name in coupon_chip %}<span class="abp-chip"><span class="abp-chip-text">{{ name|e }}</span><input type="hidden" name="opt[coupon_id]" value="{{ id }}"/><button type="button" class="abp-chip-x" aria-label="{{ button_remove|e }}: {{ name|e }}">&times;</button></span>{% endfor %}
+                <input type="text" class="abp-ac-input" placeholder="{{ text_autocomplete_coupon|e }}" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-label="{{ entry_coupon_id|e }}"/>
+                <div class="abp-ac-menu" role="listbox" hidden></div>
+              </div>
+              <div class="form-text">{{ help_coupon_id }}</div>
+              <div id="error-opt-coupon-id" class="invalid-feedback"></div>
+            </div>
+          </div>
+          <div class="row mb-3" data-abp-show="!opt[coupon_id]">
             <label for="input-coupon" class="col-sm-2 col-form-label">{{ entry_coupon }}</label>
             <div class="col-sm-10">
               <div class="input-group" style="max-width:300px;">
@@ -151,42 +172,141 @@
         </div>
       </div>
 
-      {# ---------- Free shipping ---------- #}
-      <div class="card abp-card" id="abp-card-shipping" data-abp-show="type=free_shipping">
-        <div class="card-header"><span class="abp-card-title"><span class="abp-ico-badge"><i class="fa-solid fa-truck-fast"></i></span> {{ text_section_shipping }}</span></div>
+      {# ---------- Free shipping / tiered goals ---------- #}
+      <div class="card abp-card" id="abp-card-shipping" data-abp-show="type=free_shipping|tiers">
+        <div class="card-header"><span class="abp-card-title"><span class="abp-ico-badge"><i class="fa-solid fa-truck-fast"></i></span> {{ text_section_goal }}</span></div>
         <div class="card-body">
-          <div class="row mb-3 required">
-            <label for="input-threshold" class="col-sm-2 col-form-label">{{ entry_threshold }}</label>
-            <div class="col-sm-10">
-              <div class="input-group" style="max-width:220px;">
-                <input type="text" inputmode="decimal" name="threshold" value="{{ threshold|e }}" placeholder="50.00" id="input-threshold" class="form-control"/>
-                <span class="input-group-text">{{ currency_code|e }}</span>
+          <div data-abp-show="type=free_shipping">
+            <div class="row mb-3">
+              <label class="col-sm-2 col-form-label" for="input-fs-oc">{{ entry_fs_oc }}</label>
+              <div class="col-sm-10">
+                <div class="form-check"><input type="checkbox" name="opt[fs_oc]" id="input-fs-oc" value="1" class="form-check-input"{% if opt.fs_oc %} checked{% endif %}/> <label for="input-fs-oc" class="form-check-label">{{ text_fs_oc }}</label></div>
+                <span class="abp-help">{{ help_fs_oc|format(oc_free_shipping.total, oc_free_shipping.status ? text_enabled : text_disabled)|e }}</span>
               </div>
-              <div class="form-text">{{ help_threshold|format(currency_code)|e }}</div>
-              <div id="error-threshold" class="invalid-feedback"></div>
+            </div>
+            <div class="row mb-3 required" data-abp-show="!opt[fs_oc]">
+              <label class="col-sm-2 col-form-label" for="input-threshold">{{ entry_threshold }}</label>
+              <div class="col-sm-10">
+                <div class="input-group" style="max-width:220px;">
+                  <input type="text" inputmode="decimal" name="threshold" value="{{ threshold|e }}" placeholder="50.00" id="input-threshold" class="form-control"/>
+                  <span class="input-group-text">{{ currency_code|e }}</span>
+                </div>
+                <span class="abp-help">{{ help_threshold|format(currency_code)|e }}</span>
+                <div id="error-threshold" class="invalid-feedback"></div>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <label class="col-sm-2 col-form-label">{{ entry_fs_zones }}</label>
+              <div class="col-sm-10">
+                <div class="table-responsive">
+                  <table class="table table-condensed abp-rows" id="abp-zone-rows">
+                    <thead><tr><td>{{ entry_country }}</td><td>{{ entry_zone }}</td><td>{{ entry_amount }} ({{ currency_code|e }})</td></tr></thead>
+                    <tbody>
+                      {% for row in fs_zone_rows %}
+                      {% set i = loop.index0 %}
+                      <tr>
+                        <td><select name="opt[fs_zones][{{ i }}][country_id]" class="form-select abp-zone-country" aria-label="{{ entry_country|e }}"><option value="0">—</option>{% for id, name in country_list %}<option value="{{ id }}"{% if id == row.country_id %} selected{% endif %}>{{ name|e }}</option>{% endfor %}</select></td>
+                        <td><select name="opt[fs_zones][{{ i }}][zone_id]" class="form-select abp-zone-zone" aria-label="{{ entry_zone|e }}"><option value="0">{{ text_all_zones }}</option>{% for zone in row.zones %}<option value="{{ zone.id }}"{% if zone.id == row.zone_id %} selected{% endif %}>{{ zone.name|e }}</option>{% endfor %}</select></td>
+                        <td><input type="text" inputmode="decimal" name="opt[fs_zones][{{ i }}][amount]" value="{{ row.amount|e }}" class="form-control" aria-label="{{ entry_amount|e }}"/></td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+                <button type="button" class="btn btn-default btn-sm" data-abp-add-row="#abp-zone-rows"><i class="fa-solid fa-plus"></i> {{ button_add_row }}</button>
+                <span class="abp-help">{{ help_fs_zones }}</span>
+                <div id="error-opt-fs-zones" class="invalid-feedback"></div>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <label class="col-sm-2 col-form-label">{{ entry_fs_currencies }}</label>
+              <div class="col-sm-10">
+                {% if currency_rows %}
+                <div class="abp-cur-grid">
+                  {% for c in currency_rows %}<div class="input-group"><input type="text" inputmode="decimal" name="opt[fs_currencies][{{ c.code|e }}]" value="{{ c.amount|e }}" class="form-control" aria-label="{{ entry_fs_currencies|e }} {{ c.code|e }}" placeholder="—"/><span class="input-group-text" title="{{ c.title|e }}">{{ c.code|e }}</span></div>{% endfor %}
+                </div>
+                <span class="abp-help">{{ help_fs_currencies }}</span>
+                {% else %}
+                <span class="abp-help">{{ text_one_currency }}</span>
+                {% endif %}
+                <div id="error-opt-fs-currencies" class="invalid-feedback"></div>
+              </div>
+            </div>
+          </div>
+          <div data-abp-show="type=tiers">
+            <div class="row mb-3 required">
+              <label class="col-sm-2 col-form-label">{{ entry_tiers }}</label>
+              <div class="col-sm-10">
+                <div class="table-responsive">
+                  <table class="table table-condensed abp-rows abp-tiers">
+                    <thead><tr><td style="width:1px;">#</td><td style="width:150px;">{{ entry_amount }} ({{ currency_code|e }})</td><td>{{ entry_tier_label }}</td><td>{{ entry_tier_text }}</td></tr></thead>
+                    <tbody>
+                      {% for i in 0..4 %}
+                      <tr>
+                        <td class="abp-muted">{{ i + 1 }}</td>
+                        <td><input type="text" inputmode="decimal" name="opt[tiers][]" value="{{ tier_rows[i]|e }}" class="form-control abp-tier-amount" aria-label="{{ text_tier|format(i + 1)|e }} — {{ entry_amount|e }}"/></td>
+                        <td>{% for language in languages %}{% set lid = language.language_id %}<span class="abp-lang-pane abp-lang-inline" data-lang="{{ lid }}"><input type="text" name="message_description[{{ lid }}][tier_label][]" value="{{ message_description[lid].tier_label[i]|e }}" maxlength="160" class="form-control" aria-label="{{ text_tier|format(i + 1)|e }} — {{ entry_tier_label|e }} ({{ language.code|e }})"/></span>{% endfor %}</td>
+                        <td>{% for language in languages %}{% set lid = language.language_id %}<span class="abp-lang-pane abp-lang-inline" data-lang="{{ lid }}"><input type="text" name="message_description[{{ lid }}][tier_text][]" value="{{ message_description[lid].tier_text[i]|e }}" maxlength="300" class="form-control" aria-label="{{ text_tier|format(i + 1)|e }} — {{ entry_tier_text|e }} ({{ language.code|e }})"/></span>{% endfor %}</td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+                <span class="abp-help">{{ help_tiers }}</span>
+                <div id="error-opt-tiers" class="invalid-feedback"></div>
+                {% for language in languages %}<div id="error-tier-label-{{ language.language_id }}" class="invalid-feedback"></div><div id="error-tier-text-{{ language.language_id }}" class="invalid-feedback"></div>{% endfor %}
+              </div>
             </div>
           </div>
           {% for language in languages %}
-            {% set lid = language.language_id %}
-            <div class="abp-lang-pane" data-lang="{{ lid }}">
-              <div class="row mb-3 required">
-                <label for="input-success-text-{{ lid }}" class="col-sm-2 col-form-label">{{ entry_success_text }}<span class="abp-lang-tag">{{ language.code|e }}</span></label>
-                <div class="col-sm-10">
-                  <textarea name="message_description[{{ lid }}][success_text]" rows="2" maxlength="{{ max_text }}" id="input-success-text-{{ lid }}" class="form-control">{{ message_description[lid].success_text|e }}</textarea>
-                  <div class="form-text">{{ help_success_text }}</div>
-                  <div id="error-success-text-{{ lid }}" class="invalid-feedback"></div>
-                </div>
+          {% set lid = language.language_id %}
+          <div class="abp-lang-pane" data-lang="{{ lid }}">
+            <div class="row mb-3 required">
+              <label class="col-sm-2 col-form-label" for="input-success-text{{ lid }}">{{ entry_success_text }}<span class="abp-lang-tag">{{ language.code|e }}</span></label>
+              <div class="col-sm-10">
+                <textarea name="message_description[{{ lid }}][success_text]" rows="2" maxlength="{{ max_text }}" id="input-success-text{{ lid }}" class="form-control">{{ message_description[lid].success_text|e }}</textarea>
+                <span class="abp-help">{{ help_success_text }}</span>
+                <div id="error-success-text-{{ lid }}" class="invalid-feedback"></div>
               </div>
             </div>
+          </div>
           {% endfor %}
           <div class="row mb-3">
-            <label for="input-progress-bar" class="col-sm-2 col-form-label">{{ entry_progress_bar }}</label>
+            <label class="col-sm-2 col-form-label" for="input-progress-bar">{{ entry_progress_bar }}</label>
             <div class="col-sm-10">
-              <div class="form-check form-switch form-switch-lg">
-                <input type="checkbox" name="progress_bar" value="1" id="input-progress-bar" class="form-check-input"{% if progress_bar %} checked{% endif %}/>
-              </div>
-              <div class="form-text">{{ text_progress_bar }}</div>
+              <div class="form-check form-switch form-switch-lg"><input type="hidden" name="progress_bar" value="0"/><input type="checkbox" name="progress_bar" id="input-progress-bar" value="1" class="form-check-input"{% if progress_bar %} checked{% endif %}/> <label for="input-progress-bar" class="form-check-label">{{ text_progress_bar }}</label></div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {# ---------- E-mail sign-up ---------- #}
+      <div class="card abp-card" id="abp-card-email">
+        <div class="card-header"><span class="abp-card-title"><span class="abp-ico-badge"><i class="fa-solid fa-envelope"></i></span> {{ text_section_email }}</span></div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <label class="col-sm-2 col-form-label" for="input-email">{{ entry_email_capture }}</label>
+            <div class="col-sm-10">
+              <div class="form-check"><input type="checkbox" name="opt[email]" id="input-email" value="1" class="form-check-input"{% if opt.email %} checked{% endif %}/> <label for="input-email" class="form-check-label">{{ text_email_capture }}</label></div>
+              <span class="abp-help">{{ help_email_capture }}</span>
+            </div>
+          </div>
+          <div data-abp-show="opt[email]">
+            {% for language in languages %}
+            {% set lid = language.language_id %}
+            <div class="abp-lang-pane" data-lang="{{ lid }}">
+              {% for field in ['email_placeholder', 'email_button', 'email_consent', 'email_success'] %}
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label" for="input-{{ field }}{{ lid }}">{{ attribute(_context, 'entry_' ~ field) }}<span class="abp-lang-tag">{{ language.code|e }}</span></label>
+                <div class="col-sm-10">
+                  <input type="text" name="message_description[{{ lid }}][{{ field }}]" value="{{ attribute(message_description[lid], field)|e }}" maxlength="{{ field == 'email_consent' ? 300 : 160 }}" id="input-{{ field }}{{ lid }}" class="form-control" placeholder="{{ attribute(_context, 'text_' ~ field ~ '_default')|e }}"/>
+                  <div id="error-{{ field|replace({'_': '-'}) }}-{{ lid }}" class="invalid-feedback"></div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% endfor %}
+            <p class="abp-hint"><i class="fa-solid fa-shield-halved"></i> {{ help_email_texts }}</p>
           </div>
         </div>
       </div>
@@ -237,6 +357,47 @@
         </div>
       </div>
 
+      {# ---------- Placement & behaviour ---------- #}
+      <div class="card abp-card" id="abp-card-behaviour">
+        <div class="card-header"><span class="abp-card-title"><span class="abp-ico-badge"><i class="fa-solid fa-table-cells-large"></i></span> {{ text_section_behaviour }}</span></div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <label class="col-sm-2 col-form-label">{{ entry_placement }}</label>
+            <div class="col-sm-10">
+              <div class="abp-places" role="radiogroup" aria-label="{{ entry_placement|e }}">
+                {% for value in placements %}
+                {% set key = value == '' ? 'default' : value %}
+                <div class="abp-place-opt"><input type="radio" name="placement" id="input-placement-{{ key }}" value="{{ value }}"{% if placement == value %} checked{% endif %}/><label for="input-placement-{{ key }}"><span class="abp-pl-ico abp-pl-{{ key }}" aria-hidden="true"><i></i></span><span class="abp-name">{{ attribute(_context, 'text_placement_' ~ key) }}</span></label></div>
+                {% endfor %}
+              </div>
+              <span class="abp-help">{{ help_placement }}</span>
+              <div id="error-placement" class="invalid-feedback"></div>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <label class="col-sm-2 col-form-label" for="input-priority">{{ entry_priority }}</label>
+            <div class="col-sm-10">
+              <input type="number" min="0" max="100" name="priority" value="{{ priority|e }}" id="input-priority" class="form-control abp-num"/>
+              <span class="abp-help">{{ help_priority }}</span>
+              <div id="error-priority" class="invalid-feedback"></div>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <label class="col-sm-2 col-form-label" for="input-trigger">{{ entry_trigger }}</label>
+            <div class="col-sm-10">
+              <div class="abp-inline-fields">
+                <select name="opt[trigger]" id="input-trigger" class="form-select" style="max-width:260px;">
+                  {% for value in ['none', 'delay', 'scroll', 'exit'] %}<option value="{{ value }}"{% if opt.trigger == value %} selected{% endif %}>{{ attribute(_context, 'text_trigger_' ~ value) }}</option>{% endfor %}
+                </select>
+                <span data-abp-show="opt[trigger]=delay|scroll" class="abp-inline-fields"><input type="number" min="1" name="opt[trigger_value]" value="{{ opt.trigger_value ? opt.trigger_value|e : '' }}" id="input-trigger-value" class="form-control abp-num" aria-label="{{ entry_trigger_value|e }}"/><span class="abp-unit" data-abp-show="opt[trigger]=delay">{{ text_seconds }}</span><span class="abp-unit" data-abp-show="opt[trigger]=scroll">%</span></span>
+              </div>
+              <span class="abp-help">{{ help_trigger }}</span>
+              <div id="error-opt-trigger" class="invalid-feedback"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {# ---------- Schedule ---------- #}
       <div class="card abp-card" id="abp-card-schedule">
         <div class="card-header"><span class="abp-card-title"><span class="abp-ico-badge"><i class="fa-regular fa-calendar"></i></span> {{ text_section_schedule }}</span></div>
@@ -265,6 +426,26 @@
               </div>
               <div class="form-text">{{ help_countdown }}</div>
               <div id="error-countdown" class="invalid-feedback"></div>
+            </div>
+          </div>
+          <div class="row mb-3" data-abp-show="countdown">
+            <label for="input-recur" class="col-sm-2 col-form-label">{{ entry_recur }}</label>
+            <div class="col-sm-10">
+              <div class="abp-inline-fields">
+                <select name="opt[recur]" id="input-recur" class="form-select" style="max-width:280px;">
+                  {% for value in ['', 'daily', 'weekly'] %}<option value="{{ value }}"{% if opt.recur == value %} selected{% endif %}>{{ attribute(_context, 'text_recur_' ~ (value == '' ? 'end' : value)) }}</option>{% endfor %}
+                </select>
+                <span data-abp-show="opt[recur]=weekly"><select name="opt[recur_day]" class="form-select" aria-label="{{ entry_recur_day|e }}">{% for day in 1..7 %}<option value="{{ day }}"{% if opt.recur_day == day %} selected{% endif %}>{{ attribute(_context, 'text_wd_' ~ day) }}</option>{% endfor %}</select></span>
+                <span data-abp-show="opt[recur]=daily|weekly" class="abp-inline-fields"><span>{{ text_at }}</span><input type="time" name="opt[recur_time]" value="{{ opt.recur_time|e }}" class="form-control" aria-label="{{ entry_recur_time|e }}"/></span>
+              </div>
+              <div data-abp-show="opt[recur]=daily" class="abp-recur-skip">
+                <span class="abp-sub-label">{{ entry_recur_skip }}</span>
+                <div class="abp-days" role="group" aria-label="{{ entry_recur_skip|e }}">
+                  {% for day in recur_skip_list %}<label class="abp-day"><input type="checkbox" name="opt[recur_skip][]" value="{{ day.value }}"{% if day.checked %} checked{% endif %}/><span>{{ day.name|e }}</span></label>{% endfor %}
+                </div>
+              </div>
+              <div class="form-text">{{ help_recur }}</div>
+              <div id="error-opt-recur" class="invalid-feedback"></div>
             </div>
           </div>
           <div class="row mb-3">
@@ -384,6 +565,101 @@
         </div>
       </div>
 
+      {# ---------- Audience: country, campaign, new / returning ---------- #}
+      <div class="card abp-card" id="abp-card-audience">
+        <div class="card-header"><span class="abp-card-title"><span class="abp-ico-badge"><i class="fa-solid fa-globe"></i></span> {{ text_section_audience }}</span></div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <label class="col-sm-2 col-form-label" for="input-countries-mode">{{ entry_countries }}</label>
+            <div class="col-sm-10">
+              <select name="opt[countries_mode]" id="input-countries-mode" class="form-select" style="max-width:320px;">
+                {% for value in ['all', 'include', 'exclude'] %}<option value="{{ value }}"{% if opt.countries_mode == value %} selected{% endif %}>{{ attribute(_context, 'text_countries_' ~ value) }}</option>{% endfor %}
+              </select>
+              <div class="abp-chips" id="input-countries" data-abp-ac="country" data-name="opt[countries][]" data-abp-show="opt[countries_mode]=include|exclude" style="margin-top:8px;">
+                {% for id, name in country_chips %}<span class="abp-chip"><span class="abp-chip-text">{{ name|e }}</span><input type="hidden" name="opt[countries][]" value="{{ id }}"/><button type="button" class="abp-chip-x" aria-label="{{ button_remove|e }}: {{ name|e }}">&times;</button></span>{% endfor %}
+                <input type="text" class="abp-ac-input" placeholder="{{ text_autocomplete|e }}" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-label="{{ entry_countries|e }}"/>
+                <div class="abp-ac-menu" role="listbox" hidden></div>
+              </div>
+              <span class="abp-help">{{ help_countries }}</span>
+              <div id="error-opt-countries" class="invalid-feedback"></div>
+            </div>
+          </div>
+          {% for key in ['utm_source', 'utm_medium', 'utm_campaign', 'referrer'] %}
+          <div class="row mb-3">
+            <label class="col-sm-2 col-form-label" for="input-{{ key }}">{{ attribute(_context, 'entry_' ~ key) }}</label>
+            <div class="col-sm-10">
+              <input type="text" name="opt[{{ key }}]" value="{{ attribute(opt, key)|e }}" id="input-{{ key }}" class="form-control" placeholder="{{ key == 'referrer' ? 'facebook.com, instagram.com' : (key == 'utm_source' ? 'newsletter, google' : (key == 'utm_medium' ? 'email, cpc' : 'black-friday')) }}" autocomplete="off" spellcheck="false"/>
+              {% if loop.last %}<span class="abp-help">{{ help_campaign }}</span>{% endif %}
+              <div id="error-opt-{{ key|replace({'_': '-'}) }}" class="invalid-feedback"></div>
+            </div>
+          </div>
+          {% endfor %}
+          <div class="row mb-3">
+            <label class="col-sm-2 col-form-label" for="input-visitor">{{ entry_visitor }}</label>
+            <div class="col-sm-10">
+              <select name="opt[visitor]" id="input-visitor" class="form-select" style="max-width:320px;">
+                {% for value in ['all', 'new', 'returning'] %}<option value="{{ value }}"{% if opt.visitor == value %} selected{% endif %}>{{ attribute(_context, 'text_visitor_' ~ value) }}</option>{% endfor %}
+              </select>
+              <span class="abp-help">{{ help_visitor }}</span>
+              <div id="error-opt-visitor" class="invalid-feedback"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ---------- Cart conditions ---------- #}
+      <div class="card abp-card" id="abp-card-cart">
+        <div class="card-header"><span class="abp-card-title"><span class="abp-ico-badge"><i class="fa-solid fa-cart-shopping"></i></span> {{ text_section_cart }}</span></div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <label class="col-sm-2 col-form-label" for="input-cart-subtotal-min">{{ entry_cart_subtotal }}</label>
+            <div class="col-sm-10">
+              <div class="abp-inline-fields">
+                <span>{{ text_min }}</span><input type="text" inputmode="decimal" name="opt[cart_subtotal_min]" value="{{ opt.cart_subtotal_min|e }}" id="input-cart-subtotal-min" class="form-control abp-num"/>
+                <span>{{ text_max }}</span><input type="text" inputmode="decimal" name="opt[cart_subtotal_max]" value="{{ opt.cart_subtotal_max|e }}" class="form-control abp-num" aria-label="{{ entry_cart_subtotal|e }} {{ text_max|e }}"/>
+                <span class="abp-unit">{{ currency_code|e }}</span>
+              </div>
+              <div id="error-opt-cart-subtotal-min" class="invalid-feedback"></div>
+              <div id="error-opt-cart-subtotal-max" class="invalid-feedback"></div>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <label class="col-sm-2 col-form-label" for="input-cart-qty-min">{{ entry_cart_qty }}</label>
+            <div class="col-sm-10">
+              <div class="abp-inline-fields">
+                <span>{{ text_min }}</span><input type="number" min="0" name="opt[cart_qty_min]" value="{{ opt.cart_qty_min|e }}" id="input-cart-qty-min" class="form-control abp-num"/>
+                <span>{{ text_max }}</span><input type="number" min="0" name="opt[cart_qty_max]" value="{{ opt.cart_qty_max|e }}" class="form-control abp-num" aria-label="{{ entry_cart_qty|e }} {{ text_max|e }}"/>
+              </div>
+              <div id="error-opt-cart-qty-min" class="invalid-feedback"></div>
+              <div id="error-opt-cart-qty-max" class="invalid-feedback"></div>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <label class="col-sm-2 col-form-label" for="input-cart-products">{{ entry_cart_products }}</label>
+            <div class="col-sm-10">
+              <div class="abp-chips" id="input-cart-products" data-abp-ac="product" data-name="opt[cart_products][]">
+                {% for id, name in cart_product_chips %}<span class="abp-chip"><span class="abp-chip-text">{{ name|e }}</span><input type="hidden" name="opt[cart_products][]" value="{{ id }}"/><button type="button" class="abp-chip-x" aria-label="{{ button_remove|e }}: {{ name|e }}">&times;</button></span>{% endfor %}
+                <input type="text" class="abp-ac-input" placeholder="{{ text_autocomplete|e }}" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-label="{{ entry_cart_products|e }}"/>
+                <div class="abp-ac-menu" role="listbox" hidden></div>
+              </div>
+              <div id="error-opt-cart-products" class="invalid-feedback"></div>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <label class="col-sm-2 col-form-label" for="input-cart-categories">{{ entry_cart_categories }}</label>
+            <div class="col-sm-10">
+              <div class="abp-chips" id="input-cart-categories" data-abp-ac="category" data-name="opt[cart_categories][]">
+                {% for id, name in cart_category_chips %}<span class="abp-chip"><span class="abp-chip-text">{{ name|e }}</span><input type="hidden" name="opt[cart_categories][]" value="{{ id }}"/><button type="button" class="abp-chip-x" aria-label="{{ button_remove|e }}: {{ name|e }}">&times;</button></span>{% endfor %}
+                <input type="text" class="abp-ac-input" placeholder="{{ text_autocomplete|e }}" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-label="{{ entry_cart_categories|e }}"/>
+                <div class="abp-ac-menu" role="listbox" hidden></div>
+              </div>
+              <span class="abp-help">{{ help_cart }}</span>
+              <div id="error-opt-cart-categories" class="invalid-feedback"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {# ---------- Appearance ---------- #}
       <div class="card abp-card" id="abp-card-appearance">
         <div class="card-header"><span class="abp-card-title"><span class="abp-ico-badge"><i class="fa-solid fa-palette"></i></span> {{ text_section_appearance }}</span></div>
@@ -420,6 +696,38 @@
               </div>
             </div>
           {% endfor %}
+          <div class="row mb-3">
+            <label for="input-image" class="col-sm-2 col-form-label">{{ entry_image }}</label>
+            <div class="col-sm-10">
+              <div class="abp-image">
+                <div class="card image" style="width:130px;">
+                  <img src="{{ image_thumb|e }}" alt="" title="" id="thumb-image" data-oc-placeholder="{{ placeholder|e }}" class="card-img-top"/>
+                  <input type="hidden" name="opt[image]" value="{{ opt.image|e }}" id="input-image"/>
+                  <div class="card-body p-2">
+                    <button type="button" data-oc-toggle="image" data-oc-target="#input-image" data-oc-thumb="#thumb-image" class="btn btn-primary btn-sm w-100 mb-1" aria-label="{{ entry_image|e }}"><i class="fa-solid fa-pencil"></i> {{ button_edit }}</button>
+                    <button type="button" data-oc-toggle="clear" data-oc-target="#input-image" data-oc-thumb="#thumb-image" class="btn btn-warning btn-sm w-100"><i class="fa-regular fa-trash-can"></i> {{ button_clear }}</button>
+                  </div>
+                </div>
+                <div class="abp-image-side" data-abp-show="opt[image]!=">
+                  <label class="abp-sub-label" for="input-overlay">{{ entry_overlay }} <output id="abp-overlay-out">{{ opt.overlay }}</output>%</label>
+                  <input type="range" min="0" max="90" step="5" name="opt[overlay]" value="{{ opt.overlay|e }}" id="input-overlay" class="form-range"/>
+                </div>
+              </div>
+              <div class="form-text">{{ help_image }}</div>
+              <div id="error-opt-image" class="invalid-feedback"></div>
+              <div id="error-opt-overlay" class="invalid-feedback"></div>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <label for="input-font" class="col-sm-2 col-form-label">{{ entry_font }}</label>
+            <div class="col-sm-10">
+              <select name="opt[font]" id="input-font" class="form-select" style="max-width:320px;">
+                <option value=""{% if opt.font == '' %} selected{% endif %}>{{ text_font_module }}</option>
+                {% for f in font_list %}{% if f.value != '' %}<option value="{{ f.value }}"{% if opt.font == f.value %} selected{% endif %} style="font-family:{{ f.stack|e }}">{{ f.name|e }}</option>{% endif %}{% endfor %}
+              </select>
+              <div class="form-text">{{ help_font }}</div>
+            </div>
+          </div>
           <div class="row mb-3">
             <label for="input-sort-order" class="col-sm-2 col-form-label">{{ entry_sort_order }}</label>
             <div class="col-sm-10">

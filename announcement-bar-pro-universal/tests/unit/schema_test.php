@@ -1,13 +1,14 @@
 <?php
 /**
- * Announcement Bar Pro — schema 7 (2.3.0) migration test WITHOUT a database.
+ * Announcement Bar Pro — schema 8 (2.4.0) migration test WITHOUT a database.
  *
  * Loads the real admin models of both kits (OpenCart 3 and OpenCart 4) on top of minimal OpenCart stubs and a
  * fake DB driver that keeps a table → columns map, answers SHOW TABLES / SHOW COLUMNS … LIKE and applies
  * CREATE TABLE / ALTER TABLE … ADD COLUMN like MySQL does (a duplicate ADD COLUMN throws, as MySQL error 1060).
- * What it proves: fresh install, upgrade 5→7 and 6→7, interrupted upgrade, repeat runs (idempotent), LIKE escaping,
- * column and value whitelists, text escaping, duplicate, statistics reset, "use B" SQL and the shared sanitizer helpers
- * (weekly schedule incl. midnight, coupon, ID lists, amounts).
+ * What it proves: fresh install, upgrade 5→8, 6→8 and 7→8, interrupted upgrade, repeat runs (idempotent), LIKE escaping,
+ * column and value whitelists, text escaping, duplicate, statistics reset, "use B" SQL, the shared sanitizer helpers
+ * (weekly schedule incl. midnight, coupon, ID lists, amounts) and the 2.4.0 feature library of both kits (options
+ * validation, free-shipping overrides, tiers, cart conditions, cut-off times, custom CSS, form tokens, CSV, templates).
  * What it cannot prove: that a real MySQL/MariaDB accepts the SQL (syntax, types, charset).
  *
  * Run: php tests/unit/schema_test.php   (exit code 0 = all passed)
@@ -19,6 +20,10 @@ define('VERSION', '3.0.5.1'); // the OC4 model only uses VERSION in registerEven
 define('DB_PREFIX', 'oc_');
 
 $root = dirname(__DIR__, 3);
+define('DIR_SYSTEM', $root . '/announcement-bar-pro/upload/system/');
+define('DIR_IMAGE', __DIR__ . '/');
+// OpenCart 4's library is loaded here (its kit has no DIR_EXTENSION layout); the models then find the class.
+require $root . '/announcement-bar-pro-oc4/src/system/library/features.php';
 
 /* ------------------------------------------------------------------ fake DB */
 class FakeDb {
@@ -112,12 +117,13 @@ class FakeDb {
 				'countdown' => 1, 'stores' => '[0]', 'customer_groups' => '[]', 'page_mode' => 'all', 'page_routes' => '',
 				'device' => 'mobile', 'views' => 120, 'clicks' => 9, 'date_added' => '2026-11-01 10:00:00', 'date_modified' => '2026-11-01 10:00:00',
 				'type' => 'free_shipping', 'threshold' => '50.0000', 'progress_bar' => 1, 'coupon' => 'XMAS', 'copies' => 4, 'ab_test' => 1, 'views_b' => 100, 'clicks_b' => 12, 'copies_b' => 2,
-				'weekdays' => '12345', 'time_start' => '09:00', 'time_end' => '17:00', 'categories' => '[20,27]', 'products' => '[]', 'style' => 'soft', 'button_style' => 'filled'
+				'weekdays' => '12345', 'time_start' => '09:00', 'time_end' => '17:00', 'categories' => '[20,27]', 'products' => '[]', 'style' => 'soft', 'button_style' => 'filled',
+				'placement' => 'cart', 'priority' => 40, 'subscribes' => 3, 'options' => '{"countries_mode":"include","countries":[117],"trigger":"delay","trigger_value":5,"email":1}'
 			)) : array());
 		}
 
 		if (preg_match("/^SELECT \* FROM `oc_abp_message_description` WHERE `message_id` = '7'$/", $sql)) {
-			return $this->res(array(array('message_id' => 7, 'language_id' => 1, 'text' => "It's on", 'link_text' => 'Shop', 'mobile_text' => 'On', 'success_text' => 'Free!', 'text_b' => 'B on', 'mobile_text_b' => '', 'link_text_b' => 'Go')));
+			return $this->res(array(array('message_id' => 7, 'language_id' => 1, 'text' => "It's on", 'link_text' => 'Shop', 'mobile_text' => 'On', 'success_text' => 'Free!', 'text_b' => 'B on', 'mobile_text_b' => '', 'link_text_b' => 'Go', 'extra' => '{"email_button":"Join","tier_label":[]}')));
 		}
 
 		if (preg_match("/^SELECT `ab_test` FROM `oc_abp_message` WHERE `message_id` = '(\d+)'$/", $sql, $m)) {
@@ -187,19 +193,27 @@ $s6_message = array_merge($old_message, array('device', 'views', 'clicks'));
 $s6_desc    = array_merge($old_desc, array('mobile_text'));
 $new_message = array('type', 'threshold', 'progress_bar', 'coupon', 'copies', 'ab_test', 'views_b', 'clicks_b', 'copies_b', 'weekdays', 'time_start', 'time_end', 'categories', 'products', 'style', 'button_style');
 $new_desc    = array('success_text', 'text_b', 'mobile_text_b', 'link_text_b');
+// 2.3.0 (schema 7) tables and the 2.4.0 additions
+$s7_message  = array_merge($s6_message, $new_message);
+$s7_desc     = array_merge($s6_desc, $new_desc);
+$v24_message = array('placement', 'priority', 'options', 'subscribes');
 
 foreach (array('OC3' => 'ModelExtensionModuleAnnouncementBarPro', 'OC4' => 'Opencart\Admin\Model\Extension\AnnouncementBarPro\Module\AnnouncementBarPro') as $kit => $class) {
-	check("$kit SCHEMA_VERSION is 7", constant($class . '::SCHEMA_VERSION') === 7);
+	check("$kit SCHEMA_VERSION is 8", constant($class . '::SCHEMA_VERSION') === 8);
 
 	// 1. Fresh install: CREATE TABLE already has every column, nothing is altered.
 	list($model, $db, $setting) = make($class);
 	$model->ensureSchema();
-	check("$kit fresh: abp_message has the 2.2.0 + 2.3.0 columns", !array_diff(array_merge(array('device', 'views', 'clicks'), $new_message), $db->tables['abp_message']), implode(',', $db->tables['abp_message']));
-	check("$kit fresh: description has mobile_text + 2.3.0 texts", !array_diff(array_merge(array('mobile_text'), $new_desc), $db->tables['abp_message_description']));
+	check("$kit fresh: abp_message has the 2.2.0 + 2.3.0 + 2.4.0 columns", !array_diff(array_merge(array('device', 'views', 'clicks'), $new_message, $v24_message), $db->tables['abp_message']), implode(',', $db->tables['abp_message']));
+	check("$kit fresh: description has mobile_text + 2.3.0 texts + extra", !array_diff(array_merge(array('mobile_text', 'extra'), $new_desc), $db->tables['abp_message_description']));
+	check("$kit fresh: subscriber + rate tables", isset($db->tables['abp_subscriber'], $db->tables['abp_rate']) && !array_diff(array('email', 'store_id', 'status', 'token', 'unsubscribe', 'consent', 'date_confirmed'), $db->tables['abp_subscriber']), implode(',', array_keys($db->tables)));
 	check("$kit fresh: no ADD COLUMN", !alters($db), implode(' | ', alters($db)));
-	check("$kit fresh: 24 SHOW COLUMNS checks", count(preg_grep('/^SHOW COLUMNS /', $db->log)) === 24, (string)count(preg_grep('/^SHOW COLUMNS /', $db->log)));
-	check("$kit fresh: schema setting 7, new settings defaults", (int)$setting->settings['module_announcement_bar_pro_schema'] === 7 && $setting->settings['module_announcement_bar_pro_style'] === 'solid' && $setting->settings['module_announcement_bar_pro_transition'] === 'fade' && (int)$setting->settings['module_announcement_bar_pro_arrows'] === 0);
+	check("$kit fresh: 29 SHOW COLUMNS checks", count(preg_grep('/^SHOW COLUMNS /', $db->log)) === 29, (string)count(preg_grep('/^SHOW COLUMNS /', $db->log)));
+	check("$kit fresh: schema setting 8, new settings defaults", (int)$setting->settings['module_announcement_bar_pro_schema'] === 8 && $setting->settings['module_announcement_bar_pro_style'] === 'solid' && $setting->settings['module_announcement_bar_pro_transition'] === 'fade' && (int)$setting->settings['module_announcement_bar_pro_arrows'] === 0
+		&& (int)$setting->settings['module_announcement_bar_pro_double_optin'] === 1 && (int)$setting->settings['module_announcement_bar_pro_ga4'] === 1 && $setting->settings['module_announcement_bar_pro_geo_fallback'] === 'store' && (int)$setting->settings['module_announcement_bar_pro_max_messages'] === 0);
+	check("$kit fresh: form secret (64 hex) written, schema written last", preg_match('/^[0-9a-f]{64}$/', $setting->settings['module_announcement_bar_pro_secret']) === 1 && array_key_last($setting->settings) === 'module_announcement_bar_pro_schema');
 	$create = implode("\n", preg_grep('/^CREATE TABLE/', $db->log));
+	check("$kit fresh: 2.4.0 column types", strpos($create, "`placement` VARCHAR(16) NOT NULL DEFAULT ''") !== false && strpos($create, "`priority` INT(11) NOT NULL DEFAULT '0'") !== false && strpos($create, '`options` TEXT NOT NULL,') !== false && strpos($create, '`extra` TEXT NOT NULL,') !== false && strpos($create, 'UNIQUE KEY `email_store` (`email`, `store_id`)') !== false);
 	check("$kit fresh: column types", strpos($create, "`device` VARCHAR(8) NOT NULL DEFAULT 'all'") !== false && strpos($create, "`views` INT(10) UNSIGNED NOT NULL DEFAULT '0'") !== false && strpos($create, "`threshold` DECIMAL(15,4) NOT NULL DEFAULT '0.0000'") !== false && strpos($create, "`copies_b` INT(10) UNSIGNED NOT NULL DEFAULT '0'") !== false && strpos($create, '`categories` TEXT NOT NULL,') !== false && strpos($create, '`link_text_b` TEXT NOT NULL,') !== false);
 	check("$kit fresh: no DEFAULT on any TEXT column (MySQL refuses it)", !preg_match('/` TEXT NOT NULL DEFAULT/', $create));
 
@@ -209,11 +223,11 @@ foreach (array('OC3' => 'ModelExtensionModuleAnnouncementBarPro', 'OC4' => 'Open
 	$setting->settings = array('module_announcement_bar_pro_schema' => 5, 'module_announcement_bar_pro_status' => 1, 'module_announcement_bar_pro_color_mode' => 'custom');
 	$model->ensureSchema();
 	$a = alters($db);
-	check("$kit upgrade 5→7: exactly 24 ADD COLUMN", count($a) === 24, count($a) . ': ' . implode(' | ', $a));
-	check("$kit upgrade 5→7: 2.2.0 ALTER statements", in_array("ALTER TABLE `oc_abp_message` ADD COLUMN `device` VARCHAR(8) NOT NULL DEFAULT 'all'", $a, true)
+	check("$kit upgrade 5→8: exactly 29 ADD COLUMN", count($a) === 29, count($a) . ': ' . implode(' | ', $a));
+	check("$kit upgrade 5→8: 2.2.0 ALTER statements", in_array("ALTER TABLE `oc_abp_message` ADD COLUMN `device` VARCHAR(8) NOT NULL DEFAULT 'all'", $a, true)
 		&& in_array("ALTER TABLE `oc_abp_message` ADD COLUMN `views` INT(10) UNSIGNED NOT NULL DEFAULT '0'", $a, true)
 		&& in_array("ALTER TABLE `oc_abp_message_description` ADD COLUMN `mobile_text` TEXT NOT NULL", $a, true), implode(' | ', $a));
-	check("$kit upgrade 5→7: settings kept, schema 7", (int)$setting->settings['module_announcement_bar_pro_schema'] === 7 && $setting->settings['module_announcement_bar_pro_color_mode'] === 'custom' && (int)$setting->settings['module_announcement_bar_pro_status'] === 1);
+	check("$kit upgrade 5→8: settings kept, schema 8", (int)$setting->settings['module_announcement_bar_pro_schema'] === 8 && $setting->settings['module_announcement_bar_pro_color_mode'] === 'custom' && (int)$setting->settings['module_announcement_bar_pro_status'] === 1);
 	check("$kit upgrade: SHOW COLUMNS escapes LIKE wildcards", (bool)preg_grep("/^SHOW COLUMNS FROM `oc_abp_message_description` LIKE 'mobile\\\\\\\\_text'$/", $db->log), implode(' | ', preg_grep('/^SHOW COLUMNS/', $db->log)));
 
 	// 3. Upgrade from schema 6 (2.2.0, like the live shop): only the 2.3.0 columns are added.
@@ -222,23 +236,39 @@ foreach (array('OC3' => 'ModelExtensionModuleAnnouncementBarPro', 'OC4' => 'Open
 	$setting->settings = array('module_announcement_bar_pro_schema' => 6, 'module_announcement_bar_pro_status' => 1, 'module_announcement_bar_pro_color_mode' => 'custom', 'module_announcement_bar_pro_mode' => 'stack', 'module_announcement_bar_pro_dismiss_days' => 7);
 	$model->ensureSchema();
 	$a = alters($db);
-	check("$kit upgrade 6→7: exactly 20 ADD COLUMN", count($a) === 20, count($a) . ': ' . implode(' | ', $a));
-	check("$kit upgrade 6→7: ALTER statements", in_array("ALTER TABLE `oc_abp_message` ADD COLUMN `type` VARCHAR(16) NOT NULL DEFAULT 'standard'", $a, true)
+	check("$kit upgrade 6→8: exactly 25 ADD COLUMN", count($a) === 25, count($a) . ': ' . implode(' | ', $a));
+	check("$kit upgrade 6→8: ALTER statements", in_array("ALTER TABLE `oc_abp_message` ADD COLUMN `type` VARCHAR(16) NOT NULL DEFAULT 'standard'", $a, true)
 		&& in_array("ALTER TABLE `oc_abp_message` ADD COLUMN `threshold` DECIMAL(15,4) NOT NULL DEFAULT '0.0000'", $a, true)
 		&& in_array("ALTER TABLE `oc_abp_message` ADD COLUMN `coupon` VARCHAR(32) NOT NULL DEFAULT ''", $a, true)
 		&& in_array("ALTER TABLE `oc_abp_message` ADD COLUMN `weekdays` VARCHAR(7) NOT NULL DEFAULT ''", $a, true)
 		&& in_array("ALTER TABLE `oc_abp_message` ADD COLUMN `categories` TEXT NOT NULL", $a, true)
 		&& in_array("ALTER TABLE `oc_abp_message` ADD COLUMN `button_style` VARCHAR(16) NOT NULL DEFAULT 'outline'", $a, true)
 		&& in_array("ALTER TABLE `oc_abp_message_description` ADD COLUMN `text_b` TEXT NOT NULL", $a, true), implode(' | ', $a));
-	check("$kit upgrade 6→7: no 2.2.0 column added twice", !preg_grep('/ADD COLUMN `(device|views|clicks|mobile_text)`/', $a));
-	check("$kit upgrade 6→7: settings kept, new defaults added, schema 7", (int)$setting->settings['module_announcement_bar_pro_schema'] === 7 && $setting->settings['module_announcement_bar_pro_mode'] === 'stack' && (int)$setting->settings['module_announcement_bar_pro_dismiss_days'] === 7 && $setting->settings['module_announcement_bar_pro_style'] === 'solid' && $setting->settings['module_announcement_bar_pro_color_mode'] === 'custom');
-	check("$kit upgrade 6→7: existing messages keep the 2.2.0 button look (button_style default 'outline')", (bool)preg_grep("/ADD COLUMN `button_style` VARCHAR\(16\) NOT NULL DEFAULT 'outline'/", $a));
+	check("$kit upgrade 6→8: no 2.2.0 column added twice", !preg_grep('/ADD COLUMN `(device|views|clicks|mobile_text)`/', $a));
+	check("$kit upgrade 6→8: settings kept, new defaults added, schema 8", (int)$setting->settings['module_announcement_bar_pro_schema'] === 8 && $setting->settings['module_announcement_bar_pro_mode'] === 'stack' && (int)$setting->settings['module_announcement_bar_pro_dismiss_days'] === 7 && $setting->settings['module_announcement_bar_pro_style'] === 'solid' && $setting->settings['module_announcement_bar_pro_color_mode'] === 'custom');
+	check("$kit upgrade 6→8: existing messages keep the 2.2.0 button look (button_style default 'outline')", (bool)preg_grep("/ADD COLUMN `button_style` VARCHAR\(16\) NOT NULL DEFAULT 'outline'/", $a));
+
+	// 3b. Upgrade from schema 7 (2.3.0, like the live shop): only the 2.4.0 columns + the two new tables.
+	list($model, $db, $setting) = make($class);
+	$db->tables = array('abp_message' => $s7_message, 'abp_message_description' => $s7_desc);
+	$setting->settings = array('module_announcement_bar_pro_schema' => 7, 'module_announcement_bar_pro_status' => 1, 'module_announcement_bar_pro_color_mode' => 'custom', 'module_announcement_bar_pro_mode' => 'stack', 'module_announcement_bar_pro_style' => 'gradient');
+	$model->ensureSchema();
+	$a = alters($db);
+	check("$kit upgrade 7→8: exactly 5 ADD COLUMN (placement, priority, options, subscribes, extra)", count($a) === 5 && in_array("ALTER TABLE `oc_abp_message` ADD COLUMN `options` TEXT NOT NULL", $a, true) && in_array("ALTER TABLE `oc_abp_message_description` ADD COLUMN `extra` TEXT NOT NULL", $a, true) && in_array("ALTER TABLE `oc_abp_message` ADD COLUMN `priority` INT(11) NOT NULL DEFAULT '0'", $a, true), count($a) . ': ' . implode(' | ', $a));
+	check("$kit upgrade 7→8: subscriber + rate tables created", isset($db->tables['abp_subscriber'], $db->tables['abp_rate']));
+	check("$kit upgrade 7→8: 2.3.0 settings kept (stack, gradient), 2.4.0 defaults, secret, schema 8", (int)$setting->settings['module_announcement_bar_pro_schema'] === 8 && $setting->settings['module_announcement_bar_pro_mode'] === 'stack' && $setting->settings['module_announcement_bar_pro_style'] === 'gradient' && (int)$setting->settings['module_announcement_bar_pro_pause_button'] === 1 && strlen($setting->settings['module_announcement_bar_pro_secret']) === 64);
+	$secret = $setting->settings['module_announcement_bar_pro_secret'];
+	$setting->settings['module_announcement_bar_pro_schema'] = 7; // run again (e.g. a second admin tab during the upgrade)
+	$before = count($db->log);
+	$threw = '';
+	try { $model->ensureSchema(); } catch (Exception $e) { $threw = $e->getMessage(); }
+	check("$kit 7→8 re-run: no ADD COLUMN, no error, secret unchanged", $threw === '' && !preg_grep('/ ADD COLUMN /', array_slice($db->log, $before)) && $setting->settings['module_announcement_bar_pro_secret'] === $secret, $threw);
 
 	// 4. Second run: schema is current → no DDL at all.
 	$before = count($db->log);
 	$model->ensureSchema();
 	$ddl = preg_grep('/^(CREATE|ALTER|SHOW COLUMNS)/', array_slice($db->log, $before));
-	check("$kit repeat: no DDL once schema 7", !$ddl, implode(' | ', $ddl));
+	check("$kit repeat: no DDL once schema 8", !$ddl, implode(' | ', $ddl));
 
 	// 5. Repeat even when the schema key is lost (e.g. settings deleted on uninstall, tables kept): no duplicate column.
 	$setting->settings = array();
@@ -247,13 +277,13 @@ foreach (array('OC3' => 'ModelExtensionModuleAnnouncementBarPro', 'OC4' => 'Open
 	try { $model->ensureSchema(); } catch (Exception $e) { $threw = $e->getMessage(); }
 	check("$kit re-run with kept tables: no ADD COLUMN, no error", $threw === '' && !preg_grep('/ ADD COLUMN /', array_slice($db->log, $before)), $threw);
 
-	// 6. Re-run 6→7 after an interrupted migration (half of the columns already there): only the rest is added.
+	// 6. Re-run 6→8 after an interrupted migration (half of the columns already there): only the rest is added.
 	list($model, $db, $setting) = make($class);
 	$db->tables = array('abp_message' => array_merge($s6_message, array_slice($new_message, 0, 8)), 'abp_message_description' => array_merge($s6_desc, array('success_text')));
 	$setting->settings = array('module_announcement_bar_pro_schema' => 6);
 	$model->ensureSchema();
 	$a = alters($db);
-	check("$kit interrupted 6→7: only the 11 missing columns added", count($a) === 11 && !preg_grep('/`(type|threshold|copies|success_text)`/', $a), count($a) . ': ' . implode(' | ', $a));
+	check("$kit interrupted 6→8: only the 16 missing columns added", count($a) === 16 && !preg_grep('/`(type|threshold|copies|success_text)`/', $a), count($a) . ': ' . implode(' | ', $a));
 
 	// 7. addColumnIfMissing: whitelist of names, return values.
 	check("$kit addColumnIfMissing refuses unsafe names", $model->addColumnIfMissing('abp_message`; DROP TABLE x; --', 'a', 'INT') === false && $model->addColumnIfMissing('abp_message', 'x` INT, ADD `y', 'INT') === false);
@@ -282,19 +312,37 @@ foreach (array('OC3' => 'ModelExtensionModuleAnnouncementBarPro', 'OC4' => 'Open
 	$legacy = $data; foreach (array('type', 'threshold', 'coupon', 'weekdays', 'time_start', 'time_end', 'style', 'button_style', 'categories', 'products', 'device') as $k) { unset($legacy[$k]); }
 	$model->addMessage($legacy);
 	check("$kit addMessage without 2.3.0 keys: neutral values", strpos($db->rows[3], "`type` = 'standard'") !== false && strpos($db->rows[3], "`categories` = '[]'") !== false && strpos($db->rows[3], "`progress_bar` = '1'") !== false && strpos($db->rows[3], "`button_style` = 'outline'") !== false, $db->rows[3]);
+	// SQL value of one column from a fake INSERT ("`col` = '…'"), un-escaped (the fake escape() is addslashes()).
+	$col = function ($sql, $name) { return preg_match('/`' . $name . "` = '((?:[^'\\\\]|\\\\.)*)'/", $sql, $m) ? stripslashes($m[1]) : null; };
+	$o3 = json_decode((string)$col($db->rows[3], 'options'), true);
+	$x3 = json_decode((string)$col(end($db->desc), 'extra'), true);
+	check("$kit addMessage without 2.4.0 keys: placement '', priority 0, neutral options JSON, empty extra", $col($db->rows[3], 'placement') === '' && $col($db->rows[3], 'priority') === '0' && is_array($o3) && $o3['countries_mode'] === 'all' && $o3['trigger'] === 'none' && is_array($x3) && $x3['tier_label'] === array() && $x3['email_button'] === '', $db->rows[3] . ' / ' . end($db->desc));
+	$evil = $data;
+	$evil['placement'] = "top' OR 1"; $evil['priority'] = '999'; $evil['type'] = 'tiers';
+	$evil['options'] = array('countries_mode' => "include'", 'countries' => array('5', "6' OR 1"), 'trigger' => 'delay', 'trigger_value' => '7', 'utm_source' => "x'y", 'image' => '../../config.php', 'font' => 'comic', 'email' => '1');
+	$evil['message_description'][1]['extra'] = array('email_button' => "Jo'in <b>now</b>", 'tier_label' => array("A'"));
+	$model->addMessage($evil);
+	$r  = $db->rows[4];
+	$o4 = json_decode((string)$col($r, 'options'), true);
+	check("$kit addMessage: placement / priority whitelisted, tiers type kept", $col($r, 'placement') === '' && $col($r, 'priority') === '100' && $col($r, 'type') === 'tiers', $r);
+	check("$kit addMessage: options JSON re-validated (bad values dropped), every quote escaped", is_array($o4) && $o4['countries_mode'] === 'all' && $o4['countries'] === array(5) && $o4['trigger'] === 'delay' && $o4['trigger_value'] === 7 && $o4['utm_source'] === '' && $o4['image'] === '' && $o4['font'] === '' && $o4['email'] === 1 && preg_match("/`options` = '([^'\\\\]|\\\\.)*', `date_added`/", $r) === 1, $r);
+	$x4 = json_decode((string)$col(end($db->desc), 'extra'), true);
+	check("$kit addMessage: extra texts plain text, ASCII-only JSON", is_array($x4) && $x4['email_button'] === "Jo'in now" && preg_match('/[^\x00-\x7F]/', end($db->desc)) === 0, end($db->desc));
 
 	// 9. Duplicate: copy switched off, everything else copied, statistics start at 0.
 	list($model, $db) = make($class);
 	$new = $model->duplicateMessage(7);
 	check("$kit duplicate returns new id", $new === 1);
 	check("$kit duplicate: status 0, fields copied incl. 2.3.0", isset($db->rows[1]) && strpos($db->rows[1], "`status` = '0'") !== false && strpos($db->rows[1], "`device` = 'mobile'") !== false && strpos($db->rows[1], "`date_end` = '2026-12-24 23:59:59'") !== false && strpos($db->rows[1], "`sort_order` = '3'") !== false && strpos($db->rows[1], "`coupon` = 'XMAS'") !== false && strpos($db->rows[1], "`categories` = '[20,27]'") !== false && strpos($db->rows[1], "`ab_test` = '1'") !== false && !preg_match('/`(views|clicks|copies)(_b)?`/', $db->rows[1]), isset($db->rows[1]) ? $db->rows[1] : '');
+	check("$kit duplicate: 2.4.0 placement, priority, options copied; subscribes not", strpos($db->rows[1], "`placement` = 'cart'") !== false && strpos($db->rows[1], "`priority` = '40'") !== false && strpos(stripslashes($db->rows[1]), '"countries_mode":"include","countries":[117]') !== false && strpos(stripslashes($db->rows[1]), '"trigger":"delay","trigger_value":5') !== false && strpos($db->rows[1], '`subscribes`') === false, $db->rows[1]);
+	check("$kit duplicate: extra texts copied", isset($db->desc[0]) && strpos(stripslashes($db->desc[0]), '"email_button":"Join"') !== false, isset($db->desc[0]) ? $db->desc[0] : '');
 	check("$kit duplicate: description copied incl. phone, success and B texts", isset($db->desc[0]) && strpos($db->desc[0], "`text` = 'It\\'s on'") !== false && strpos($db->desc[0], "`mobile_text` = 'On'") !== false && strpos($db->desc[0], "`text_b` = 'B on'") !== false && strpos($db->desc[0], "`success_text` = 'Free!'") !== false);
 	check("$kit duplicate of a missing message → 0, nothing written", $model->duplicateMessage(8) === 0 && count($db->rows) === 1);
 
 	// 10. Reset statistics: all six counters, (int) id.
 	list($model, $db) = make($class);
 	$model->resetStatistics($kit === 'OC3' ? '5 OR 1=1' : 5); // OC4 has an int type hint
-	check("$kit resetStatistics: all counters, cast to int", end($db->log) === "UPDATE `oc_abp_message` SET `views` = '0', `clicks` = '0', `copies` = '0', `views_b` = '0', `clicks_b` = '0', `copies_b` = '0' WHERE `message_id` = '5'", end($db->log));
+	check("$kit resetStatistics: all counters incl. sign-ups, cast to int", end($db->log) === "UPDATE `oc_abp_message` SET `views` = '0', `clicks` = '0', `copies` = '0', `views_b` = '0', `clicks_b` = '0', `copies_b` = '0', `subscribes` = '0' WHERE `message_id` = '5'", end($db->log));
 
 	// 11. Use B: only for a message with an A/B test; B texts become A, B counters become the main counters.
 	list($model, $db) = make($class);
@@ -335,6 +383,63 @@ foreach (array('OC3' => '\Announcementbarpro\Sanitizer', 'OC4' => '\Opencart\Sys
 	check("$kit clockTime()", $s->clockTime('09:30') === '09:30' && $s->clockTime('24:00') === '' && $s->clockTime('9:30') === '');
 	check("$kit idList(): positive ints, unique, max", $s->idList(array('3', '3', '0', '-1', '4x', 5)) === array(3, 5) && $s->idList('[1,2,"x"]') === array(1, 2) && count($s->idList(range(1, 300), 200)) === 200);
 	check("$kit amount(): 49,99 → 49.9900, invalid → false", $s->amount('49,99') === '49.9900' && $s->amount('50') === '50.0000' && $s->amount('1e3') === false && $s->amount('-5') === false && $s->amount('') === false);
+}
+
+// 14. 2.4.0 feature library (identical class body in both kits; both are run).
+require_once $root . '/announcement-bar-pro/upload/system/library/announcementbarpro/features.php';
+date_default_timezone_set('Europe/Riga');
+foreach (array('OC3' => '\Announcementbarpro\Features', 'OC4' => '\Opencart\System\Library\Extension\AnnouncementBarPro\Features') as $kit => $cls) {
+	$f = new $cls();
+	$lookup = function ($kind, $values) {
+		if ($kind === 'zone') { return array(10 => 117, 20 => 222); }
+		if ($kind === 'image') { return $values === 'catalog/a.jpg'; }
+		$known = array('country' => array(117, 222), 'coupon' => array(5), 'product' => array(40), 'category' => array(20));
+		return array_values(array_intersect((array)$values, $known[$kind]));
+	};
+	list($o, $e) = $f->validate(array(), $lookup, array('EUR', 'USD'));
+	check("$kit validate(empty) = defaults, no errors", $o == $f->defaults() && !$e);
+	list($o, $e) = $f->validate(array('countries_mode' => 'include', 'countries' => array('117'), 'fs_zones' => array(array('country_id' => '117', 'zone_id' => '10', 'amount' => '40'), array('country_id' => '0', 'zone_id' => '0', 'amount' => '')),
+		'fs_currencies' => array('EUR' => '45,5', 'USD' => ''), 'coupon_id' => '5', 'tiers' => array('50', '100', '', '', ''), 'cart_qty_min' => '2', 'cart_products' => array('40'),
+		'utm_source' => 'NewsLetter, Google', 'referrer' => 'https://www.Facebook.com/x', 'visitor' => 'new', 'trigger' => 'scroll', 'trigger_value' => '40',
+		'recur' => 'daily', 'recur_time' => '14:00', 'recur_skip' => array('7', '6'), 'email' => '1', 'image' => 'catalog/a.jpg', 'overlay' => '70', 'font' => 'serif'), $lookup, array('EUR', 'USD'), 'tiers');
+	check("$kit validate(valid): no errors, values normalised", !$e && $o['countries'] === array(117) && $o['fs_zones'] === array(array('country_id' => 117, 'zone_id' => 10, 'amount' => '40.0000')) && $o['fs_currencies'] === array('EUR' => '45.5000')
+		&& $o['tiers'] === array('50.0000', '100.0000') && $o['utm_source'] === 'newsletter,google' && $o['referrer'] === 'facebook.com' && $o['trigger_value'] === 40 && $o['recur_skip'] === '67' && $o['coupon_id'] === 5 && $o['font'] === 'serif', json_encode($e) . json_encode($o));
+	list($o, $e) = $f->validate(array('countries_mode' => 'include', 'countries' => array('999'), 'fs_zones' => array(array('country_id' => '222', 'zone_id' => '10', 'amount' => '5')), 'fs_currencies' => array('GBP' => '5'),
+		'coupon_id' => '6', 'tiers' => array('100', '50'), 'cart_subtotal_min' => '20', 'cart_subtotal_max' => '10', 'cart_products' => array('41'), 'utm_source' => 'a b<c', 'referrer' => 'not a host',
+		'trigger' => 'delay', 'trigger_value' => '601', 'recur' => 'daily', 'recur_time' => '25:00', 'image' => '../x.jpg', 'overlay' => '95', 'font' => 'comic', 'visitor' => 'robot'), $lookup, array('EUR'), 'tiers');
+	$want = array('countries', 'fs_zones', 'fs_currencies', 'coupon_id', 'tiers', 'cart_subtotal_max', 'cart_products', 'utm_source', 'referrer', 'trigger', 'recur', 'image', 'overlay', 'font', 'visitor');
+	check("$kit validate(invalid): every bad field reported", !array_diff($want, array_keys($e)), implode(',', array_diff($want, array_keys($e))));
+	check("$kit validate(invalid): unsafe values never kept", $o['image'] === '' && $o['font'] === '' && $o['visitor'] === 'all' && $o['coupon_id'] === 0 && $o['fs_currencies'] === array());
+	list(, $e) = $f->validate(array('tiers' => array('50')), null, array(), 'tiers');
+	check("$kit tiers: fewer than 2 rejected; other types drop tiers", isset($e['tiers']) && $f->validate(array('tiers' => array('50', '60')), null, array(), 'standard')[0]['tiers'] === array());
+	check("$kit options(): broken JSON → defaults; stored tiers kept", $f->options('{x') == $f->defaults() && $f->options('{"tiers":["5.0000","9.0000"]}')['tiers'] === array('5.0000', '9.0000'));
+	$o = $f->validate(array('countries_mode' => 'exclude', 'countries' => array('117'), 'fs_zones' => array(array('country_id' => '117', 'zone_id' => '0', 'amount' => '60'), array('country_id' => '117', 'zone_id' => '10', 'amount' => '30')), 'fs_currencies' => array('EUR' => '80')), null, array('EUR'))[0];
+	check("$kit country: exclude list; unknown country (0) passes exclude, fails include", !$f->countryMatches($o, 117) && $f->countryMatches($o, 222) && $f->countryMatches($o, 0) && !$f->countryMatches(array('countries_mode' => 'include', 'countries' => array(117)), 0));
+	check("$kit threshold: zone > country > currency > default", $f->threshold($o, 100, 117, 10, 'EUR') === array(30.0, '') && $f->threshold($o, 100, 117, 99, 'EUR') === array(60.0, '') && $f->threshold($o, 100, 222, 0, 'EUR') === array(80.0, 'EUR') && $f->threshold($o, 100, 222, 0, 'USD') === array(100.0, ''));
+	$t = $f->tierState(array('50', '100', '150'), 120);
+	check("$kit tierState: 2 reached, next = 3rd, 80 %, markers", $t['done'] === 2 && $t['next'] === 2 && $t['pct'] === 80 && $t['marks'] === array(33.33, 66.67, 100.0), json_encode($t));
+	check("$kit tierState: all reached → next -1", $f->tierState(array('50', '100'), 100)['next'] === -1);
+	$c = array_merge($f->defaults(), array('cart_subtotal_min' => '10.0000', 'cart_qty_max' => '3', 'cart_categories' => array(20)));
+	check("$kit cartMatches: subtotal, quantity and category rules", $f->hasCartRules($c) && $f->cartMatches($c, 15, 2, array(1), array(20)) && !$f->cartMatches($c, 5, 2, array(1), array(20)) && !$f->cartMatches($c, 15, 4, array(1), array(20)) && !$f->cartMatches($c, 15, 2, array(1), array(21)) && !$f->hasCartRules($f->defaults()));
+	$r = array_merge($f->defaults(), array('recur' => 'daily', 'recur_time' => '14:00', 'recur_skip' => '67'));
+	$fri15 = strtotime('2026-11-13 15:00:00'); $mon10 = strtotime('2026-11-09 10:00:00');
+	check("$kit nextCutoff daily: same day before, next working day after (skips Sat+Sun)", $f->nextCutoff($r, $mon10) === strtotime('2026-11-09 14:00:00') && $f->nextCutoff($r, $fri15) === strtotime('2026-11-16 14:00:00'), date('c', $f->nextCutoff($r, $fri15)));
+	$w = array_merge($f->defaults(), array('recur' => 'weekly', 'recur_time' => '09:30', 'recur_day' => 5));
+	check("$kit nextCutoff weekly (Friday 09:30) + attributes", $f->nextCutoff($w, $mon10) === strtotime('2026-11-13 09:30:00') && $f->recurAttr($w) === 'w|09:30|5' && $f->recurAttr($r) === 'd|14:00|67');
+	check("$kit nextCutoff across the DST change (store time)", date('H:i', $f->nextCutoff($r, strtotime('2026-10-23 15:00:00'))) === '14:00');
+	$css = $f->css('a{color:red}</style><script>alert(1)</script>@import url(x.css);b{background:url(javascript:alert(1))}c{width:expression(alert(1))}d{background:url("/img/x.png")}\\3c/style\\3e{}e{-moz-binding:url(x)}');
+	check("$kit css(): no tags, @import, javascript:, expression, escapes, bindings; safe url kept", strpos($css, '<') === false && stripos($css, 'script>') === false && stripos($css, '@import') === false && stripos($css, 'javascript') === false && stripos($css, 'expression') === false && strpos($css, '\\') === false && stripos($css, 'binding') === false && strpos($css, 'url("/img/x.png")') !== false && strpos($css, 'a{color:red}') === 0, $css);
+	$T = 1794000000; $tok = $f->token('secret', 'sess1', $T);
+	check("$kit token: valid for its session after 2 s; not too early, not for another session or key, not after 2 days, not forged", $f->tokenValid($tok, 'secret', 'sess1', $T + 5) && !$f->tokenValid($tok, 'secret', 'sess1', $T + 1) && !$f->tokenValid($tok, 'secret', 'sess2', $T + 5) && !$f->tokenValid($tok, 'other', 'sess1', $T + 5) && !$f->tokenValid($tok, 'secret', 'sess1', $T + 172801) && !$f->tokenValid($T . '.' . str_repeat('0', 32), 'secret', 'sess1', $T + 5) && !$f->tokenValid($tok, '', 'sess1', $T + 5));
+	check("$kit csvCell: formula injection neutralised, quotes doubled", $f->csvCell('=HYPERLINK("x")') === '"\'=HYPERLINK(""x"")"' && $f->csvCell('+1') === '"\'+1"' && $f->csvCell('a@b.lv') === '"a@b.lv"');
+	check("$kit email(): valid, too long, invalid", $f->email(' a@b.lv ') === 'a@b.lv' && $f->email(str_repeat('a', 90) . '@b.lv') === '' && $f->email('a@b') === '' && $f->email('<a@b.lv>') === '');
+	check("$kit imagePath(): only catalog images, no traversal / quotes", $f->imagePath('catalog/demo/a b.jpg') && !$f->imagePath('catalog/../config.php') && !$f->imagePath('catalog/x".jpg') && !$f->imagePath('image/catalog/x.jpg') && !$f->imagePath('catalog/x.php'));
+	$tpl = $f->templates(); $complete = true;
+	foreach ($tpl as $k => $x) { foreach (array('en', 'lv', 'ru') as $l) { if (empty($x['name'][$l]) || empty($x['text'][$l])) { $complete = false; } } }
+	check("$kit templates: 10–15, each with name + text in EN / LV / RU", count($tpl) >= 10 && count($tpl) <= 15 && $complete, (string)count($tpl));
+	$ex = $f->extraOf('{"tier_label":["<b>A</b>","B"],"email_button":"Jo&amp;in"}'); $errs = array();
+	$cl = $f->extra(array('tier_label' => array('X', '', 'Z'), 'tier_text' => array(str_repeat('y', 400)), 'email_consent' => 'ok'), array(0, 2), $errs);
+	check("$kit extraOf / extra: plain text, tier rows by index, length limit reported", $ex['tier_label'] === array('A', 'B') && $ex['email_button'] === 'Jo&in' && $cl['tier_label'] === array('X', 'Z') && isset($errs['tier_text']) && $cl['email_consent'] === 'ok');
 }
 
 echo "\n$pass passed, $fail failed\n";

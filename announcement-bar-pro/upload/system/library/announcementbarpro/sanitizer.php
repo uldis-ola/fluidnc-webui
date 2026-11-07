@@ -2,7 +2,7 @@
 /**
  * Announcement Bar Pro — text / HTML / URL sanitizer.
  * Shared by admin (on save) and catalog (on render, defence in depth).
- * @version 2.3.0
+ * @version 2.4.0
  */
 namespace Announcementbarpro;
 

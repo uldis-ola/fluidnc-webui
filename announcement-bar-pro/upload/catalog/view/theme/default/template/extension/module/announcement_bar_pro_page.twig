@@ -1,0 +1,18 @@
+{{ header }}
+<div id="abp-page" class="container">
+  <div class="row">{{ column_left }}
+    <div id="content" class="col-sm-12">{{ content_top }}
+      <h1>{{ title|e }}</h1>
+      <p>{{ text|e }}</p>
+      {% if button %}
+      <form action="{{ action }}" method="post">
+        <input type="hidden" name="t" value="{{ token|e }}" />
+        <button type="submit" class="btn btn-primary">{{ button|e }}</button>
+      </form>
+      {% else %}
+      <p><a href="{{ home }}" class="btn btn-default">{{ continue|e }}</a></p>
+      {% endif %}
+      {{ content_bottom }}</div>
+    {{ column_right }}</div>
+</div>
+{{ footer }}

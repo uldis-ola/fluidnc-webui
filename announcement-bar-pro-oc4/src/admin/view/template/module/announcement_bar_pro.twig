@@ -74,9 +74,10 @@
                               {% if message.coupon %}<span class="abp-badge abp-b-coupon" data-bs-toggle="tooltip" title="{{ message.coupon|e }}"><i class="fa-solid fa-ticket"></i> {{ message.coupon|e }}</span>{% endif %}
                               {% if message.ab %}<span class="abp-badge abp-b-ab" data-bs-toggle="tooltip" title="{{ text_badge_ab|e }}"><i class="fa-solid fa-shuffle"></i> A/B</span>{% endif %}
                               {% if message.schedule %}<span class="abp-badge abp-b-schedule" data-bs-toggle="tooltip" title="{{ message.schedule|e }}"><i class="fa-regular fa-clock"></i> {{ message.schedule|e }}</span>{% endif %}
-                              {% if message.targeting %}<span class="abp-badge abp-b-target" data-bs-toggle="tooltip" title="{{ message.targeting|e }}"><i aria-hidden="true" class="fa-solid fa-crosshairs"></i><span class="visually-hidden">{{ message.targeting|e }}</span></span>{% endif %}
-                              {% if message.device != 'all' %}<span class="abp-badge" data-bs-toggle="tooltip" title="{{ attribute(_context, 'text_device_' ~ message.device)|e }}"><i aria-hidden="true" class="fa-solid {{ message.device == 'mobile' ? 'fa-mobile-screen' : 'fa-desktop' }}"></i><span class="visually-hidden">{{ attribute(_context, 'text_device_' ~ message.device)|e }}</span></span>{% endif %}
-                              {% if message.missing %}<span class="abp-badge abp-b-warn" data-bs-toggle="tooltip" title="{{ message.missing|e }}"><i aria-hidden="true" class="fa-solid fa-language"></i><span class="visually-hidden">{{ message.missing|e }}</span></span>{% endif %}
+                              {% if message.targeting %}<span class="abp-badge abp-b-target" data-bs-toggle="tooltip" title="{{ message.targeting|e }}"><i aria-hidden="true" class="fa-solid fa-crosshairs"></i> {{ text_badge_targeted|e }}</span>{% endif %}
+                              {% for badge in message.badges %}<span class="abp-badge {{ badge.class|e }}" data-bs-toggle="tooltip" title="{{ badge.title|e }}"><i aria-hidden="true" class="fa-solid {{ badge.icon|e }}"></i> {{ badge.label|e }}</span>{% endfor %}
+                              {% if message.device != 'all' %}<span class="abp-badge" data-bs-toggle="tooltip" title="{{ attribute(_context, 'text_device_' ~ message.device)|e }}"><i aria-hidden="true" class="fa-solid {{ message.device == 'mobile' ? 'fa-mobile-screen' : 'fa-desktop' }}"></i> {{ attribute(_context, 'text_badge_device_' ~ message.device)|e }}</span>{% endif %}
+                              {% if message.missing %}<span class="abp-badge abp-b-warn" data-bs-toggle="tooltip" title="{{ message.missing|e }}"><i aria-hidden="true" class="fa-solid fa-language"></i> {{ text_badge_missing|e }}</span>{% endif %}
                             </div>
                           </div>
                         </td>
@@ -189,6 +190,31 @@
                   <div class="form-text">{{ help_allow_html|e }}</div>
                 </div>
               </div>
+              <div class="row mb-3">
+                <label for="input-max-messages" class="col-sm-3 col-form-label">{{ entry_max_messages }}</label>
+                <div class="col-sm-9">
+                  <input type="number" min="0" max="20" name="module_announcement_bar_pro_max_messages" value="{{ setting.max_messages|e }}" id="input-max-messages" class="form-control abp-num"/>
+                  <div class="form-text">{{ help_max_messages }}</div>
+                  <div id="error-max-messages" class="invalid-feedback"></div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label for="input-autohide" class="col-sm-3 col-form-label">{{ entry_autohide }}</label>
+                <div class="col-sm-9">
+                  <input type="number" min="0" max="600" name="module_announcement_bar_pro_autohide" value="{{ setting.autohide|e }}" id="input-autohide" class="form-control abp-num"/>
+                  <div class="form-text">{{ help_autohide }}</div>
+                  <div id="error-autohide" class="invalid-feedback"></div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label for="input-pause-button" class="col-sm-3 col-form-label">{{ entry_pause_button }}</label>
+                <div class="col-sm-9">
+                  <div class="form-check form-switch form-switch-lg">
+                    <input type="checkbox" name="module_announcement_bar_pro_pause_button" value="1" id="input-pause-button" class="form-check-input"{% if setting.pause_button %} checked{% endif %}/>
+                  </div>
+                  <div class="form-text">{{ help_pause_button }}</div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -268,6 +294,102 @@
                   <input type="number" min="0" max="30" name="module_announcement_bar_pro_padding" value="{{ setting.padding|e }}" id="input-padding" class="form-control abp-num"/>
                   <div class="form-text">{{ help_padding }}</div>
                   <div id="error-padding" class="invalid-feedback"></div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label for="input-font" class="col-sm-3 col-form-label">{{ entry_font }}</label>
+                <div class="col-sm-9">
+                  <select name="module_announcement_bar_pro_font" id="input-font" class="form-select" style="max-width:320px;">{% for f in font_list %}<option value="{{ f.value }}"{% if setting.font == f.value %} selected{% endif %}{% if f.stack %} style="font-family:{{ f.stack|e }}"{% endif %}>{{ f.name|e }}</option>{% endfor %}</select>
+                  <div class="form-text">{{ help_font_module }}</div>
+                  <div id="error-font" class="invalid-feedback"></div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label for="input-custom-css" class="col-sm-3 col-form-label">{{ entry_custom_css }}</label>
+                <div class="col-sm-9">
+                  <textarea name="module_announcement_bar_pro_custom_css" id="input-custom-css" rows="5" class="form-control abp-code" spellcheck="false" placeholder="#abp-bar .abp-btn { border-radius: 6px; }">{{ setting.custom_css|e }}</textarea>
+                  <div class="form-text">{{ help_custom_css }}</div>
+                  <div id="error-custom-css" class="invalid-feedback"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card abp-card">
+            <div class="card-header"><span class="abp-card-title"><span class="abp-ico-badge"><i class="fa-solid fa-earth-europe"></i></span> {{ text_geo }}</span></div>
+            <div class="card-body">
+              <div class="row mb-3">
+                <label for="input-geo-cf" class="col-sm-3 col-form-label">{{ entry_geo_cf }}</label>
+                <div class="col-sm-9">
+                  <div class="form-check form-switch form-switch-lg">
+                    <input type="checkbox" name="module_announcement_bar_pro_geo_cf" value="1" id="input-geo-cf" class="form-check-input"{% if setting.geo_cf %} checked{% endif %}/>
+                  </div>
+                  <div class="form-text">{{ help_geo_cf }}</div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label for="input-geo-fallback" class="col-sm-3 col-form-label">{{ entry_geo_fallback }}</label>
+                <div class="col-sm-9">
+                  <select name="module_announcement_bar_pro_geo_fallback" id="input-geo-fallback" class="form-select" style="max-width:320px;"><option value="store"{% if setting.geo_fallback != 'none' %} selected{% endif %}>{{ text_geo_store }}</option><option value="none"{% if setting.geo_fallback == 'none' %} selected{% endif %}>{{ text_geo_none }}</option></select>
+                  <div class="form-text">{{ help_geo_fallback }}</div>
+                  <div id="error-geo-fallback" class="invalid-feedback"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card abp-card" id="abp-newsletter">
+            <div class="card-header"><span class="abp-card-title"><span class="abp-ico-badge"><i class="fa-solid fa-envelope"></i></span> {{ text_newsletter }}</span></div>
+            <div class="card-body">
+              {% if not mail_ready %}<div class="alert alert-warning"><i class="fa-solid fa-triangle-exclamation"></i> {{ text_mail_missing }}</div>{% endif %}
+              <div class="row mb-3">
+                <label for="input-privacy-id" class="col-sm-3 col-form-label">{{ entry_privacy_id }}</label>
+                <div class="col-sm-9">
+                  <select name="module_announcement_bar_pro_privacy_id" id="input-privacy-id" class="form-select" style="max-width:360px;"><option value="0">{{ text_none }}</option>{% for page in information_pages %}<option value="{{ page.id }}"{% if setting.privacy_id == page.id %} selected{% endif %}>{{ page.title|e }}</option>{% endfor %}</select>
+                  <div class="form-text">{{ help_privacy_id }}</div>
+                  <div id="error-privacy-id" class="invalid-feedback"></div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label for="input-double-optin" class="col-sm-3 col-form-label">{{ entry_double_optin }}</label>
+                <div class="col-sm-9">
+                  <div class="form-check form-switch form-switch-lg">
+                    <input type="checkbox" name="module_announcement_bar_pro_double_optin" value="1" id="input-double-optin" class="form-check-input"{% if setting.double_optin %} checked{% endif %}/>
+                  </div>
+                  <div class="form-text">{{ help_double_optin }}</div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label class="col-sm-3 col-form-label">{{ entry_subscribers }}</label>
+                <div class="col-sm-9">
+                  <p class="abp-subs"><span class="abp-state abp-state-active">{{ subscriber_counts[1] }} {{ text_sub_confirmed }}</span> <span class="abp-state abp-state-scheduled">{{ subscriber_counts[0] }} {{ text_sub_pending }}</span> <span class="abp-state abp-state-disabled">{{ subscriber_counts[2] }} {{ text_sub_unsubscribed }}</span></p>
+                  <a href="{{ export_subscribers }}" class="btn btn-light btn-sm"><i class="fa-solid fa-download"></i> {{ button_export_subscribers }}</a>
+                  <div class="form-text">{{ help_subscribers }}</div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label for="input-erase-email" class="col-sm-3 col-form-label">{{ entry_erase_email }}</label>
+                <div class="col-sm-9">
+                  <div class="input-group" style="max-width:420px;">
+                    <input type="email" id="input-erase-email" class="form-control" autocomplete="off" placeholder="name@example.com" form="abp-no-form"/>
+                    <button type="button" class="btn btn-danger" data-abp-erase="{{ erase_subscriber }}"><i class="fa-solid fa-eraser"></i> {{ button_erase }}</button>
+                  </div>
+                  <div class="form-text">{{ help_erase }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card abp-card">
+            <div class="card-header"><span class="abp-card-title"><span class="abp-ico-badge"><i class="fa-solid fa-chart-line"></i></span> {{ text_analytics }}</span></div>
+            <div class="card-body">
+              <div class="row mb-3">
+                <label for="input-ga4" class="col-sm-3 col-form-label">{{ entry_ga4 }}</label>
+                <div class="col-sm-9">
+                  <div class="form-check form-switch form-switch-lg">
+                    <input type="checkbox" name="module_announcement_bar_pro_ga4" value="1" id="input-ga4" class="form-check-input"{% if setting.ga4 %} checked{% endif %}/>
+                  </div>
+                  <div class="form-text">{{ help_ga4 }}</div>
                 </div>
               </div>
             </div>

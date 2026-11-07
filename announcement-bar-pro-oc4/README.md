@@ -3,11 +3,13 @@
 Paziņojumu josla veikala augšā vai apakšā: akcijas, piegādes nosacījumi, svarīgas ziņas.
 *An announcement bar for the top or bottom of every store page.*
 
-- **Versija / Version:** 2.0.5 (same features as the OpenCart 3 package 2.0.5)
+- **Versija / Version:** 2.4.0 (same features as the OpenCart 3 package)
 - **Saderība / Compatibility:** OpenCart 4.0.2.x – 4.1.0.x, tested on 4.0.2.3 and 4.1.0.4 with PHP 8.3 (PHP 8.0+ required). The code also handles 4.0.0.x–4.0.1.x (route separator `|`, library loading, language flags), but those versions were **not** installed and tested.
 - **Valodas / Languages:** English, Latviešu, Русский
 - **Licence / License:** GPL-3.0 (see `LICENSE.txt`)
 - OpenCart 3.0.x: use the separate package in `announcement-bar-pro`.
+
+> **2.4.0:** several bars and inline boxes (cart page, under the price, mini-cart) with priority, country / cart / campaign / visitor targeting, tiered goals, OpenCart coupons, triggers, recurring countdown, e-mail sign-up (double opt-in), templates, GA4 events. Features, privacy notes and upgrade steps: README of the universal package.
 
 ## LV
 
