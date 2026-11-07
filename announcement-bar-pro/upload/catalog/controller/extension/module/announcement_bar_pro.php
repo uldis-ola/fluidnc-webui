@@ -395,7 +395,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		$json = array('m' => new \stdClass());
 
 		try {
-			if (isset($this->request->server['REQUEST_METHOD']) && $this->request->server['REQUEST_METHOD'] === 'GET' && $this->config->get(self::CODE . '_status') && (int)$this->config->get(self::CODE . '_schema') >= 7 && $this->sameOrigin()) {
+			if (isset($this->request->server['REQUEST_METHOD']) && $this->request->server['REQUEST_METHOD'] === 'GET' && $this->config->get(self::CODE . '_status') && (int)$this->config->get(self::CODE . '_schema') >= 7 && $this->sameOrigin(true)) {
 				$this->abp = $this->sanitizer();
 				$ids       = $this->abp->idList(isset($this->request->get['ids']) && is_string($this->request->get['ids']) ? $this->request->get['ids'] : '', 20);
 
@@ -403,11 +403,13 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 					$language_id = (int)$this->config->get('config_language_id');
 					$allow_html  = (bool)$this->config->get(self::CODE . '_allow_html');
 					$out         = array();
+					$store_id    = (int)$this->config->get('config_store_id');
+					$group_id    = $this->customer->isLogged() ? (int)$this->customer->getGroupId() : (int)$this->config->get('config_customer_group_id');
 
 					$this->load->model(self::ROUTE);
 
 					foreach ($this->model_extension_module_announcement_bar_pro->getActiveMessages($language_id, $this->defaultLanguageId(), 7) as $row) {
-						if (!in_array((int)$row['message_id'], $ids, true)) {
+						if (!in_array((int)$row['message_id'], $ids, true) || !$this->inList($row['stores'], $store_id) || !$this->inList($row['customer_groups'], $group_id)) {
 							continue;
 						}
 
@@ -444,7 +446,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 	 * Only requests from the shop's own pages count (the browser's Sec-Fetch-Site, or Origin/Referer host).
 	 * Scripts and other sites cannot inflate the statistics with cookie-less requests.
 	 */
-	private function sameOrigin() {
+	private function sameOrigin($allow_unknown = false) {
 		$server = $this->request->server;
 		$host   = isset($server['HTTP_HOST']) && is_string($server['HTTP_HOST']) ? strtolower($server['HTTP_HOST']) : '';
 
@@ -461,7 +463,9 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			}
 		}
 
-		return false;
+		// Read-only requests (the cart endpoint) may come without any origin header: older Safari does not send
+		// Sec-Fetch-Site and a no-referrer policy drops the Referer. Statistics stay strict.
+		return $allow_unknown;
 	}
 
 	/**

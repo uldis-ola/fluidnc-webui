@@ -26,8 +26,11 @@
     if (bar.getAttribute('data-color') === 'auto' || styled) { bar.className += ' abp-auto-pending'; }
 
     // A/B test: a stable random variant per browser (localStorage "abp_ab"); without storage everyone sees A.
+    // Nothing is stored (everyone sees A) with Do Not Track / Global Privacy Control, or when the shop's consent
+    // tool sets window.abpConsent = false before this script.
     var ab = null;
-    try { ab = JSON.parse(window.localStorage.getItem('abp_ab') || '{}'); if (!ab || typeof ab !== 'object') { ab = {}; } } catch (e0) { ab = null; }
+    var abOff = (function (d) { return d === '1' || d === 'yes'; })(navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack) || navigator.globalPrivacyControl === true || window.abpConsent === false;
+    if (!abOff) try { ab = JSON.parse(window.localStorage.getItem('abp_ab') || '{}'); if (!ab || typeof ab !== 'object') { ab = {}; } } catch (e0) { ab = null; }
     var abChanged = false;
     for (i = 0; i < items.length; i++) {
       if (items[i].getAttribute('data-ab') !== '1') { continue; }
