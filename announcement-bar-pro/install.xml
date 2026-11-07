@@ -3,8 +3,8 @@
   <name>Announcement Bar Pro</name>
   <code>announcement_bar_pro</code>
   <version>2.3.0</version>
-  <author>3dp.lv</author>
-  <link>https://3dp.lv</link>
+  <author>3DP SIA</author>
+  <link>mailto:extension@3dp.lv</link>
   <!-- No core file modifications. The bar is injected via the OpenCart event
        catalog/view/common/header/after, registered when the module is installed. -->
 </modification>

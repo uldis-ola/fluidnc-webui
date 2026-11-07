@@ -12,7 +12,7 @@ Josla automātiski pielāgojas veikala tēmai.
 - Versija: **2.3.0 „Pro Max”**, DB shēma **7**
 - Licence: GPL-3.0 (LICENSE.txt no OpenCart pirmkoda)
 - Valodas: LV, EN, RU (admin + veikals). Ja veikala valodai tulkojuma nav → angļu.
-- Marketplace-gatavs. Autors `3dp.lv`, saite `https://3dp.lv` (no 2.1.1; Ulda izvēle 06.11.2026).
+- Marketplace-gatavs. Autors `3DP SIA`, saite `mailto:extension@3dp.lv` (no 2.3.0; Ulda izvēle 07.11.2026 — moduļi nav saistīti ar 3dp.lv).
 
 ## 2. Repozitorijs un zars
 
@@ -180,7 +180,7 @@ Publicētais demo: https://claude.ai/artifact/JV4VbyRutwCA9Axw42DGYs (privāts).
 
 ## 9. Kas vēl jāizdara
 
-1. ~~Autora dati~~ — izdarīts 2.1.1 (`3dp.lv`, `https://3dp.lv`).
+1. ~~Autora dati~~ — izdarīts 2.3.0 (`3DP SIA`, `mailto:extension@3dp.lv`).
 2. Pārbaudīt savā veikalā (vispirms testa kopijā!) ar savu tēmu: telefons + dators, aizvēršana, atpakaļskaitīšana.
 3. Ja publicē OpenCart Marketplace: ekrānuzņēmumi, apraksts, cena (nav noteikta).
 4. Iespējami uzlabojumi (nav pieprasīti): papildu valodas, A/B. (Statistika — izdarīts 2.2.0.)
