@@ -16,9 +16,11 @@ const crypto = require('crypto');
 const sha256 = s => crypto.createHash('sha256').update(s).digest('hex');
 const BASE = process.env.OCBASE, DIR = process.env.OCDIR, DB = process.env.OCDB, SHOTS = process.env.SHOTS, DEV = process.env.DEV === '1';
 const MAILDIR = process.env.MAILDIR || 'C:/Users/Admin/abp-testenv/mail';
-// One retry: on Windows a client start can fail now and then under load (seen once on OC4 in 2.4.0 testing).
-const q1 = s => { try { return execFileSync(process.env.MYSQL, [...process.env.MYSQLARGS.split(' '), DB, '-N', '-e', s], { stdio: ['pipe', 'pipe', 'ignore'] }).toString().trim(); } catch (e) { return 'SQLERR ' + e.message.slice(0, 160); } };
-const q = s => { const r = q1(s); return r.startsWith('SQLERR') ? q1(s) : r; };
+// On Windows a mariadb client start can fail now and then under load (seen on OC4 in 2.4.0 testing and, 2.4.1, as a
+// one-off "settings kept" failure on OC3). Up to 4 tries with a short pause; every failed try is printed (SQLRETRY) so a
+// client failure can never again look like a module failure.
+const q1 = s => { try { return execFileSync(process.env.MYSQL, [...process.env.MYSQLARGS.split(' '), DB, '-N', '-e', s], { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim(); } catch (e) { return 'SQLERR ' + String((e.stderr || '') + ' ' + e.message).replace(/\s+/g, ' ').slice(0, 200); } };
+const q = s => { let r = q1(s); for (let i = 1; i < 4 && r.startsWith('SQLERR'); i++) { console.log('SQLRETRY ' + i + ': ' + r + ' | ' + s.slice(0, 80)); execFileSync(process.execPath, ['-e', 'setTimeout(()=>{},300)']); r = q1(s); } return r; };
 const R = []; const ok = (n, c, x = '') => { R.push((c ? 'PASS ' : 'FAIL ') + n + (!c && x !== '' ? ' — ' + String(x).slice(0, 500) : '')); console.log(R[R.length - 1]); };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const setting = k => q("select value from oc_setting where `key`='module_announcement_bar_pro_" + k + "'");
@@ -185,7 +187,8 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
 		await add23({ text: 'Delivery across Europe - parcel locker, courier, post.' });
 		await add23({ text: 'Add {remaining} more for free shipping', fs: 1 });
 		ok('2.3.0: 3 messages (one free shipping), schema 7', q('select count(*) from oc_abp_message') === '3' && setting('schema') === '7', q('select count(*) from oc_abp_message') + '/' + setting('schema'));
-		await settings({ mode: 'stack', dismiss_days: '7' });
+		const set23 = await settings({ mode: 'stack', dismiss_days: '7' });
+		ok('2.3.0 settings saved: mode stack, 7 days', set23 === '' && setting('mode') === 'stack' && setting('dismiss_days') === '7', set23 + ' ' + setting('mode') + '/' + setting('dismiss_days'));
 		const s0 = await shop(); await s0.pg.goto(BASE); await s0.pg.waitForSelector('#abp-bar'); await sleep(800);
 		keysBefore = (await s0.pg.$$eval('#abp-bar .abp-item', l => l.map(i => i.dataset.key))).sort(); await s0.c.close();
 		ok('2.3.0 storefront: 3 messages with dismiss keys', keysBefore.length === 3, keysBefore.join());
@@ -198,7 +201,13 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
 		const cols = q("select count(*) from information_schema.columns where table_schema=database() and table_name='oc_abp_message' and column_name in ('placement','priority','options','subscribes')") + '/' + q("select count(*) from information_schema.columns where table_schema=database() and table_name='oc_abp_message_description' and column_name='extra'") + '/' + q("select count(*) from information_schema.tables where table_schema=database() and table_name in ('oc_abp_subscriber','oc_abp_rate')");
 		ok('migration 7→8: 4 + 1 columns, 2 tables', cols === '4/1/2', cols);
 		ok('migration: form secret created (64 hex), 6 events', /^[0-9a-f]{64}$/.test(setting('secret')) && q("select count(*) from oc_event where `code`='announcement_bar_pro'") === '6');
-		ok('settings kept (stack, 7 days) + 2.4.0 defaults (double opt-in on, GA4 on, pause button on, limits 10 / 200, consent wait off)', setting('mode') === 'stack' && setting('dismiss_days') === '7' && setting('double_optin') === '1' && setting('ga4') === '1' && setting('pause_button') === '1' && setting('signup_limit_ip') === '10' && setting('signup_limit_total') === '200' && setting('consent_wait') === '0', [setting('signup_limit_ip'), setting('signup_limit_total'), setting('consent_wait')].join('/'));
+		{
+			// Every sub-condition named, so a failure says which one (and the module's whole settings row set).
+			const want = { mode: 'stack', dismiss_days: '7', double_optin: '1', ga4: '1', pause_button: '1', signup_limit_ip: '10', signup_limit_total: '200', consent_wait: '0' };
+			const got = {}; for (const k of Object.keys(want)) got[k] = setting(k);
+			const bad = Object.keys(want).filter(k => got[k] !== want[k]);
+			ok('settings kept (stack, 7 days) + 2.4.0 defaults (double opt-in on, GA4 on, pause button on, limits 10 / 200, consent wait off)', bad.length === 0, bad.map(k => k + '=' + JSON.stringify(got[k]) + ' (want ' + want[k] + ')').join(', ') + ' | all: ' + q("select group_concat(concat(substring(`key`, 28), '=', left(value, 12)) order by `key` separator ' ') from oc_setting where `code`='module_announcement_bar_pro'"));
+		}
 		await p.goto(A(ROUTE));
 		ok('2nd admin visit: idempotent (one "options" column, same secret)', q("select count(*) from information_schema.columns where table_schema=database() and table_name='oc_abp_message' and column_name='options'") === '1');
 		const s1 = await shop(); await s1.pg.goto(BASE); await s1.pg.waitForSelector('#abp-bar'); await sleep(800);
@@ -364,11 +373,15 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
 		ok('coupon disabled in OpenCart → message hides itself', !r.v.includes(idCp), JSON.stringify(r));
 		q(`update oc_coupon set status=1, date_end='2020-12-31' where coupon_id=${cid}`); r = await shot();
 		ok('coupon expired → hidden', !r.v.includes(idCp));
-		q(`update oc_coupon set date_end=CURDATE() where coupon_id=${cid}`); r = await shot();
+		// "Today" in the SHOP's time zone (PHP / OpenCart DB session, from the bar's data-tz), not MariaDB's own clock:
+		// the shop runs in UTC, so between 00:00 and 02:00 Riga time the DB server's date is already "tomorrow" for the shop.
+		const tzCp = parseInt(((await (await p.request.get(BASE)).text()).match(/data-tz="(-?\d+)"/) || [0, '0'])[1], 10);
+		const SHOPDAY = `DATE(DATE_ADD(UTC_TIMESTAMP(), INTERVAL ${tzCp} SECOND))`;
+		q(`update oc_coupon set date_end=${SHOPDAY} where coupon_id=${cid}`); r = await shot();
 		ok('coupon on its end date → hidden (OpenCart refuses it that day too: date_end > NOW())', !r.v.includes(idCp), JSON.stringify(r) + ' end=' + q(`select date_end from oc_coupon where coupon_id=${cid}`));
-		q(`update oc_coupon set date_start=CURDATE(), date_end='2099-12-31' where coupon_id=${cid}`); r = await shot();
+		q(`update oc_coupon set date_start=${SHOPDAY}, date_end='2099-12-31' where coupon_id=${cid}`); r = await shot();
 		ok('coupon from its start date (today) → shown (date_start < NOW())', r.v.includes(idCp), JSON.stringify(r));
-		q(`update oc_coupon set date_start=DATE_ADD(CURDATE(), INTERVAL 1 DAY) where coupon_id=${cid}`); r = await shot();
+		q(`update oc_coupon set date_start=DATE_ADD(${SHOPDAY}, INTERVAL 1 DAY) where coupon_id=${cid}`); r = await shot();
 		ok('coupon starting tomorrow → hidden', !r.v.includes(idCp), JSON.stringify(r));
 		q(`update oc_coupon set date_start='2020-01-01' where coupon_id=${cid}`);
 		q(`update oc_coupon set date_end='2099-12-31', uses_total=1 where coupon_id=${cid}`); q(`insert into oc_coupon_history (coupon_id,order_id,customer_id,amount,date_added) values (${cid},1,0,-1,NOW())`); r = await shot();
