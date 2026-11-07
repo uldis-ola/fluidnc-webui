@@ -263,11 +263,39 @@
     + '.pv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;padding:16px 18px}.pv-card{height:70px;border-radius:10px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.05)}</style>';
   var skeleton = '<div class="pv-head"><div class="pv-logo"></div><div class="pv-nav"><i></i><i></i><i></i></div></div><div class="pv-grid"><div class="pv-card"></div><div class="pv-card"></div><div class="pv-card"></div><div class="pv-card"></div><div class="pv-card"></div><div class="pv-card"></div></div>';
   var pvTimer = null, lastDoc = '';
+  // The preview frame is sandboxed (opaque origin), so the browser refuses the shop's icon font there without a CORS
+  // header. Load the Font Awesome CSS here (same origin), embed its woff2 fonts as data: URLs and pass the CSS inline.
+  var faCss = null;
+  function loadFa() {
+    if (!cfg.assets || !cfg.assets.fa || !window.fetch || !window.FileReader || faCss !== null) { return; }
+    faCss = '';
+    var base = new URL(cfg.assets.fa, document.baseURI);
+    fetch(base.href, { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (css) {
+      if (!css) { return; }
+      var urls = [], re = /url\(\s*['"]?([^'")]+\.woff2)(?:[?#][^'")]*)?['"]?\s*\)/g, m;
+      while ((m = re.exec(css)) && urls.length < 8) { if (urls.indexOf(m[1]) < 0) { urls.push(m[1]); } }
+      return Promise.all(urls.map(function (u) {
+        var abs = new URL(u, base);
+        if (abs.origin !== location.origin) { return null; }
+        return fetch(abs.href, { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.blob() : null; }).then(function (b) {
+          if (!b) { return null; }
+          return new Promise(function (ok) { var fr = new FileReader(); fr.onload = function () { ok([u, String(fr.result).replace(/^data:[^;,]*/, 'data:font/woff2')]); }; fr.onerror = function () { ok(null); }; fr.readAsDataURL(b); });
+        });
+      })).then(function (pairs) {
+        var out = css.replace(/url\(\s*['"]?([^'")]+?)(?:[?#][^'")]*)?['"]?\s*\)/g, function (all, u) {
+          for (var i = 0; i < pairs.length; i++) { if (pairs[i] && pairs[i][0] === u) { return 'url(' + pairs[i][1] + ')'; } }
+          return /^data:/.test(u) ? all : 'url(' + new URL(u, base).href + ')';
+        });
+        if (pairs.some(function (p) { return p; })) { faCss = out.replace(/<\/style/gi, ''); lastDoc = ''; render(); }
+      });
+    })['catch'](function () { /* keep the <link>: icons may stay empty, the preview still works */ });
+  }
   function render() {
     if (!frame || !cfg.assets) { return; }
+    loadFa();
     var s = state();
     var doc = '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="' + esc(cfg.assets.css) + '">'
-      + (cfg.assets.fa ? '<link rel="stylesheet" href="' + esc(cfg.assets.fa) + '">' : '') + page + '</head><body>' + barHtml(s)
+      + (faCss ? '<style>' + faCss + '</style>' : (cfg.assets.fa ? '<link rel="stylesheet" href="' + esc(cfg.assets.fa) + '">' : '')) + page + '</head><body>' + barHtml(s)
       + '<script src="' + esc(cfg.assets.pre) + '"><\/script>' + skeleton + '<script src="' + esc(cfg.assets.js) + '"><\/script></body></html>';
     var wrap = $('#abp-preview-wrap');
     if (wrap) { wrap.classList.toggle('abp-pv-phone', pv.device === 'phone'); }

@@ -74,9 +74,9 @@
                               {% if message.coupon %}<span class="abp-badge abp-b-coupon" data-bs-toggle="tooltip" title="{{ message.coupon|e }}"><i class="fa-solid fa-ticket"></i> {{ message.coupon|e }}</span>{% endif %}
                               {% if message.ab %}<span class="abp-badge abp-b-ab" data-bs-toggle="tooltip" title="{{ text_badge_ab|e }}"><i class="fa-solid fa-shuffle"></i> A/B</span>{% endif %}
                               {% if message.schedule %}<span class="abp-badge abp-b-schedule" data-bs-toggle="tooltip" title="{{ message.schedule|e }}"><i class="fa-regular fa-clock"></i> {{ message.schedule|e }}</span>{% endif %}
-                              {% if message.targeting %}<span class="abp-badge abp-b-target" data-bs-toggle="tooltip" title="{{ message.targeting|e }}"><i class="fa-solid fa-crosshairs"></i></span>{% endif %}
-                              {% if message.device != 'all' %}<span class="abp-badge" data-bs-toggle="tooltip" title="{{ attribute(_context, 'text_device_' ~ message.device)|e }}"><i class="fa-solid {{ message.device == 'mobile' ? 'fa-mobile-screen' : 'fa-desktop' }}"></i></span>{% endif %}
-                              {% if message.missing %}<span class="abp-badge abp-b-warn" data-bs-toggle="tooltip" title="{{ message.missing|e }}"><i class="fa-solid fa-language"></i></span>{% endif %}
+                              {% if message.targeting %}<span class="abp-badge abp-b-target" data-bs-toggle="tooltip" title="{{ message.targeting|e }}"><i aria-hidden="true" class="fa-solid fa-crosshairs"></i><span class="visually-hidden">{{ message.targeting|e }}</span></span>{% endif %}
+                              {% if message.device != 'all' %}<span class="abp-badge" data-bs-toggle="tooltip" title="{{ attribute(_context, 'text_device_' ~ message.device)|e }}"><i aria-hidden="true" class="fa-solid {{ message.device == 'mobile' ? 'fa-mobile-screen' : 'fa-desktop' }}"></i><span class="visually-hidden">{{ attribute(_context, 'text_device_' ~ message.device)|e }}</span></span>{% endif %}
+                              {% if message.missing %}<span class="abp-badge abp-b-warn" data-bs-toggle="tooltip" title="{{ message.missing|e }}"><i aria-hidden="true" class="fa-solid fa-language"></i><span class="visually-hidden">{{ message.missing|e }}</span></span>{% endif %}
                             </div>
                           </div>
                         </td>

@@ -84,9 +84,9 @@
                             {% if message.coupon %}<span class="abp-badge abp-b-coupon" data-toggle="tooltip" title="{{ message.coupon|e }}"><i class="fa fa-ticket"></i> {{ message.coupon|e }}</span>{% endif %}
                             {% if message.ab %}<span class="abp-badge abp-b-ab" data-toggle="tooltip" title="{{ text_badge_ab|e }}"><i class="fa fa-random"></i> A/B</span>{% endif %}
                             {% if message.schedule %}<span class="abp-badge abp-b-schedule" data-toggle="tooltip" title="{{ message.schedule|e }}"><i class="fa fa-clock-o"></i> {{ message.schedule|e }}</span>{% endif %}
-                            {% if message.targeting %}<span class="abp-badge abp-b-target" data-toggle="tooltip" title="{{ message.targeting|e }}"><i class="fa fa-crosshairs"></i></span>{% endif %}
-                            {% if message.device != 'all' %}<span class="abp-badge" data-toggle="tooltip" title="{{ attribute(_context, 'text_device_' ~ message.device)|e }}"><i class="fa {{ message.device == 'mobile' ? 'fa-mobile' : 'fa-desktop' }}"></i></span>{% endif %}
-                            {% if message.missing %}<span class="abp-badge abp-b-warn" data-toggle="tooltip" title="{{ message.missing|e }}"><i class="fa fa-language"></i></span>{% endif %}
+                            {% if message.targeting %}<span class="abp-badge abp-b-target" data-toggle="tooltip" title="{{ message.targeting|e }}"><i aria-hidden="true" class="fa fa-crosshairs"></i><span class="sr-only">{{ message.targeting|e }}</span></span>{% endif %}
+                            {% if message.device != 'all' %}<span class="abp-badge" data-toggle="tooltip" title="{{ attribute(_context, 'text_device_' ~ message.device)|e }}"><i aria-hidden="true" class="fa {{ message.device == 'mobile' ? 'fa-mobile' : 'fa-desktop' }}"></i><span class="sr-only">{{ attribute(_context, 'text_device_' ~ message.device)|e }}</span></span>{% endif %}
+                            {% if message.missing %}<span class="abp-badge abp-b-warn" data-toggle="tooltip" title="{{ message.missing|e }}"><i aria-hidden="true" class="fa fa-language"></i><span class="sr-only">{{ message.missing|e }}</span></span>{% endif %}
                           </div>
                         </div>
                       </td>

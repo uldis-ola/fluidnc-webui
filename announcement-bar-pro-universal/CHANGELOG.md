@@ -2,6 +2,7 @@
 
 ## 2.3.0 "Pro Max" — 2026-11-07
 - Review hardening: the free-shipping endpoint answers only for messages of the visitor's store and customer group (same rules as the bar); it also accepts read-only requests without origin headers (older Safari with a no-referrer policy), statistics stay strict. The A/B variant is not stored (everyone sees A) with Do Not Track / Global Privacy Control, or when the shop's consent tool sets `window.abpConsent = false`. The threshold help says it is the same rule as OpenCart's Free Shipping method.
+- Admin live preview shows the store's icons: the icon font is embedded into the sandboxed preview (the browser blocks fonts there without a CORS header). Icon-only badges in the message list have screen-reader text.
 - Author is now **3DP SIA**; the extension link opens the support e-mail extension@3dp.lv (`install.xml`, `install.json`).
 - **Free-shipping progress** (new message type): amount in the store's default currency, a per-language text with `{remaining}` and a per-language text for when the amount is reached (required where the text is set), optional thin progress bar. The remaining amount is computed on the server from the cart subtotal (without tax) and formatted in the visitor's currency. After OpenCart's own AJAX cart requests (`checkout/cart` and `common/cart` routes, OpenCart 3 and 4, via jQuery `ajaxComplete`) the bar asks a small read-only endpoint (`…/cart`, GET `ids`, same-origin only, JSON, no session changes beyond what OpenCart does on any page view, never outputs errors) and updates text and bar in place.
 - **Coupon code with Copy:** optional per message (A–Z, 0–9, `-`, `_`, max. 32, stored uppercase). Dashed code chip + Copy button (Clipboard API with `execCommand` fallback), visible "Copied!" feedback announced through `aria-live`, new **copies** counter.
@@ -35,7 +36,7 @@
 - README: correct upgrade steps for OpenCart 4 (its installer refuses a package that is still installed; checked on 4.1.0.4).
 
 ## 2.1.1 — 2026-11-06
-- Author and link set in `install.xml` (OpenCart 3) and `install.json` (OpenCart 4): author `3dp.lv`, link `https://3dp.lv`. They replace the placeholders.
+- Author and link set in `install.xml` (OpenCart 3) and `install.json` (OpenCart 4): author and link (they replace the placeholders; since 2.3.0 the author is 3DP SIA).
 - No code changes. Only the version number changed (file headers, `VERSION` constants, asset `?v=` key).
 
 ## 2.1.0 — 2026-11-06
