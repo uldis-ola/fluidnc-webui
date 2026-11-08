@@ -3,7 +3,7 @@
 *Announcement bars and inline boxes for OpenCart 1.5: promotions, free-shipping progress, coupons, countdowns, e-mail sign-ups.*
 Paziņojumu joslas un bloki OpenCart 1.5 veikalam: akcijas, bezmaksas piegādes progress, kuponi, atpakaļskaitīšana, e-pasta pieteikšanās.
 
-- **Version:** 2.4.1 (same features as the OpenCart 3 / 4 editions 2.4.1)
+- **Version:** 2.4.2 (same features as the OpenCart 3 / 4 editions 2.4.2)
 - **OpenCart:** 1.5.4 – 1.5.6.4. Tested on **1.5.6.4** (PHP 5.6 and PHP 7.4) and **1.5.5.1** (PHP 5.6).
 - **vQmod:** 2.4 or newer (tested with vQmod 2.6.6 for OpenCart). OpenCart 1.5 has no event system, so vQmod is needed.
 - **PHP:** **5.6 minimum** (recommended: the newest PHP your OpenCart 1.5 runs on, 7.x). PHP 5.4 / 5.5 are not supported:

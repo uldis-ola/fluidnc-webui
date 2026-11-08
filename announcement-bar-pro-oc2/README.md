@@ -3,7 +3,7 @@
 An announcement bar for the top or bottom of every store page, plus inline boxes on the cart page, under the product
 price and in the mini-cart: promotions, shipping terms, sign-up forms, notices.
 
-- **Version:** 2.4.1 (same features as the OpenCart 3 and 4 editions 2.4.1)
+- **Version:** 2.4.2 (same features as the OpenCart 3 and 4 editions 2.4.2)
 - **Compatibility:** OpenCart 2.0.0.0 – 2.3.0.2. Tested on 2.0.3.1, 2.1.0.2, 2.2.0.0 and 2.3.0.2.
 - **PHP:** 5.6 or newer (tested on PHP 5.6.40 and 7.4.33). PHP 5.4 / 5.5 are not supported: the shared feature
   library uses array class constants (PHP 5.6). PHP 7.0+ functions it needs (`random_bytes`, `intdiv`) are provided by
