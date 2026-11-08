@@ -868,12 +868,14 @@ class Features {
 
 	/**
 	 * Server-side check of a Turnstile token with Cloudflare's siteverify. Fails closed: 'ok' only when Cloudflare
-	 * answered "success": true (and, if it names an action, ours); 'missing' without a token; 'failed' for everything
-	 * else (refused or used token, network error, bad JSON, another action, unusable secret).
+	 * answered "success": true (and, if it names an action, ours; if it names a hostname and $host is set, the shop's);
+	 * 'missing' without a token; 'failed' for everything else (refused or used token, network error, bad JSON, another
+	 * action, another hostname, unusable secret).
 	 * $transport($url, array $fields) returns the response body or false (injectable, so tests need no network);
-	 * $codes receives Cloudflare's error codes or the local reason (http-error, bad-json, not-success, wrong-action).
+	 * $codes receives Cloudflare's error codes or the local reason (http-error, bad-json, not-success, wrong-action,
+	 * wrong-hostname). $host: the shop's host from tsHost() ('' = no hostname check).
 	 */
-	public function tsVerify($secret, $response, $ip, $transport, &$codes = null) {
+	public function tsVerify($secret, $response, $ip, $transport, &$codes = null, $host = '') {
 		$codes = array();
 
 		if (!is_string($response) || trim($response) === '') {
@@ -937,7 +939,53 @@ class Features {
 			return 'failed';
 		}
 
+		// 2.4.2: a token solved on another site (same widget keys) is refused. Only when Cloudflare names the hostname.
+		$host = is_string($host) ? $this->tsHostName($host) : '';
+
+		if ($host !== '' && isset($json['hostname']) && $json['hostname'] !== '' && (!is_string($json['hostname']) || $this->tsHostName($json['hostname']) !== $host)) {
+			$codes = array('wrong-hostname');
+			return 'failed';
+		}
+
 		return 'ok';
+	}
+
+	/**
+	 * The host tsVerify() compares with siteverify's "hostname" (2.4.2): from the shop's configured URL(s) — never from
+	 * the request's Host header — the first usable one. '' (no hostname check) when none is usable, or for a local
+	 * development host (localhost, *.localhost, 127.x.x.x, ::1): a public shop is never served under those names, and
+	 * Cloudflare's test keys answer "hostname": "example.com" there.
+	 */
+	public function tsHost($urls) {
+		foreach ((array)$urls as $url) {
+			if (!is_string($url) || trim($url) === '') {
+				continue;
+			}
+
+			$url  = trim($url);
+			$host = parse_url(strpos($url, '//') === false ? 'http://' . $url : $url, PHP_URL_HOST);
+
+			if (!is_string($host) || $host === '') {
+				continue;
+			}
+
+			$host = $this->tsHostName($host);
+
+			if ($host === 'localhost' || substr($host, -10) === '.localhost' || $host === '::1' || preg_match('/^127(\.\d{1,3}){3}$/', $host)) {
+				return '';
+			}
+
+			return $host;
+		}
+
+		return '';
+	}
+
+	/** Host for comparing: lower case, no [ ] (IPv6), no trailing dot, no leading "www." (www and the bare domain are one shop). */
+	private function tsHostName($host) {
+		$host = rtrim(strtolower(trim(trim($host), '[]')), '.');
+
+		return strpos($host, 'www.') === 0 ? substr($host, 4) : $host;
 	}
 
 	/**

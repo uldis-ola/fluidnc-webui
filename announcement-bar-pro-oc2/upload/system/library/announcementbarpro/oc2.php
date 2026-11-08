@@ -316,6 +316,8 @@ class AbpOc2 {
 			}
 		} catch (\Exception $e) {
 			return $original;
+		} catch (\Throwable $e) { // PHP 7+ errors
+			return $original;
 		}
 
 		return is_string($output) ? $output : $original;

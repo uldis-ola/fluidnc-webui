@@ -6,6 +6,7 @@
 - **OpenCart 4 compatibility fixes** (from the 2026-11-08 compatibility pass, OpenCart 4 package): OpenCart 4.0.0.x–4.0.1.x send the double opt-in e-mail through the shop's SMTP settings (their `Mail` options are public properties); OpenCart 4.1.0.0 gets the module's own category search in the message form (its core category autocomplete matches whole names only).
 - **New editions with the same features:** OpenCart 2.0.0.0–2.3.0.2 (`announcement-bar-pro-oc2`, two packages: 2.0–2.2 and 2.3, PHP 5.6+) and OpenCart 1.5.4–1.5.6.4 (`announcement-bar-pro-oc15`, vQmod, PHP 5.6+).
 - Schema stays 8: upgrading 2.4.1 → 2.4.2 replaces files only. Tested: `COMPATIBILITY.md` of the universal package.
+- **Review fixes (pre-release):** Cloudflare Turnstile — `Features::tsVerify()` also checks the `hostname` of Cloudflare's answer against the shop's host (from the shop's configured URL, never the request's Host header; `www.` and letter case ignored) and refuses a token solved on another site (`wrong-hostname`, logged). Not checked when Cloudflare names no hostname, or when the shop runs on a local development host (localhost, `*.localhost`, 127.x, ::1) — there Cloudflare's test keys answer `example.com`.
 
 ## 2.4.1 — 2026-11-08
 First release of the OpenCart 1.5 edition (1.5.4 – 1.5.6.4, PHP 5.6+, vQmod). Same features as Announcement Bar Pro 2.4.1

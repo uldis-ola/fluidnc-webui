@@ -67,9 +67,10 @@ class Turnstile {
 	 * @param mixed    $token     Posted "cf-turnstile-response".
 	 * @param string   $ip        Visitor IP (remoteip).
 	 * @param callable $transport HTTP POST.
+	 * @param string   $host      The site's host from self::host() ('' = no hostname check).
 	 * @return string self::OK | self::MISSING | self::FAILED
 	 */
-	public static function verify( $secret, $token, $ip, $transport ) {
+	public static function verify( $secret, $token, $ip, $transport, $host = '' ) {
 		$token = is_string( $token ) ? trim( $token ) : '';
 
 		if ( '' === $token ) {
@@ -95,17 +96,19 @@ class Turnstile {
 			return self::FAILED;
 		}
 
-		return self::parse( $body );
+		return self::parse( $body, $host );
 	}
 
 	/**
 	 * Siteverify answer → OK or FAILED. Success must be the JSON value true; an action, when Cloudflare reports one,
-	 * must be ours.
+	 * must be ours; a hostname, when Cloudflare reports one and $host is set, must be the site's (1.0.1: a token solved
+	 * on another site with the same widget keys is refused).
 	 *
-	 * @param mixed $body Response body.
+	 * @param mixed  $body Response body.
+	 * @param string $host The site's host from self::host() ('' = no hostname check).
 	 * @return string
 	 */
-	public static function parse( $body ) {
+	public static function parse( $body, $host = '' ) {
 		$data = is_string( $body ) && '' !== $body ? json_decode( $body, true ) : null;
 
 		if ( ! is_array( $data ) || ! isset( $data['success'] ) || true !== $data['success'] ) {
@@ -116,6 +119,56 @@ class Turnstile {
 			return self::FAILED;
 		}
 
+		$host = is_string( $host ) ? self::host_name( $host ) : '';
+
+		if ( '' !== $host && isset( $data['hostname'] ) && '' !== $data['hostname'] && ( ! is_string( $data['hostname'] ) || self::host_name( $data['hostname'] ) !== $host ) ) {
+			return self::FAILED;
+		}
+
 		return self::OK;
+	}
+
+	/**
+	 * The host compared with siteverify's "hostname": from the site's own URL (home_url(), never the request's Host
+	 * header). '' (no hostname check) when it has none, or for a local development host (localhost, *.localhost,
+	 * 127.x.x.x, ::1): a public site is never served under those names, and Cloudflare's test keys answer
+	 * "hostname": "example.com" there.
+	 *
+	 * @param mixed $url Site URL (or a bare host).
+	 * @return string
+	 */
+	public static function host( $url ) {
+		$url = is_string( $url ) ? trim( $url ) : '';
+
+		if ( '' === $url ) {
+			return '';
+		}
+
+		$host = wp_parse_url( false === strpos( $url, '//' ) ? 'http://' . $url : $url, PHP_URL_HOST );
+
+		if ( ! is_string( $host ) || '' === $host ) {
+			return '';
+		}
+
+		$host = self::host_name( $host );
+
+		if ( 'localhost' === $host || '.localhost' === substr( $host, -10 ) || '::1' === $host || preg_match( '/^127(\.\d{1,3}){3}$/', $host ) ) {
+			return '';
+		}
+
+		return $host;
+	}
+
+	/**
+	 * Host for comparing: lower case, no [ ] (IPv6), no trailing dot, no leading "www." (www and the bare domain are
+	 * one site).
+	 *
+	 * @param string $host Host.
+	 * @return string
+	 */
+	private static function host_name( $host ) {
+		$host = rtrim( strtolower( trim( trim( $host ), '[]' ) ), '.' );
+
+		return 0 === strpos( $host, 'www.' ) ? substr( $host, 4 ) : $host;
 	}
 }

@@ -21,8 +21,13 @@
 			// Announcement Bar Pro (OpenCart 2.0/2.1 storefront: the view hook OpenCart 2.2+ has as events)
 			if (!defined('DIR_CATALOG') && version_compare(VERSION, '2.2.0.0', '<') && is_file(DIR_SYSTEM . 'library/announcementbarpro/oc2.php')) {
 				require_once(DIR_SYSTEM . 'library/announcementbarpro/oc2.php');
-				$output = AbpOc2::view($this->registry, $template, $output);
+				$output = AbpOc2::view($this->registry, isset($abp_view_template) && is_string($abp_view_template) ? $abp_view_template : $template, $output);
 			}]]></add>
+    </operation>
+    <!-- The template name as the caller passed it: core's extract($data) and the template itself can overwrite $template. -->
+    <operation error="skip">
+      <search><![CDATA[extract($data);]]></search>
+      <add position="before"><![CDATA[			$abp_view_template = $template; // Announcement Bar Pro: before extract($data) can overwrite $template]]></add>
     </operation>
   </file>
 </modification>

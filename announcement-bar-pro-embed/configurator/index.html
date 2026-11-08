@@ -537,10 +537,39 @@ if (typeof module === 'object' && module.exports) { module.exports = ABPCore; }
   }
   var st = null, sel = 0, lang = 'en', pvLang = '', base = '';
   try { var saved = JSON.parse(localStorage.getItem(KEY) || 'null'); if (saved && saved.cfg) { st = saved.cfg; base = saved.base || ''; } } catch (e) { st = null; }
-  if (!st || !Array.isArray(st.messages) || !st.settings) { st = blank(); st.messages.push(fromTpl(TEMPLATES[3])); }
+  if (!st || !Array.isArray(st.messages) || !st.settings || typeof st.settings !== 'object') { st = blank(); st.messages.push(fromTpl(TEMPLATES[3])); }
+  normLangs(st);
   function save() { try { localStorage.setItem(KEY, JSON.stringify({ cfg: st, base: base })); } catch (e) { /* file:// without storage */ } }
   function nextId() { return st.messages.reduce(function (m, x) { return Math.max(m, +x.id || 0); }, 0) + 1; }
   function langs() { return st.settings.languages; }
+  function own(o, k) { return !!o && typeof o === 'object' && Object.prototype.hasOwnProperty.call(o, k); }
+  function attr(v) { return String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  // Languages of a loaded / imported config: 2-letter codes only (as the runtime), no repeats; the default one of them;
+  // label maps without a prototype, so a key such as "__proto__" can never reach Object.prototype.
+  function normLangs(cfg) {
+    var S = cfg.settings, seen = Object.create(null), src = S.labels, labels = Object.create(null);
+    S.languages = (Array.isArray(S.languages) ? S.languages : []).filter(function (l) {
+      if (typeof l !== 'string' || !/^[a-z]{2}$/.test(l) || seen[l]) { return false; }
+      seen[l] = 1;
+      return true;
+    }).slice(0, 30);
+    if (!S.languages.length) { S.languages = ['en']; }
+    if (typeof S.default_language !== 'string' || S.languages.indexOf(S.default_language) === -1) { S.default_language = S.languages[0]; }
+    S.languages.forEach(function (l) {
+      var from = own(src, l) && src[l] && typeof src[l] === 'object' ? src[l] : null, def = own(LABELS, l) ? LABELS[l] : C.LABELS, o = Object.create(null);
+      Object.keys(C.LABELS).forEach(function (k) { o[k] = own(from, k) && typeof from[k] === 'string' ? from[k] : def[k]; });
+      labels[l] = o;
+    });
+    S.labels = labels;
+    (Array.isArray(cfg.messages) ? cfg.messages : []).forEach(function (m) {
+      if (m && typeof m === 'object' && m.languages !== undefined) { m.languages = (Array.isArray(m.languages) ? m.languages : []).filter(function (l) { return typeof l === 'string' && seen[l] === 1; }); }
+    });
+  }
+  function labelsOf(l) {
+    var S = st.settings;
+    if (!own(S.labels, l)) { var o = Object.create(null), d = own(LABELS, l) ? LABELS[l] : C.LABELS; Object.keys(C.LABELS).forEach(function (k) { o[k] = d[k]; }); S.labels[l] = o; }
+    return S.labels[l];
+  }
   function localDate(ms) { var d = new Date(ms - new Date(ms).getTimezoneOffset() * 60000); return d.toISOString().slice(0, 16); }
 
   function fromTpl(t) {
@@ -803,7 +832,7 @@ if (typeof module === 'object' && module.exports) { module.exports = ABPCore; }
         field('Add another language (2-letter code)', (function () { var i = inp('text', function () { return ''; }, function () {}, { maxlength: 2, placeholder: 'fr' }); i.addEventListener('change', function () { var v = i.value.toLowerCase(); if (/^[a-z]{2}$/.test(v)) { setLang(v, true); } }); return i; })())])
     ]));
     var labelBox = h('details', null, [h('summary', { text: 'Labels for visitors (Close, Copy, …) — ' + (LANGS[lang] || lang) })]);
-    var L = S.labels[lang] || (S.labels[lang] = JSON.parse(JSON.stringify(LABELS[lang] || C.LABELS)));
+    var L = labelsOf(lang);
     labelBox.appendChild(row(Object.keys(C.LABELS).map(function (k) { return field(C.LABELS[k], inp('text', function () { return L[k]; }, function (v) { L[k] = v; }, { maxlength: 80 })); })));
     box.appendChild(group('Texts for visitors', [h('div', { class: 'tools' }, [langTabs(function () { drawSettings(); drawEditor(); })]), labelBox]));
     box.appendChild(group('Time, money, privacy', [
@@ -819,7 +848,7 @@ if (typeof module === 'object' && module.exports) { module.exports = ABPCore; }
     var S = st.settings;
     if (on && S.languages.indexOf(l) === -1) {
       S.languages.push(l);
-      if (!S.labels[l]) { S.labels[l] = JSON.parse(JSON.stringify(LABELS[l] || C.LABELS)); }
+      labelsOf(l);
       st.messages.forEach(function (m) { ['text', 'link_text', 'success_text', 'mobile_text'].forEach(function (k) { if (m[k] && typeof m[k] === 'object' && m[k][l] === undefined) { m[k][l] = ''; } }); });
     }
     if (!on && S.languages.length > 1) { S.languages = S.languages.filter(function (x) { return x !== l; }); if (S.default_language === l) { S.default_language = S.languages[0]; } if (lang === l) { lang = S.default_language; } }
@@ -861,7 +890,7 @@ if (typeof module === 'object' && module.exports) { module.exports = ABPCore; }
       var cfg = JSON.parse(cleanConfig());
       cfg.messages.forEach(function (m) { m.pages = { mode: 'all', rules: [] }; if (m.trigger && m.trigger !== 'none') { m.trigger = 'none'; } m.utm_source = m.utm_medium = m.utm_campaign = m.referrer = ''; m.visitor = 'all'; });
       var cart = { subtotal: +$('pv-cart').value || 0, currency: S.currency };
-      var page = '<!DOCTYPE html><html lang="' + l + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>' + $('rt-css').textContent + '</style>' +
+      var page = '<!DOCTYPE html><html lang="' + attr(l) + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>' + $('rt-css').textContent + '</style>' +
         '<style>body{margin:0;font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#1f2937;background:#fff}header.site{display:flex;align-items:center;gap:18px;padding:14px 20px;border-bottom:1px solid #e5e7eb}header.site b{font-size:18px}nav a{color:#1d4ed8;margin-right:12px;text-decoration:none}main{padding:20px;max-width:900px}.ph{height:14px;background:#eef2f7;border-radius:6px;margin:10px 0}.btn-primary{display:inline-block;background:#4338ca;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none}</style></head><body>' +
         '<header class="site"><b>Your shop</b><nav><a href="#">Home</a><a href="#">Shop</a><a href="#">Contact</a></nav></header><main><h1 style="font-size:22px;margin:0 0 6px">Sample page</h1><div class="ph" style="width:70%"></div><div class="ph" style="width:55%"></div><div class="ph" style="width:62%"></div><a class="btn-primary" href="#">Main colour</a><div style="height:500px"></div></main>' +
         '<script>window.abpConfig=' + safeJson(JSON.stringify(cfg)) + ';window.abpCart=' + JSON.stringify(cart) + ';<\/script><script data-css="none">' + $('rt-js').textContent + '<\/script></body></html>';
@@ -903,8 +932,8 @@ if (typeof module === 'object' && module.exports) { module.exports = ABPCore; }
       if (!j || typeof j !== 'object' || !Array.isArray(j.messages) || !j.settings || typeof j.settings !== 'object') { throw new Error('needs "settings" and "messages"'); }
       var b = blank();
       Object.keys(b.settings).forEach(function (k) { if (j.settings[k] === undefined) { j.settings[k] = b.settings[k]; } });
-      if (!Array.isArray(j.settings.languages) || !j.settings.languages.length) { j.settings.languages = ['en']; }
-      st = j; sel = 0; lang = st.settings.default_language || st.settings.languages[0];
+      normLangs(j);
+      st = j; sel = 0; lang = st.settings.default_language;
       changed(); draw();
       $('live').textContent = 'Configuration loaded';
     } catch (e) { err.textContent = 'Not loaded: ' + e.message; }

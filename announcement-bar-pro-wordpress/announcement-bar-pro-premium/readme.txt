@@ -53,6 +53,7 @@ Coming from the single-plugin build 1.0.0 (licence key inside the plugin)? Updat
 = 1.0.1 =
 * The help text of the placement field now names both mini-carts: the classic mini-cart and the drawer of the Mini-Cart block (English, Latvian, Russian).
 * Works with the free plugin 1.0.1 (shared storefront script 2.4.2).
+* Cloudflare Turnstile: the hostname in Cloudflare's answer must be the site's own (from the site address, www. and letter case ignored); a token solved on another site is refused. Not checked on local development hosts (localhost, *.localhost, 127.x, ::1), where Cloudflare's test keys answer example.com.
 
 = 1.0.0 =
 * First release as an add-on of the free plugin: every Pro feature of the single-plugin build 1.0.0, plus the optional Cloudflare Turnstile check of the e-mail sign-up, and the re-subscribe rule (an unsubscribe is never overwritten by a new sign-up; only the owner's confirmation subscribes the address again).

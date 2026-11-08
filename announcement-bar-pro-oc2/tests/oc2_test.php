@@ -114,6 +114,32 @@ if (!$v22) {
 $xml = simplexml_load_file($root . '/install.xml');
 check('install.xml: code, version 2.4.2, loader operation with error="skip" and the version guard', (string)$xml->code === 'announcement_bar_pro' && (string)$xml->version === '2.4.2'
 	&& (string)$xml->file['path'] === 'system/engine/loader.php' && (string)$xml->file->operation['error'] === 'skip' && strpos((string)$xml->file->operation->add, "version_compare(VERSION, '2.2.0.0', '<')") !== false && strpos((string)$xml->file->operation->add, "!defined('DIR_CATALOG')") !== false);
+check('2.0/2.1: hook returns the original output on PHP 7+ errors too (catch \\Throwable)', strpos(file_get_contents(DIR_SYSTEM . 'library/announcementbarpro/oc2.php'), 'catch (\\Throwable $e)') !== false);
+
+// install.xml applied to OpenCart 2.0/2.1's Loader::view() (same statements as core): the hook gets the template the
+// caller asked for, even when $data has a "template" key (extract) or the template file sets $template itself.
+if (!$v22) {
+	$core = 'public function view($template, $data = array()) { $file = DIR_TEMPLATE . $template; if (file_exists($file)) { extract($data);' . "\n"
+		. 'ob_start();' . "\n" . 'require($file);' . "\n" . '$output = ob_get_contents();' . "\n" . 'ob_end_clean();' . "\n" . '} return $output; }';
+	foreach ($xml->file->operation as $op) {
+		$search = (string)$op->search;
+		$add    = (string)$op->add;
+		check('install.xml operation finds its line in Loader::view(): ' . $search, substr_count($core, $search) === 1);
+		$core = str_replace($search, (string)$op->add['position'] === 'before' ? $add . "\n" . $search : $search . "\n" . $add, $core);
+	}
+	$core = str_replace('AbpOc2::view(', 'AbpLoaderProbe::seen(', $core);
+	class AbpLoaderProbe { public static $got = array(); public $registry; static function seen($r, $t, $o) { self::$got[] = $t; return $o; } }
+	eval('class AbpPatchedLoader extends AbpLoaderProbe { ' . $core . ' }');
+	$tplDir = DIR_TEMPLATE; // test-only probe templates (eval above runs this file's own constant string)
+	file_put_contents($tplDir . 'abp_probe_header.tpl', '<?php $template = "default/template/common/footer.tpl"; ?>H');
+	file_put_contents($tplDir . 'abp_probe_home.tpl', 'P');
+	$loader = new AbpPatchedLoader();
+	$out1 = $loader->view('abp_probe_header.tpl', array());
+	$out2 = $loader->view('abp_probe_home.tpl', array('template' => 'default/template/common/header.tpl', 'abp' => 1));
+	@unlink($tplDir . 'abp_probe_header.tpl');
+	@unlink($tplDir . 'abp_probe_home.tpl');
+	check('2.0/2.1: hook gets the requested template although extract($data) / the template overwrote $template', $out1 === 'H' && $out2 === 'P' && AbpLoaderProbe::$got === array('abp_probe_header.tpl', 'abp_probe_home.tpl'), json_encode(AbpLoaderProbe::$got));
+}
 
 // Language stubs: every folder points to the shared texts; every text file defines the same keys
 foreach (array('english' => 'en', 'en-gb' => 'en', 'latvian' => 'lv', 'lv-lv' => 'lv', 'russian' => 'ru', 'ru-ru' => 'ru') as $dir => $code) {

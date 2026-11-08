@@ -1055,7 +1055,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		}
 
 		$codes  = array();
-		$result = $this->fx->tsVerify($secret, isset($post['cf-turnstile-response']) ? $post['cf-turnstile-response'] : '', $this->clientIp(), array($this->fx, 'httpPost'), $codes);
+		$result = $this->fx->tsVerify($secret, isset($post['cf-turnstile-response']) ? $post['cf-turnstile-response'] : '', $this->clientIp(), array($this->fx, 'httpPost'), $codes, $this->fx->tsHost(array($this->config->get('config_ssl'), $this->config->get('config_url'), defined('HTTP_SERVER') ? HTTP_SERVER : '')));
 
 		if ($result === 'ok') {
 			return '';
@@ -1064,6 +1064,11 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		// A wrong key or an unreachable Cloudflare is the shop's problem: log it (codes only, never keys or tokens).
 		if ($result === 'failed' && array_intersect($codes, array('missing-input-secret', 'invalid-input-secret', 'http-error', 'bad-json', 'internal-error'))) {
 			$this->log->write('Announcement Bar Pro: Cloudflare Turnstile check not possible — ' . implode(', ', $codes));
+		}
+
+		// 2.4.2: the token was solved on another host than the shop's configured URL (another site, or a wrong shop URL).
+		if ($result === 'failed' && in_array('wrong-hostname', $codes, true)) {
+			$this->log->write('Announcement Bar Pro: Cloudflare Turnstile token refused — wrong-hostname (it was not solved on the host of the shop URL)');
 		}
 
 		return $this->language->get($result === 'missing' ? 'abp_error_ts_missing' : 'abp_error_ts_failed');
@@ -1107,7 +1112,11 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			// Re-subscription: the unsubscribe link of this mail is derived from the token (nothing else is stored).
 			$model->setResubscribeToken((int)$existing['subscriber_id'], hash('sha256', $token));
 
-			if (!$this->sendConfirmation($email, $token, $this->fx->unsubToken($token, (string)$this->config->get(self::CODE . '_secret')))) {
+			$id = (int)$existing['subscriber_id'];
+
+			if (!$this->sendConfirmation($email, $token, $this->fx->unsubToken($token, (string)$this->config->get(self::CODE . '_secret')), function () use ($model, $id) {
+				$model->setResubscribeToken($id, '');
+			})) {
 				$model->setResubscribeToken((int)$existing['subscriber_id'], '');
 
 				return array('error' => $this->language->get('abp_error_failed'));
@@ -1148,7 +1157,13 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			return $done;
 		}
 
-		if (!$this->sendConfirmation($email, $token, $unsub)) {
+		if (!$this->sendConfirmation($email, $token, $unsub, function () use ($model, $email, $store_id) {
+			$row = $model->getSubscriber($email, $store_id);
+
+			if ($row) {
+				$model->unsubscribe((int)$row['subscriber_id']);
+			}
+		})) {
 			$model->unsubscribe((int)$model->getSubscriber($email, $store_id)['subscriber_id']);
 
 			return array('error' => $this->language->get('abp_error_failed'));
@@ -1157,8 +1172,11 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		return $done;
 	}
 
-	/** Double opt-in e-mail through the shop's own mail settings. False when it could not be sent. */
-	private function sendConfirmation($email, $token, $unsub) {
+	/**
+	 * Double opt-in e-mail through the shop's own mail settings. False when it could not be sent. $rollback undoes the
+	 * sign-up when OpenCart 2.0 / 2.1 ends the request inside Mail::send() (see mailOld()).
+	 */
+	private function sendConfirmation($email, $token, $unsub, $rollback = null) {
 		if ($this->fx->email($email) === '') {
 			return false;
 		}
@@ -1186,9 +1204,19 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			. '<p style="font-size:13px;color:#4b5563;">' . $e($l('abp_mail_ignore')) . '</p>'
 			. '<p style="font-size:12px;color:#4b5563;">' . $e($l('abp_mail_unsubscribe')) . ' <a href="' . $e($leave) . '">' . $e($leave) . '</a></p></body></html>';
 
-		try {
-			$mail = AbpOc2::mail($this->config); // 2.0.0.0: config_mail array; 2.0.2+: config_mail_protocol, … (OpenCart 3: mail engine)
+		if (version_compare(VERSION, '2.2.0.0', '<')) {
+			return $this->mailOld($email, $store, $text, $html, $rollback);
+		}
 
+		$mail = AbpOc2::mail($this->config); // 2.2+: config_mail_protocol, … (Mail::send() throws on errors)
+
+		if (!$this->smtpReachable($mail)) {
+			return false;
+		}
+
+		ob_start(); // a warning of the mail class (shops that display errors) never reaches the JSON answer
+
+		try {
 			// No CR / LF can reach a header (the address was validated already; this is a second line of defence).
 			$mail->setTo($this->fx->headerText($email));
 			$mail->setFrom($this->fx->headerText($this->config->get('config_email')));
@@ -1198,12 +1226,110 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 			$mail->setHtml($html);
 			$mail->send();
 		} catch (\Exception $ex) {
+			ob_end_clean();
 			$this->log->write('Announcement Bar Pro: confirmation e-mail failed — ' . $ex->getMessage());
 			return false;
 		} catch (\Throwable $ex) { // PHP 7+ errors
+			ob_end_clean();
 			$this->log->write('Announcement Bar Pro: confirmation e-mail failed — ' . $ex->getMessage());
 			return false;
 		}
+
+		ob_end_clean();
+
+		return true;
+	}
+
+	/** SMTP only: false (logged) when the server does not accept a connection at all; other protocols: true. */
+	private function smtpReachable($mail) {
+		if ($mail->protocol !== 'smtp') {
+			return true;
+		}
+
+		$host   = (string)$mail->smtp_hostname;
+		$target = preg_match('#^tls://#i', $host) ? substr($host, 6) : $host; // tls:// = STARTTLS on a plain connection
+		$port   = (int)$mail->smtp_port;
+		$errno  = 0;
+		$errstr = '';
+		$probe  = $target === '' ? false : @fsockopen($target, $port > 0 ? $port : 25, $errno, $errstr, 5);
+
+		if (!$probe) {
+			$this->log->write('Announcement Bar Pro: confirmation e-mail failed — SMTP server not reachable (' . $errno . ')');
+			return false;
+		}
+
+		fclose($probe);
+
+		return true;
+	}
+
+	/**
+	 * OpenCart 2.0 / 2.1: Mail::send() ends the request with exit() when the SMTP server refuses (it cannot be caught;
+	 * 2.2+ throws an exception instead). A refused connection is checked first; any other SMTP failure answers with the
+	 * same JSON error from a shutdown function, and $rollback undoes the sign-up (exactly what a false return does).
+	 */
+	private function mailOld($email, $store, $text, $html, $rollback) {
+		$l    = function ($key) {
+			return $this->language->get($key);
+		};
+		$mail = AbpOc2::mail($this->config); // 2.0.0.0: config_mail array; 2.0.2+: config_mail_protocol, …
+
+		if (!$this->smtpReachable($mail)) {
+			return false;
+		}
+
+		$sent  = false;
+		$error = $this->language->get('abp_error_failed');
+		$log   = $this->log;
+
+		register_shutdown_function(function () use (&$sent, $rollback, $error, $log) {
+			if ($sent) {
+				return;
+			}
+
+			$log->write('Announcement Bar Pro: confirmation e-mail failed — the mail server refused it (see the error above).');
+
+			if (is_callable($rollback)) {
+				call_user_func($rollback);
+			}
+
+			while (ob_get_level() > 0) {
+				ob_end_clean();
+			}
+
+			if (!headers_sent()) {
+				header('Content-Type: application/json; charset=utf-8');
+				header('Cache-Control: no-store');
+			}
+
+			echo json_encode(array('error' => $error));
+		});
+
+		ob_start();
+
+		try {
+			// No CR / LF can reach a header (the address was validated already; this is a second line of defence).
+			$mail->setTo($this->fx->headerText($email));
+			$mail->setFrom($this->fx->headerText($this->config->get('config_email')));
+			$mail->setSender($store);
+			$mail->setSubject($this->fx->headerText(sprintf($l('abp_mail_subject'), $store)));
+			$mail->setText($text);
+			$mail->setHtml($html);
+			$mail->send();
+			$sent = true;
+		} catch (\Exception $ex) {
+			$sent = true; // handled here
+			ob_end_clean();
+			$this->log->write('Announcement Bar Pro: confirmation e-mail failed — ' . $ex->getMessage());
+			return false;
+		} catch (\Throwable $ex) { // PHP 7+ errors
+			$sent = true;
+			ob_end_clean();
+			$this->log->write('Announcement Bar Pro: confirmation e-mail failed — ' . $ex->getMessage());
+			return false;
+		}
+
+		ob_end_clean(); // notices of the mail class never reach the JSON answer
 
 		return true;
 	}

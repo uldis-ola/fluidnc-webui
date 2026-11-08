@@ -634,6 +634,33 @@ const copyTree = (from, to) => { for (const e of fs.readdirSync(from, { withFile
 		const inj2 = await post(Object.assign({}, base, { email: 'victim@example.com\r\nBcc: x@evil.example' }));
 		await sleep(800);
 		ok('sign-up: injection addresses ("a\\<LF>X-Injected:1"@a.co, CR/LF + Bcc) refused, nothing stored, no mail', /"field":"email"/.test(inj) && /"field":"email"/.test(inj2) && q("select count(*) from oc_abp_subscriber where email like '%Injected%' or email like '%evil%'") === '0' && fs.readdirSync(MAILDIR).filter(f => f.endsWith('.eml')).length === mBefore, inj + ' ' + inj2);
+		// 2.4.2: mail server down / refusing. OpenCart 2.0 / 2.1 end the request with exit() inside Mail::send(); the
+		// visitor still gets the JSON error, and no pending row stays behind. A retry once the server is back works.
+		{
+			const net = require('net');
+			const freePort = await new Promise(res => { const s = net.createServer().listen(0, '127.0.0.1', () => { const pt = s.address().port; s.close(() => res(pt)); }); });
+			const refuser = net.createServer(sock => { sock.write('220 refuser ESMTP\r\n'); sock.on('data', () => sock.write('554 5.7.1 not today\r\n')); sock.on('error', () => {}); });
+			await new Promise(res => refuser.listen(0, '127.0.0.1', res));
+			const json = t => { try { return JSON.parse(t); } catch (e) { return null; } };
+			const pending = a => q(`select count(*) from oc_abp_subscriber where email='${a}' and status=0`);
+			cfg('config_mail_smtp_port', String(freePort)); // nothing listens: the sink is stopped
+			const down = await post(Object.assign({}, base, { email: 'smtpdown@example.com' }));
+			ok('sign-up with the SMTP server stopped → JSON error, no pending row', json(down) && /did not work|try again/i.test(json(down).error || '') && pending('smtpdown@example.com') === '0', down + ' rows=' + q("select concat(status) from oc_abp_subscriber where email='smtpdown@example.com'"));
+			cfg('config_mail_smtp_port', String(refuser.address().port)); // accepts, then refuses EHLO (2.0/2.1: exit() inside Mail::send())
+			const refused = await post(Object.assign({}, base, { email: 'smtprefused@example.com' }));
+			ok('sign-up with an SMTP server that refuses → JSON error (no PHP notice in it), no pending row', json(refused) && !!json(refused).error && !/Notice|Error:/.test(refused) && pending('smtprefused@example.com') === '0', refused + ' rows=' + q("select concat(status) from oc_abp_subscriber where email='smtprefused@example.com'"));
+			cfg('config_mail_smtp_port', SMTPPORT); // the sink runs again
+			q('delete from oc_abp_rate');
+			const mB = fs.readdirSync(MAILDIR).filter(f => f.endsWith('.eml')).length;
+			const again = await post(Object.assign({}, base, { email: 'smtpdown@example.com' }));
+			await sleep(1200);
+			const mails = fs.readdirSync(MAILDIR).filter(f => f.endsWith('.eml'));
+			ok('retry after the SMTP server is back → ok, confirmation e-mail sent', /"ok":1/.test(again) && mails.length === mB + 1 && mails.some(f => fs.readFileSync(path.join(MAILDIR, f), 'utf8').includes('smtpdown@example.com')), again + ' mails +' + (mails.length - mB));
+			const shopUp = await pg.evaluate(async u => (await fetch(u, { credentials: 'same-origin' })).status, BASE);
+			ok('shop still answers after the refused mails', shopUp === 200, shopUp);
+			refuser.close();
+			q("delete from oc_abp_subscriber where email in ('smtpdown@example.com','smtprefused@example.com')");
+		}
 		await c.close();
 		q('delete from oc_abp_rate');
 	}
@@ -806,8 +833,10 @@ const copyTree = (from, to) => { for (const e of fs.readdirSync(from, { withFile
 	const ours = lines.filter(l => /announcement_bar_pro|announcementbarpro|AbpOc2|AbpAdmin/i.test(l));
 	// Known OpenCart core notice (not from the module): 2.2.0.0 system/library/template.php line 9 "Undefined variable: expire" on every view.
 	const core = lines.filter(l => !ours.includes(l) && /template\.php on line 9/.test(l) && /Undefined variable: expire/.test(l));
+	// 2.4.2 mail-server-down block: the module's own log lines, and 2.0 / 2.1 core's notice before its exit().
+	const smtpTest = lines.filter(l => !ours.includes(l) && (/Announcement Bar Pro: confirmation e-mail failed/.test(l) || /Error: EHLO not accepted from server! in .*mail\.php/.test(l)));
 	ok('PHP error log: no entries from the module', ours.length === 0, ours.slice(0, 5).join(' | '));
-	ok('PHP error log: nothing else new except known OpenCart core notices (' + core.length + ' core)', lines.length === ours.length + core.length && ours.length === 0, lines.filter(l => !core.includes(l)).slice(0, 3).join(' | '));
+	ok('PHP error log: nothing else new except known OpenCart core notices (' + core.length + ' core, ' + smtpTest.length + ' from the SMTP-down test)', lines.length === ours.length + core.length + smtpTest.length && ours.length === 0 && smtpTest.length >= 2 && smtpTest.length <= 4, lines.filter(l => !core.includes(l) && !smtpTest.includes(l)).slice(0, 3).join(' | ') + ' / smtp lines: ' + smtpTest.length);
 
 	await b.close();
 	const failed = R.filter(r => r.startsWith('FAIL'));

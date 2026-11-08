@@ -163,7 +163,7 @@ class Subscribers {
 						'field' => 'consent',
 					);
 				} else {
-					$check = Turnstile::enabled( $s ) ? Turnstile::verify( $s['turnstile_secret'], $request->get_param( 'cf-turnstile-response' ), Endpoints::client_ip(), array( __CLASS__, 'http_post' ) ) : Turnstile::OK;
+					$check = Turnstile::enabled( $s ) ? Turnstile::verify( $s['turnstile_secret'], $request->get_param( 'cf-turnstile-response' ), Endpoints::client_ip(), array( __CLASS__, 'http_post' ), Turnstile::host( home_url() ) ) : Turnstile::OK;
 
 					if ( Turnstile::MISSING === $check ) {
 						$json = array(

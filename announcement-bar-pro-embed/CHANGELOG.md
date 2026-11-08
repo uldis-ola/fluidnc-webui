@@ -3,6 +3,10 @@
 ## 1.0.1 — 2026-11-08
 - Runtime: the shared storefront script, pre-script and CSS of Announcement Bar Pro 2.4.2 (only change for the embed:
   the version in their headers; the new OpenCart 1.5 mini-cart rule needs jQuery AJAX and does not apply to embeds).
+- Configurator (review fix, pre-release): an imported configuration keeps only 2-letter language codes (as the runtime),
+  resets a default language that is not one of them, rebuilds the label maps without a prototype (a `__proto__` key can
+  never reach `Object.prototype`), limits each message's languages to the site's, and the preview escapes the language in
+  `<html lang>`. The runtime is unchanged (still within the 20 KB gzip budget).
 
 ## 1.0.0 — 2026-11-08
 - First release of the universal JS embed: one `<script>` for any site, config as inline JSON or a JSON file.

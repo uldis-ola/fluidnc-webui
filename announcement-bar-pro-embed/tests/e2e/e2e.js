@@ -235,6 +235,25 @@ var visibleIds = function () { return Array.prototype.filter.call(document.query
         var aio = await gp.evaluate(function () { return fetch(document.getElementById('dl-c').href).then(function (r) { return r.text(); }); });
         fs.mkdirSync(path.join(__dirname, 'out'), { recursive: true });
         fs.writeFileSync(path.join(__dirname, 'out', 'aio.html'), '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>All-in-one</title></head><body><h1>Site builder page</h1>' + aio + '</body></html>');
+        // 1.0.1: a hostile imported config — bad language codes, a bad default language, "__proto__" label keys.
+        var hostile = '{"version":1,"settings":{"languages":["en","lv","x\\"><img src=x onerror=window.__pwned=1>","__proto__","EN","lv",7],'
+          + '"default_language":"\\"><img src=x onerror=window.__pwned=1>","labels":{"__proto__":{"close":"polluted"},"lv":{"close":"Aizvērt!","__proto__":{"polluted":1},"copy":5}}},'
+          + '"messages":[{"id":1,"enabled":true,"text":{"en":"Imported","lv":"Ielādēts"},"languages":["lv","__proto__","<b>"]}]}';
+        await gp.click('#pv-dev button[data-v=desktop]');
+        await gp.fill('#exp-json', hostile);
+        await gp.click('#btn-import');
+        await sleep(900);
+        var imp = await gp.evaluate(function () {
+          var j = JSON.parse(document.getElementById('exp-json').value), f = document.getElementById('pv');
+          return { err: document.getElementById('imp-err').textContent, langs: j.settings.languages, def: j.settings.default_language, labelKeys: Object.keys(j.settings.labels), lvClose: j.settings.labels.lv.close, lvCopy: j.settings.labels.lv.copy,
+            msgLangs: j.messages[0].languages, protoClose: ({}).close, protoPolluted: ({}).polluted, pwned: window.__pwned, html: f.srcdoc.slice(0, 40), tabs: Array.prototype.map.call(document.querySelectorAll('#pv-lang button'), function (b) { return b.textContent; }) };
+        });
+        ok(GL + ': import keeps only 2-letter languages, resets a bad default language', imp.err === '' && imp.langs.join() === 'en,lv' && imp.def === 'en' && imp.tabs.join() === 'EN,LV', imp);
+        ok(GL + ': import: label maps rebuilt per language (strings only), "__proto__" never reaches Object.prototype', imp.labelKeys.join() === 'en,lv' && imp.lvClose === 'Aizvērt!' && imp.lvCopy === 'Kopēt' && imp.protoClose === undefined && imp.protoPolluted === undefined, imp);
+        ok(GL + ': import: message languages limited to the site languages; preview <html lang> clean; nothing ran', imp.msgLangs.join() === 'lv' && imp.html === '<!DOCTYPE html><html lang="en"><head><me' && imp.pwned === undefined, imp);
+        await gp.click('#pv-lang button:nth-child(2)'); await sleep(700);
+        var pvLv = await frame().evaluate(function () { var b = document.getElementById('abp-bar'); return [document.documentElement.lang, b && b.innerText]; });
+        ok(GL + ': import: preview in the second language', pvLv[0] === 'lv' && /Ielādēts/.test(pvLv[1] || ''), pvLv);
       }
       await gp.screenshot({ path: path.join(SHOTS, 'configurator-' + w4 + '.png'), fullPage: false });
       ok(GL + ': no JS errors', g.errors.length === 0, g.errors);

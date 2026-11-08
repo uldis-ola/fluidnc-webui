@@ -1039,7 +1039,7 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 		}
 
 		$codes  = array();
-		$result = $this->fx->tsVerify($secret, isset($post['cf-turnstile-response']) ? $post['cf-turnstile-response'] : '', $this->clientIp(), array($this->fx, 'httpPost'), $codes);
+		$result = $this->fx->tsVerify($secret, isset($post['cf-turnstile-response']) ? $post['cf-turnstile-response'] : '', $this->clientIp(), array($this->fx, 'httpPost'), $codes, $this->fx->tsHost(array($this->config->get('config_ssl'), $this->config->get('config_url'), defined('HTTP_SERVER') ? HTTP_SERVER : '')));
 
 		if ($result === 'ok') {
 			return '';
@@ -1048,6 +1048,11 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 		// A wrong key or an unreachable Cloudflare is the shop's problem: log it (codes only, never keys or tokens).
 		if ($result === 'failed' && array_intersect($codes, array('missing-input-secret', 'invalid-input-secret', 'http-error', 'bad-json', 'internal-error'))) {
 			$this->log->write('Announcement Bar Pro: Cloudflare Turnstile check not possible — ' . implode(', ', $codes));
+		}
+
+		// 2.4.2: the token was solved on another host than the shop's configured URL (another site, or a wrong shop URL).
+		if ($result === 'failed' && in_array('wrong-hostname', $codes, true)) {
+			$this->log->write('Announcement Bar Pro: Cloudflare Turnstile token refused — wrong-hostname (it was not solved on the host of the shop URL)');
 		}
 
 		return $this->language->get($result === 'missing' ? 'abp_error_ts_missing' : 'abp_error_ts_failed');
