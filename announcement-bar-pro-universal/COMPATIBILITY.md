@@ -18,7 +18,33 @@ Only what was actually installed and tested is listed. Everything else is **not 
   these runs.
 - Scripts of the test environment: `abp-testenv/compat/` (own MariaDB :3313, MySQL 8 :3308, ports 8160–8169).
 
-## 2.4.2 — runs of 2026-11-08 (OpenCart 2.4.2, WordPress 1.0.1, Embed 1.0.1)
+## 2.4.2 final — runs after the review fixes (commit 357272a, 2026-11-08)
+
+The release build. Same method and test environment as the runs below; every row is a fresh shop. These numbers
+replace the earlier 2.4.2 rows for the same platform (the end-to-end tests gained checks for the review fixes).
+
+| Edition | Platform | PHP | Test | Result |
+|---|---|---|---|---|
+| OpenCart 3 (universal zip) | 3.0.5.1 | 8.3 | `abp24-e2e.js`: 2.3.0 → 2.4.0 → 2.4.1 → **2.4.2** upgrades | ✅ 169/169 |
+| OpenCart 4 (universal zip) | 4.1.0.4 | ¹ | `abp24-e2e.js`: fresh install of 2.4.2 | ✅ 150/150 |
+| OpenCart 2.0–2.2 zip | 2.0.3.1 | ¹ | `announcement-bar-pro-oc2/tests/e2e/abp-oc2-e2e.js` | ✅ 140/140 |
+| OpenCart 2.0–2.2 zip | 2.1.0.2 | ¹ | same | ✅ 140/140 |
+| OpenCart 2.3 zip | 2.3.0.2 | ¹ | same | ✅ 140/140 |
+| OpenCart 1.5 zip (vQmod 2.6.6) | 1.5.6.4 | 5.6 | `announcement-bar-pro-oc15/tests/e2e/abp15-e2e.js` | ✅ 177/177 |
+| WordPress free 1.0.1 + Premium 1.0.1 | WordPress + WooCommerce latest | ¹ | `wp-e2e.js` | ✅ 191/191 |
+| Embed 1.0.1 | static pages, **Chromium only** | — | `announcement-bar-pro-embed/tests/e2e/e2e.js` | ✅ 105/105 |
+
+¹ The PHP version of these reruns is not recorded in this table. The earlier runs of the same platform (below) used:
+OpenCart 4.1.0.4 PHP 8.3.36; OpenCart 2.0.3.1 / 2.1.0.2 PHP 5.6.40; OpenCart 2.3.0.2 PHP 7.4.33; WordPress 7.1.4 +
+WooCommerce 11.2.2 PHP 8.3.36.
+
+Unit tests (2.4.2 final): universal `schema_test.php` **249/249**; OpenCart 2.x `schema_test.php` **143/143** and
+`oc2_test.php` passed; OpenCart 1.5 `schema15_test.php` **150/150**; WordPress `run.php` **83/83**; embed unit **151/151**.
+
+Not re-run with the final build (their last result is in the sections below): OpenCart 3.0.3.8, 4.0.x, 4.1.0.0,
+2.0.0.0, 2.2.0.0, 1.5.5.1, WordPress 6.2 / 6.5, multisite.
+
+## 2.4.2 — first runs of 2026-11-08 (OpenCart 2.4.2, WordPress 1.0.1, Embed 1.0.1)
 
 Same method as below, own test instances (`abp-testenv/run242/`: MariaDB 11.4.4 on :3314 with its own datadir and global
 `sql_mode=NO_ENGINE_SUBSTITUTION` — OpenCart 3 / 4 and WordPress set their own session SQL mode; PHP built-in servers
