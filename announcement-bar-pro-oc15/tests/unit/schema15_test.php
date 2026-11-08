@@ -11,10 +11,15 @@
  * validation, free-shipping overrides, tiers, cart conditions, cut-off times, custom CSS, form tokens, CSV, templates).
  * What it cannot prove: that a real MySQL/MariaDB accepts the SQL (syntax, types, charset).
  *
- * Run: php tests/unit/schema_test.php   (exit code 0 = all passed)
+ * Run: php tests/unit/schema15_test.php   (exit code 0 = all passed; no php.ini or extensions needed), or
+ *      tests/unit/run.sh                  (PHP 5.6 + 7.4, plain and with the test environment's ini)
  */
 error_reporting(E_ALL);
 ini_set('display_errors', '1');
+// Self-contained: runs with a bare PHP (no php.ini, no mbstring / openssl, no date.timezone).
+if (!ini_get('date.timezone')) {
+	date_default_timezone_set('UTC');
+}
 
 define('VERSION', '1.5.6.4');
 define('DB_PREFIX', 'oc_');

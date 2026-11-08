@@ -2,8 +2,14 @@
 /**
  * Announcement Bar Pro — checks of the OpenCart 1.5 edition only (included by schema15_test.php, which defines check()).
  * PHP 5.6 polyfills, template helpers, image path mapping, the vQmod file, generated templates, 1.5 API use.
+ * Run on its own (`php tests/unit/oc15_test.php`) it runs the whole suite through schema15_test.php.
  */
+if (!function_exists('check')) {
+	require __DIR__ . '/schema15_test.php'; // defines check() / make(), loads compat.php, includes this file, exits
+	exit(0);
+}
 $k15 = $root . '/announcement-bar-pro-oc15/upload/';
+require_once $k15 . 'system/library/announcementbarpro/compat.php';
 
 // 1. compat.php: random_bytes() / intdiv() exist and behave (on PHP 5.6 the polyfills, on 7.x the built-ins).
 $rb = random_bytes(32);

@@ -41,19 +41,24 @@ if (!function_exists('abp15_v')) {
 				return sprintf('\\x%02X', ord($char));
 			}
 
-			$utf16 = function_exists('mb_convert_encoding') ? mb_convert_encoding($char, 'UTF-16BE', 'UTF-8') : '';
+			// Code point from the UTF-8 bytes (no mbstring / iconv needed), then UTF-16 units (surrogate pair above U+FFFF).
+			$b  = array_values(unpack('C*', $char));
+			$n  = count($b);
+			$cp = $n === 2 ? (($b[0] & 0x1F) << 6) | ($b[1] & 0x3F)
+				: ($n === 3 ? (($b[0] & 0x0F) << 12) | (($b[1] & 0x3F) << 6) | ($b[2] & 0x3F)
+				: ($n === 4 ? (($b[0] & 0x07) << 18) | (($b[1] & 0x3F) << 12) | (($b[2] & 0x3F) << 6) | ($b[3] & 0x3F) : -1));
 
-			if ($utf16 === '') {
+			if ($cp < 0) {
 				return '';
 			}
 
-			$out = '';
+			if ($cp > 0xFFFF) {
+				$cp -= 0x10000;
 
-			foreach (str_split(bin2hex($utf16), 4) as $unit) {
-				$out .= '\\u' . strtoupper($unit);
+				return sprintf('\\u%04X\\u%04X', 0xD800 | ($cp >> 10), 0xDC00 | ($cp & 0x3FF));
 			}
 
-			return $out;
+			return sprintf('\\u%04X', $cp);
 		}, $value);
 	}
 
@@ -65,7 +70,13 @@ if (!function_exists('abp15_v')) {
 
 		$value = is_scalar($value) ? (string)$value : '';
 
-		return function_exists('mb_strlen') ? mb_strlen($value, 'UTF-8') : strlen($value);
+		if (function_exists('mb_strlen')) {
+			return mb_strlen($value, 'UTF-8');
+		}
+
+		$count = preg_match_all('/./su', $value); // characters without mbstring (false on invalid UTF-8)
+
+		return $count === false ? strlen($value) : $count;
 	}
 
 	/** Twig "in": element of an array (loose, like Twig), or part of a string. */

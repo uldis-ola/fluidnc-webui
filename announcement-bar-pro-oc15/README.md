@@ -100,7 +100,7 @@ languages fall back to English.
 
 - `build.sh` — checks (versions, shared files byte-identical, templates up to date, PHP lint on 5.6 / 7.4 when found,
   unit tests) and builds `dist/announcement_bar_pro_oc15_v2.4.1.zip`.
-- `tests/unit/schema15_test.php` — migration, SQL whitelists, shared library and 1.5-specific checks without a database
+- `tests/unit/schema15_test.php` (or `tests/unit/run.sh` for PHP 5.6 + 7.4) — migration, SQL whitelists, shared library and 1.5-specific checks without a database; runs on a bare PHP without php.ini
   (`php tests/unit/schema15_test.php`, PHP 5.6 and 7.x).
 - `tests/e2e/abp15-e2e.js` (+ `abp15-extra.js`) — Playwright run against a real OpenCart 1.5 shop (see the file header).
 - `tools/twig2tpl.py` — Twig → PHP template converter (`build.sh` checks the admin templates are current);
