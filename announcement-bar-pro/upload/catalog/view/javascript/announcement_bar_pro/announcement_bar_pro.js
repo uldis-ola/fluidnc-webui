@@ -1,4 +1,4 @@
-/* Announcement Bar Pro v2.4.1 — no dependencies. Adapts itself to the shop theme (see "Automatic adaptation").
+/* Announcement Bar Pro v2.4.2 — no dependencies. Adapts itself to the shop theme (see "Automatic adaptation").
    Runs every bar (top / bottom) and box (cart page, product page, mini-cart) on the page; features start only when a
    message uses them (triggers, auto-hide, forms, goals, GA4). */
 (function () {
@@ -1006,7 +1006,7 @@
     hooked = true;
     window.jQuery(document).ajaxComplete(function (e, xhr, settings) {
       var url = settings && typeof settings.url === 'string' ? settings.url : '';
-      if (/route=(checkout|common)(\/|%2F)cart|(checkout|common)\/cart[\/.|]/i.test(url)) {
+      if (/route=(checkout|common|module)(\/|%2F)cart|(checkout|common)\/cart[\/.|]/i.test(url)) { // module/cart: OpenCart 1.5 mini-cart
         queueCart();
         setTimeout(scan, 60); // the mini-cart drop-down is reloaded with a new box
       }

@@ -3,7 +3,7 @@ defined('VERSION') || exit; // not callable directly (in the universal package t
 /**
  * Announcement Bar Pro — admin model (OpenCart 3.0.x)
  * Tables: {prefix}abp_message, {prefix}abp_message_description, {prefix}abp_subscriber, {prefix}abp_rate
- * @version 2.4.1
+ * @version 2.4.2
  */
 class ModelExtensionModuleAnnouncementBarPro extends Model {
 	const CODE           = 'module_announcement_bar_pro';

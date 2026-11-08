@@ -463,7 +463,7 @@ foreach (array('OC15' => '\Announcementbarpro\Features') as $kit => $cls) {
 	$fake = array('REMOTE_ADDR' => '198.51.100.9', 'HTTP_CF_CONNECTING_IP' => '203.0.113.7', 'HTTP_CF_IPCOUNTRY' => 'LV');
 	check("$kit clientIp(): CF-Connecting-IP only from a CloudFlare REMOTE_ADDR with the setting on", $f->clientIp($cf, true) === '203.0.113.7' && $f->clientIp($cf, false) === '162.158.10.20' && $f->clientIp($fake, true) === '198.51.100.9' && $f->clientIp(array('REMOTE_ADDR' => '162.158.10.20', 'HTTP_CF_CONNECTING_IP' => 'junk'), true) === '162.158.10.20' && $f->clientIp(array(), true) === '');
 	check("$kit cfCountry(): CF-IPCountry only from CloudFlare with the setting on; XX / T1 / junk ignored", $f->cfCountry($cf, true) === 'LV' && $f->cfCountry($cf, false) === '' && $f->cfCountry($fake, true) === '' && $f->cfCountry(array('REMOTE_ADDR' => '162.158.10.20', 'HTTP_CF_IPCOUNTRY' => 'XX'), true) === '' && $f->cfCountry(array('REMOTE_ADDR' => '162.158.10.20', 'HTTP_CF_IPCOUNTRY' => 'T1'), true) === '' && $f->cfCountry(array('REMOTE_ADDR' => '162.158.10.20', 'HTTP_CF_IPCOUNTRY' => 'LVA'), true) === '');
-	check("$kit imagePath(): only catalog images, no traversal / quotes", $f->imagePath('catalog/demo/a b.jpg') && !$f->imagePath('catalog/../config.php') && !$f->imagePath('catalog/x".jpg') && !$f->imagePath('image/catalog/x.jpg') && !$f->imagePath('catalog/x.php'));
+	check("$kit imagePath(): catalog/ (OC 2–4) and data/ (OC 1.5) images only, no traversal / quotes", $f->imagePath('catalog/demo/a b.jpg') && $f->imagePath('data/demo/a.jpg') && !$f->imagePath('data/../config.php') && !$f->imagePath('datax/a.jpg') && !$f->imagePath('system/a.jpg') && !$f->imagePath('catalog/../config.php') && !$f->imagePath('catalog/x".jpg') && !$f->imagePath('image/catalog/x.jpg') && !$f->imagePath('catalog/x.php'));
 	$tpl = $f->templates(); $complete = true;
 	foreach ($tpl as $k => $x) { foreach (array('en', 'lv', 'ru') as $l) { if (empty($x['name'][$l]) || empty($x['text'][$l])) { $complete = false; } } }
 	check("$kit templates: 10–15, each with name + text in EN / LV / RU", count($tpl) >= 10 && count($tpl) <= 15 && $complete, (string)count($tpl));
@@ -497,9 +497,8 @@ foreach (array('OC15' => '\Announcementbarpro\Features') as $kit => $cls) {
 	check("$kit tsVerify: success=false → failed with Cloudflare's error codes", $r === 'failed' && $codes === array('invalid-input-response', 'timeout-or-duplicate'), json_encode($codes));
 	check("$kit tsVerify: success as string \"true\" / 1 / missing → failed (strict)", $f->tsVerify($SECRET, 'tok', '', $mock('{"success":"true"}')) === 'failed' && $f->tsVerify($SECRET, 'tok', '', $mock('{"success":1}')) === 'failed' && $f->tsVerify($SECRET, 'tok', '', $mock('{"hostname":"x"}'), $codes) === 'failed' && $codes === array('not-success'));
 	$r1 = $f->tsVerify($SECRET, 'tok', '', $mock(false), $c1);
-	// PHP 5.6 has no \Throwable: the shared tsVerify() catch (\Throwable) cannot catch a throwing transport there. The real
-	// transport (Features::httpPost) never throws, so on PHP 5.6 this case is run with a failing (false) transport instead.
-	$r2 = $f->tsVerify($SECRET, 'tok', '', $mock(PHP_MAJOR_VERSION >= 7 ? new \Exception('timeout') : false), $c2);
+	// 2.4.2: tsVerify() catches \Exception as well as \Throwable, so a throwing transport fails closed on PHP 5.6 too.
+	$r2 = $f->tsVerify($SECRET, 'tok', '', $mock(new \Exception('timeout')), $c2);
 	$r3 = $f->tsVerify($SECRET, 'tok', '', $mock(''), $c3);
 	check("$kit tsVerify: network failure (false, exception, empty body) → failed (fail closed)", $r1 === 'failed' && $r2 === 'failed' && $r3 === 'failed' && $c1 === array('http-error') && $c2 === array('http-error'));
 	$r1 = $f->tsVerify($SECRET, 'tok', '', $mock('<html>502 Bad Gateway</html>'), $c1);

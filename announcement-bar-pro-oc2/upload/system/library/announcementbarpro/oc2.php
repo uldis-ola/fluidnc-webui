@@ -8,7 +8,7 @@
  *  - the .tpl renderer (templates generated from the OpenCart 3 Twig templates by tools/twig2tpl.py) and its helpers,
  *  - OpenCart 2.0/2.1 view hook (those versions have no view events; install.xml calls AbpOc2::view()),
  *  - e-mail (2.0.0.0 keeps the mail settings in one array; 2.0.2+ has separate keys; OpenCart 3 uses "mail engine").
- * @version 2.4.1
+ * @version 2.4.2
  */
 defined('VERSION') || exit;
 

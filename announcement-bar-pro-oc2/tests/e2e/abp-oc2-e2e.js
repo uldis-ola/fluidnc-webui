@@ -1,4 +1,4 @@
-// Announcement Bar Pro 2.4.1 — OpenCart 2.0.x–2.3.x edition on a REAL local OpenCart 2 shop (Playwright Chromium).
+// Announcement Bar Pro 2.4.2 — OpenCart 2.0.x–2.3.x edition on a REAL local OpenCart 2 shop (Playwright Chromium).
 // Adapted from abp24-e2e.js (OC3 / OC4): same feature checks through the real admin UI and the storefront at 1366 and
 // 390 px (no JS errors, no PHP log entries, no horizontal scroll, contrast >= 4.5:1).
 // Install: the module files are copied into the shop ("upload + modification refresh" — OpenCart 2.x's Extension

@@ -19,7 +19,7 @@ def cut(start, end, new):
     s = s[:i] + new + s[j:]
 
 head_end = s.index("const { chromium } = require('playwright');")
-s = """// Announcement Bar Pro 2.4.1 for OpenCart 1.5 on a REAL local OpenCart 1.5.x shop (Playwright Chromium).
+s = """// Announcement Bar Pro 2.4.2 for OpenCart 1.5 on a REAL local OpenCart 1.5.x shop (Playwright Chromium).
 // Derived from the OpenCart 3 / 4 E2E of the universal package (same feature checks), with the OpenCart 1.5 ways:
 // install through Extensions > Modules after the files were copied (FTP-style) and vQmod is installed; settings in
 // oc_setting.`group`; PHP sessions (address chosen through the cart's shipping estimate); mini-cart in #cart .content.
@@ -107,8 +107,6 @@ rep("\tconst log = fs.existsSync(logFile) ? fs.readFileSync(logFile, 'utf8').sli
     "\t// The PHP log of the test server: only entries about this module count (OpenCart 1.5 core itself is noisy on PHP 7).\n"
     "\tconst plog = phpLog && fs.existsSync(phpLog) ? fs.readFileSync(phpLog, 'utf8').slice(php0).split(/\\r?\\n/).filter(l => /announcement_bar_pro|announcementbarpro|abp15|Fatal/i.test(l)) : [];\n"
     "\tok('PHP log: no errors from this module (and no fatal errors at all)', plog.length === 0, plog.slice(0, 5).join(' | '));")
-# OpenCart 1.5 image manager paths (image/data/...) are stored as catalog/... (shared imagePath rule).
-rep("optOf(idImg).image === img &&", "optOf(idImg).image === img.replace(/^data\\//, 'catalog/') &&")
 # The visitor of the shipping-estimate test has a product (101) in the cart: over the Latvian amount (50) → success text.
 rep("ok('country: shipping address Latvia (this visit) → shown; Latvian amount $50.00', v.includes(idLv) && /\\$50\\.00/.test(txt),",
     "ok('country: shipping address Latvia (cart estimate, this visit) → shown; Latvian amount 50 (cart 101 > 50 → success text, not $99 to the default 200)', v.includes(idLv) && /Free shipping!/.test(txt) && !/\\$99/.test(txt),")

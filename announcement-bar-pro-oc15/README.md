@@ -17,7 +17,7 @@ Paziņojumu joslas un bloki OpenCart 1.5 veikalam: akcijas, bezmaksas piegādes 
 
 Installation: **`INSTALL.md`** (English) · **`INSTALL.lv.md`** (latviski).
 
-## Features (identical to 2.4.1 for OpenCart 3 / 4)
+## Features (identical to 2.4.2 for OpenCart 3 / 4)
 
 - Any number of messages; several bars at once (top + bottom) and **inline boxes** on the cart page, under the product
   price and in the mini-cart, ordered by **priority** (0–100) and a per-bar message limit.
@@ -51,10 +51,10 @@ Installation: **`INSTALL.md`** (English) · **`INSTALL.lv.md`** (latviski).
 | Admin UI | Bootstrap 3 / 5 of the admin | same pages and card layout with the module's own scoped styles (`abp_oc15.css`, everything under `.abp15`); tabs, image manager (jQuery UI dialog) and date-time picker of OpenCart 1.5 via `abp_oc15.js` |
 | Templates | Twig | PHP `.tpl`, generated from the Twig templates by `tools/twig2tpl.py` (Twig rules kept: missing values are empty, no PHP notices) |
 | Icons | theme's Font Awesome | Font Awesome 4.7 bundled, loaded only on pages that show an icon; setting *Load the icon font* (switch off if the theme already has Font Awesome 4) |
-| Images | `image/catalog/…` | `image/data/…` (the 1.5 image manager); stored internally as `catalog/…` because the shared rules expect that prefix |
+| Images | `image/catalog/…` | `image/data/…` (the 1.5 image manager), stored as it is (the shared rules accept `data/…` since 2.4.2) |
 | Settings | `module_announcement_bar_pro_*` | `announcement_bar_pro_*` in `oc_setting` (group `announcement_bar_pro`) |
 | Tables | utf8mb4 | utf8 like OpenCart 1.5 itself (its DB link is utf8; emoji are stored as HTML entities, as in every edition) |
-| Mini-cart refresh | `common/cart/info` | `module/cart` (jQuery `.load`), handled by `announcement_bar_pro_oc15.js` |
+| Mini-cart refresh | `common/cart/info` | `module/cart` (jQuery `.load`), handled by the shared storefront script since 2.4.2 (no adapter script) |
 
 The storefront script and styles (`announcement_bar_pro.js`, `_pre.js`, `.css`), the admin script and styles
 (`abp_admin.js`, `abp_admin.css`) and the helper library (`features.php`, `sanitizer.php`) are byte-identical to the
@@ -86,7 +86,7 @@ upload/admin/language/{english,latvian,russian}/module/        admin texts
 upload/catalog/controller/module/announcement_bar_pro.php      storefront hooks + endpoints (cart, track, subscribe, confirm, unsubscribe)
 upload/catalog/model/module/announcement_bar_pro.php
 upload/catalog/view/theme/default/template/module/             bar + confirm / unsubscribe page (.tpl)
-upload/catalog/view/javascript/announcement_bar_pro/           shared JS / CSS, 1.5 adapter JS / CSS, fa/ (Font Awesome 4.7)
+upload/catalog/view/javascript/announcement_bar_pro/           shared JS / CSS, 1.5 adapter CSS, fa/ (Font Awesome 4.7)
 upload/catalog/language/{english,latvian,russian}/module/
 upload/system/library/announcementbarpro/                      features.php, sanitizer.php (shared), compat.php, tpl.php (1.5)
 upload/vqmod/xml/announcement_bar_pro.xml                      vQmod hooks
@@ -99,7 +99,7 @@ languages fall back to English.
 ## Development
 
 - `build.sh` — checks (versions, shared files byte-identical, templates up to date, PHP lint on 5.6 / 7.4 when found,
-  unit tests) and builds `dist/announcement_bar_pro_oc15_v2.4.1.zip`.
+  unit tests) and builds `dist/announcement_bar_pro_oc15_v2.4.2.zip`.
 - `tests/unit/schema15_test.php` (or `tests/unit/run.sh` for PHP 5.6 + 7.4) — migration, SQL whitelists, shared library and 1.5-specific checks without a database; runs on a bare PHP without php.ini
   (`php tests/unit/schema15_test.php`, PHP 5.6 and 7.x).
 - `tests/e2e/abp15-e2e.js` (+ `abp15-extra.js`) — Playwright run against a real OpenCart 1.5 shop (see the file header).

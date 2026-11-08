@@ -4,7 +4,7 @@
  * The shared helpers (features.php, sanitizer.php) are identical in every edition and call two PHP 7.0 functions:
  * random_bytes() and intdiv(). On PHP 5.6 they are provided here (only when missing, so a newer PHP or another
  * polyfill such as paragonie/random_compat always wins). Nothing else is defined.
- * @version 2.4.1
+ * @version 2.4.2
  */
 defined('VERSION') || exit;
 

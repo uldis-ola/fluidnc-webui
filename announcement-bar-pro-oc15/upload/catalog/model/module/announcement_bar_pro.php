@@ -3,7 +3,7 @@ defined('VERSION') || exit; // not callable directly (in the universal package t
 require_once(DIR_SYSTEM . 'library/announcementbarpro/compat.php'); // PHP 5.6: random_bytes(), intdiv() of the shared helpers
 /**
  * Announcement Bar Pro — catalog model (OpenCart 1.5.x)
- * @version 2.4.1
+ * @version 2.4.2
  */
 class ModelModuleAnnouncementBarPro extends Model {
 	/**

@@ -4,10 +4,10 @@ require_once(DIR_SYSTEM . 'library/announcementbarpro/compat.php'); // PHP 5.6: 
 /**
  * Announcement Bar Pro — admin controller (OpenCart 1.5.x: 1.5.4 – 1.5.6.4)
  * Views are PHP .tpl templates; the bar is injected by vqmod/xml/announcement_bar_pro.xml (OpenCart 1.5 has no events).
- * @version 2.4.1
+ * @version 2.4.2
  */
 class ControllerModuleAnnouncementBarPro extends Controller {
-	const VERSION    = '2.4.1';
+	const VERSION    = '2.4.2';
 	const CODE       = 'announcement_bar_pro';
 	const ROUTE      = 'module/announcement_bar_pro';
 	const MAX_TEXT   = 1000;
@@ -1281,11 +1281,6 @@ class ControllerModuleAnnouncementBarPro extends Controller {
 		// 2.4.0 options: strings and lists of strings only (2 levels, e.g. fs_zones[0][amount]); checked in Features::validate().
 		$out['opt'] = isset($post['opt']) && is_array($post['opt']) ? $this->tree($post['opt'], 2) : array();
 
-		// OpenCart 1.5: the image manager gives "data/…"; the shared rules store it as "catalog/…" (see ModelModuleAnnouncementBarPro::imageFile()).
-		if (isset($out['opt']['image']) && is_string($out['opt']['image'])) {
-			$out['opt']['image'] = $this->model_module_announcement_bar_pro->imageToStored($out['opt']['image']);
-		}
-
 		$out['message_description'] = array();
 		if (isset($post['message_description']) && is_array($post['message_description'])) {
 			foreach ($post['message_description'] as $language_id => $row) {
@@ -1754,7 +1749,6 @@ class ControllerModuleAnnouncementBarPro extends Controller {
 		$this->load->model('tool/image');
 		$data['placeholder']     = $this->model_tool_image->resize('no_image.jpg', 100, 100);
 		$data['image_thumb']     = $opt['image'] !== '' && $model->imageFile($opt['image']) !== '' ? $this->model_tool_image->resize($model->imageFile($opt['image']), 100, 100) : $data['placeholder'];
-		$data['opt']['image']    = $opt['image'] !== '' ? $model->imageFile($opt['image'], true) : ''; // the 1.5 image manager's path (data/…)
 		$data['font_list']       = $this->fontStacks();
 		$data['placements']      = \Announcementbarpro\Features::PLACEMENTS;
 

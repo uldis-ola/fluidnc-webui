@@ -47,6 +47,8 @@ for f in "$F3" "$F4"; do
 done
 cmp -s <(sed "1,/$MARK/d" "$F3") <(sed "1,/$MARK/d" "$F4") \
 	|| { echo "features.php differs between kits below the shared-body marker:" >&2; diff <(sed "1,/$MARK/d" "$F3") <(sed "1,/$MARK/d" "$F4") | head -20 >&2; exit 1; }
+# 2.4.2: every edition next to this one (OpenCart 4 / 2.x / 1.5, WordPress) against the OpenCart 3 sources.
+./check-shared.sh
 STAGE=$(mktemp -d); trap 'rm -rf "$STAGE"' EXIT
 cp -r "$OC3/upload" "$OC3/install.xml" "$STAGE/"
 cp -r "$OC4/install.json" "$OC4/admin" "$OC4/catalog" "$OC4/system" "$STAGE/"

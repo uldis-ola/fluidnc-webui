@@ -3,7 +3,7 @@ defined('VERSION') || exit; // not callable directly
 require_once(DIR_SYSTEM . 'library/announcementbarpro/oc2.php'); // OpenCart 2.x adapter + PHP 5.6 polyfills
 /**
  * Announcement Bar Pro — catalog model (OpenCart 3.0.x)
- * @version 2.4.1
+ * @version 2.4.2
  */
 class ModelExtensionModuleAnnouncementBarPro extends Model {
 	/**

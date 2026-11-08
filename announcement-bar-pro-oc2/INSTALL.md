@@ -1,12 +1,12 @@
-# Announcement Bar Pro 2.4.1 — installation (OpenCart 2.0.x–2.3.x)
+# Announcement Bar Pro 2.4.2 — installation (OpenCart 2.0.x–2.3.x)
 
 **Back up your files and database first.** Requirements: OpenCart 2.0.0.0–2.3.0.2, PHP 5.6 or newer
 (OpenSSL extension on PHP 5.6).
 
 Pick the package for your OpenCart version (*System › Maintenance* or the admin footer shows it):
 
-- OpenCart **2.0.x, 2.1.x, 2.2.x** → `announcement_bar_pro_oc2.0-2.2_v2.4.1.ocmod.zip`
-- OpenCart **2.3.x** → `announcement_bar_pro_oc2.3_v2.4.1.ocmod.zip`
+- OpenCart **2.0.x, 2.1.x, 2.2.x** → `announcement_bar_pro_oc2.0-2.2_v2.4.2.ocmod.zip`
+- OpenCart **2.3.x** → `announcement_bar_pro_oc2.3_v2.4.2.ocmod.zip`
 
 ## A. With the Extension Installer (FTP set up in OpenCart)
 

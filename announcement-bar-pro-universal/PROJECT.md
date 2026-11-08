@@ -9,7 +9,7 @@ Paziņojumu josla (announcement bar) OpenCart veikalam: josla lapas augšā vai 
 piegādes info, atpakaļskaitīšanu u. tml. Viena instalācijas paka der **OpenCart 3.0.x, 4.0.x un 4.1.x**.
 Josla automātiski pielāgojas veikala tēmai.
 
-- Versija: **2.4.1**, DB shēma **8**
+- Versija: **2.4.2**, DB shēma **8**
 - Licence: GPL-3.0 (LICENSE.txt no OpenCart pirmkoda)
 - Valodas: LV, EN, RU (admin + veikals). Ja veikala valodai tulkojuma nav → angļu.
 - Marketplace-gatavs. Autors `3DP SIA`, saite `mailto:extension@3dp.lv` (no 2.3.0; Ulda izvēle 07.11.2026 — moduļi nav saistīti ar 3dp.lv).
@@ -32,7 +32,7 @@ index.html                       repo vecais saturs, ar moduli nav saistīts
 
 ```bash
 cd announcement-bar-pro-universal && ./build.sh
-# → dist/v2.4.1/announcement_bar_pro.ocmod.zip
+# → dist/v2.4.2/announcement_bar_pro.ocmod.zip
 ```
 Universālā paka satur abus komplektus vienā zip:
 - OC3 instalētājs ņem tikai `upload/` + `install.xml`;

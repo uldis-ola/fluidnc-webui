@@ -1,4 +1,4 @@
-/* Announcement Bar Pro v2.4.1 — admin script, shared by the OpenCart 3 and OpenCart 4 packages (no framework needed).
+/* Announcement Bar Pro v2.4.2 — admin script, shared by the OpenCart 3 and OpenCart 4 packages (no framework needed).
    List: import / export, "Use B", erase a newsletter address. Form: templates, language switcher, sections that depend
    on other fields, weekday pills, autocomplete chips (categories, products, coupons, countries), rows per country /
    region, image manager and the LIVE PREVIEW, which loads the shop's real bar script and styles into a sandboxed

@@ -6,10 +6,10 @@ namespace Opencart\Catalog\Controller\Extension\AnnouncementBarPro\Module;
  * Bars: event catalog/view/common/header/after (footer/after + view/[any]/after as automatic fallback).
  * Inline boxes (2.4.0): checkout/cart, product/product and common/cart views; each fails silently without its hook.
  * Public endpoints: track, cart, subscribe (POST, JSON), confirm / unsubscribe (pages). None writes the session.
- * @version 2.4.1
+ * @version 2.4.2
  */
 class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
-	public const VERSION = '2.4.1';
+	public const VERSION = '2.4.2';
 	public const CODE    = 'module_announcement_bar_pro';
 	public const ROUTE   = 'extension/announcement_bar_pro/module/announcement_bar_pro';
 

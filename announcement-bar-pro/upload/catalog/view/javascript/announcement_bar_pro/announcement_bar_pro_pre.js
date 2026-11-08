@@ -1,4 +1,4 @@
-/* Announcement Bar Pro v2.4.1 — runs synchronously right after the bars (no inline script, CSP-friendly).
+/* Announcement Bar Pro v2.4.2 — runs synchronously right after the bars (no inline script, CSP-friendly).
    Before the first paint it: keeps a single bar per id, moves a top bar to the top of <body> when the theme made it
    render in the footer, hides it while automatic colours / styles are worked out, removes messages the visitor
    closed, gives every A/B-tested message this browser's variant, decides campaign / referrer / new-or-returning rules

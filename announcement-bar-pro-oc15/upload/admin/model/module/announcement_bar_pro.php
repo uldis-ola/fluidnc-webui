@@ -6,7 +6,7 @@ require_once(DIR_SYSTEM . 'library/announcementbarpro/compat.php'); // PHP 5.6: 
  * Tables use utf8 like OpenCart 1.5 itself (its database link is utf8; 4-byte characters such as emoji are stored as
  * HTML entities by the sanitizer), so they also work on MySQL 5.1 / 5.5.
  * Tables: {prefix}abp_message, {prefix}abp_message_description, {prefix}abp_subscriber, {prefix}abp_rate
- * @version 2.4.1
+ * @version 2.4.2
  */
 class ModelModuleAnnouncementBarPro extends Model {
 	const CODE           = 'announcement_bar_pro';
@@ -684,25 +684,13 @@ class ModelModuleAnnouncementBarPro extends Model {
 	}
 
 	/**
-	 * OpenCart 1.5 keeps images in image/data/; the shared rules (Features::imagePath()) accept "catalog/…" paths only.
-	 * The 1.5 edition stores "data/x.jpg" as "catalog/x.jpg" and maps it back wherever the file is used.
+	 * Stored image path (as the OpenCart 1.5 image manager gives it: "data/x.jpg", accepted by Features::imagePath())
+	 * when the file exists under image/, else ''.
 	 */
-	public function imageToStored($path) {
-		$path = trim(strtr((string)$path, chr(92), '/'));
-
-		return strpos($path, 'data/') === 0 ? 'catalog/' . substr($path, 5) : $path;
-	}
-
-	/** Stored image path → path under image/ ("data/x.jpg"); '' when the file does not exist (unless $any). */
-	public function imageFile($stored, $any = false) {
+	public function imageFile($stored) {
 		$stored = (string)$stored;
-		$real   = strpos($stored, 'catalog/') === 0 ? 'data/' . substr($stored, 8) : $stored;
 
-		if ($any) {
-			return $real;
-		}
-
-		return $real !== '' && strpos($real, '..') === false && defined('DIR_IMAGE') && is_file(DIR_IMAGE . $real) ? $real : '';
+		return $stored !== '' && strpos($stored, '..') === false && defined('DIR_IMAGE') && is_file(DIR_IMAGE . $stored) ? $stored : '';
 	}
 
 	/** Coupons whose name or code contains $filter (autocomplete), at most 10, active ones first. */

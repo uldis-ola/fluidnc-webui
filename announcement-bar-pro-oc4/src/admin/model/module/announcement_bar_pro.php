@@ -5,7 +5,7 @@ namespace Opencart\Admin\Model\Extension\AnnouncementBarPro\Module;
  * Announcement Bar Pro — admin model (OpenCart 4.0.2+ / 4.1)
  * Tables: {prefix}abp_message, {prefix}abp_message_description
  *
- * @version 2.4.1
+ * @version 2.4.2
  */
 class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 	public const CODE           = 'module_announcement_bar_pro';

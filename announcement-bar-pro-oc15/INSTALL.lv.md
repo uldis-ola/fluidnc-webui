@@ -1,4 +1,4 @@
-# Announcement Bar Pro 2.4.1 OpenCart 1.5.x veikalam — uzstādīšana
+# Announcement Bar Pro 2.4.2 OpenCart 1.5.x veikalam — uzstādīšana
 
 Prasības: OpenCart 1.5.4 – 1.5.6.4, **PHP 5.6 vai jaunāks** (ieteicams 7.x), **vQmod 2.4+**, MySQL 5.1+ / MariaDB.
 Atbalsts: 3DP SIA, extension@3dp.lv

@@ -7,12 +7,12 @@ defined('VERSION') || exit; // not callable directly
  * Entry files: admin/controller/extension/module/announcement_bar_pro.php (2.3 package) and
  * admin/controller/module/announcement_bar_pro.php (2.0–2.2 package) extend this class.
  * Version differences: AbpOc2 (oc2.php).
- * @version 2.4.1
+ * @version 2.4.2
  */
 require_once(DIR_SYSTEM . 'library/announcementbarpro/oc2.php');
 
 class AbpAdminController extends Controller {
-	const VERSION    = '2.4.1';
+	const VERSION    = '2.4.2';
 	const CODE       = 'module_announcement_bar_pro';
 	const EVENT_CODE = 'announcement_bar_pro';
 	const MROUTE     = 'extension/module/announcement_bar_pro'; // model + language files (all 2.x versions)

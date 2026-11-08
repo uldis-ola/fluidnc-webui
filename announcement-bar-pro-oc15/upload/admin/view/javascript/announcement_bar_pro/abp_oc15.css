@@ -1,4 +1,4 @@
-/* Announcement Bar Pro v2.4.1 — OpenCart 1.5 admin: the layout classes the shared admin pages use (Bootstrap 3 names),
+/* Announcement Bar Pro v2.4.2 — OpenCart 1.5 admin: the layout classes the shared admin pages use (Bootstrap 3 names),
    scoped to .abp15 so nothing else in the OpenCart 1.5 admin changes. Loaded after abp_admin.css (shared). */
 .abp15{--abp15-ink:#1f2937;--abp15-muted:#6b7280;--abp15-line:#e5e7eb;--abp15-input:#cbd5e1;--abp15-accent:#2563eb;--abp15-accent-d:#1d4ed8;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:13px;line-height:1.5;color:var(--abp15-ink);}

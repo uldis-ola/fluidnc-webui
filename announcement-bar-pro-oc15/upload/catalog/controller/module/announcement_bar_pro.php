@@ -7,10 +7,10 @@ require_once(DIR_SYSTEM . 'library/announcementbarpro/compat.php'); // PHP 5.6: 
  * Bars: common/header (after <body>); footer marker + Response::setOutput() as automatic fallback.
  * Inline boxes (2.4.0): checkout/cart, product/product and module/cart (mini-cart); each fails silently without its spot.
  * Public endpoints: track, cart, subscribe (POST, JSON), confirm / unsubscribe (pages). None writes the session.
- * @version 2.4.1
+ * @version 2.4.2
  */
 class ControllerModuleAnnouncementBarPro extends Controller {
-	const VERSION = '2.4.1';
+	const VERSION = '2.4.2';
 	const CODE    = 'announcement_bar_pro';
 	const ROUTE   = 'module/announcement_bar_pro';
 
@@ -894,8 +894,6 @@ class ControllerModuleAnnouncementBarPro extends Controller {
 
 		$https = !empty($this->request->server['HTTPS']);
 		$base  = $https && $this->config->get('config_ssl') ? $this->config->get('config_ssl') : $this->config->get('config_url');
-		// OpenCart 1.5: images live in image/data/; the shared rules store them as "catalog/…" (admin model imageToStored()).
-		$path  = strpos($path, 'catalog/') === 0 ? 'data/' . substr($path, 8) : $path;
 		$url   = $base . 'image/' . str_replace('%2F', '/', rawurlencode($path));
 		$rgb   = array(hexdec(substr($hex, 1, 2)), hexdec(substr($hex, 3, 2)), hexdec(substr($hex, 5, 2)));
 		$tint  = 'rgba(' . implode(',', $rgb) . ',' . number_format(max(0, min(90, (int)$overlay)) / 100, 2, '.', '') . ')';

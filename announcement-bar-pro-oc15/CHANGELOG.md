@@ -1,5 +1,12 @@
 # Changelog — Announcement Bar Pro for OpenCart 1.5.x
 
+## 2.4.2 — 2026-11-08
+- **Shared fixes (every OpenCart edition, byte-identical shared files):** `Features::tsVerify()` (Cloudflare Turnstile) now also catches `\Exception`, so a throwing transport fails closed on PHP 5.6 too (PHP 5.6 has no `\Throwable`); `Features::imagePath()` also accepts OpenCart 1.5 image-manager paths (`data/…`) besides `catalog/…`; the storefront script refreshes the cart amounts and the mini-cart box also after OpenCart 1.5's mini-cart reload (`route=module/cart`).
+- OpenCart 1.5: images are stored as the 1.5 image manager gives them (`data/…`; the `catalog/…` mapping is gone), and the adapter script `announcement_bar_pro_oc15.js` is removed — the shared script handles the 1.5 mini-cart reload (`route=module/cart`). Upload the new files; the old `announcement_bar_pro_oc15.js` on the server is unused and may be deleted.
+- **OpenCart 4 compatibility fixes** (from the 2026-11-08 compatibility pass, OpenCart 4 package): OpenCart 4.0.0.x–4.0.1.x send the double opt-in e-mail through the shop's SMTP settings (their `Mail` options are public properties); OpenCart 4.1.0.0 gets the module's own category search in the message form (its core category autocomplete matches whole names only).
+- **New editions with the same features:** OpenCart 2.0.0.0–2.3.0.2 (`announcement-bar-pro-oc2`, two packages: 2.0–2.2 and 2.3, PHP 5.6+) and OpenCart 1.5.4–1.5.6.4 (`announcement-bar-pro-oc15`, vQmod, PHP 5.6+).
+- Schema stays 8: upgrading 2.4.1 → 2.4.2 replaces files only. Tested: `COMPATIBILITY.md` of the universal package.
+
 ## 2.4.1 — 2026-11-08
 First release of the OpenCart 1.5 edition (1.5.4 – 1.5.6.4, PHP 5.6+, vQmod). Same features as Announcement Bar Pro 2.4.1
 for OpenCart 3 / 4: several bars and inline boxes (cart page, under the price, mini-cart) with priority, targeting (stores,

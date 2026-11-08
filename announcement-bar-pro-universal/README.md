@@ -3,7 +3,7 @@
 Paziņojumu josla veikala augšā vai apakšā: akcijas, piegādes nosacījumi, svarīgas ziņas.
 *An announcement bar for the top or bottom of every store page.*
 
-- **Versija / Version:** 2.4.1
+- **Versija / Version:** 2.4.2
 - **Viena paka visām versijām / One package for all versions:** `announcement_bar_pro.ocmod.zip`
   - OpenCart **3.0.x** (tested 3.0.3.8 and 3.0.5.1; code uses only APIs present since 3.0.0.0), PHP 7.3+ (tested 7.4–8.3 within each OpenCart version's own PHP range; 7.3 not tested)
   - OpenCart **4.0.x / 4.1.x** (tested 4.0.0.0, 4.0.1.1, 4.0.2.3, 4.1.0.0, 4.1.0.4), PHP 8.0+ (4.0.0.x–4.0.1.x: PHP 8.0 / 8.1, see COMPATIBILITY.md)
@@ -65,6 +65,11 @@ Nekas nav jāiestata:
 - **Ierīces:** katram paziņojumam — visas ierīces, tikai datori (768 px un platāki) vai tikai telefoni. Pagriežot telefonu vai mainot loga platumu, josla pārkārtojas pati; ja nevienam paziņojumam šis ekrāna izmērs neder, josla netiek rādīta.
 - **Statistika:** paziņojumu sarakstā ir skatījumi, klikšķi un CTR (%), katram paziņojumam poga „Atiestatīt statistiku”.
 - **Dublēt:** paziņojuma kopija ar visām valodām un iestatījumiem; kopija ir izslēgta un ar nulles statistiku.
+
+### Jaunums 2.4.2
+- Kopīgie labojumi visās OpenCart versijās: Turnstile pārbaude PHP 5.6 vidē arī tad, ja savienojums met izņēmumu, pieteikumu nepieņem; fona attēla ceļš var būt arī `data/…` (OpenCart 1.5); veikala skripts atjauno groza summas arī pēc OpenCart 1.5 mini groza pārlādes.
+- OpenCart 4: dubultā apstiprinājuma e-pasts caur veikala SMTP iestatījumiem 4.0.0.x–4.0.1.x; kategoriju meklēšana paziņojuma formā 4.1.0.0.
+- Jaunas versijas ar tām pašām iespējām: OpenCart 2.0–2.3 un OpenCart 1.5 (sk. `COMPATIBILITY.md`).
 
 ### Jaunums 2.4.1
 - **Cloudflare Turnstile (pēc izvēles):** pretrobotu pārbaude e-pasta pieteikšanās formai. *Iestatījumi → E-pasta pieteikumi*: „Turnstile vietnes atslēga” un „Turnstile slepenā atslēga” (bez maksas, Cloudflare panelī → Turnstile). Ieslēgta tikai tad, ja norādītas abas atslēgas. Slepenā atslēga netiek rādīta nevienā lapā (lauks paliek tukšs; tukšs lauks saglabāšanā atstāj saglabāto atslēgu; „Dzēst saglabāto slepeno atslēgu” vai tukša vietnes atslēga to izslēdz) un nenonāk ne veikalā, ne eksportā. Serveris pārbauda katru pieteikumu ar Cloudflare `siteverify` (tā pati apmeklētāja IP kā ātruma ierobežojumam, 8 s); bez izturētas pārbaudes — arī ja Cloudflare nav sasniedzams — pieteikums netiek pieņemts. Visas līdzšinējās pārbaudes paliek.
@@ -147,6 +152,11 @@ Tad tajā pašā lapā tiek izvēlēta A/B versija, izlemti „jauns / atgriezie
 | **Design** | 5 styles — Solid, Gradient, Soft, Minimal, Glass — all with contrast of at least 4.5:1; fade or slide, prev/next arrows, `prefers-reduced-motion` |
 | **Admin** | Form in sections with a live preview (the shop's real script and styles; computer / phone, A/B, cart state), list with colour swatch, status badges, icons and CTR, JSON export / import |
 | **Statistics** | Views, clicks, copies, CTR; no personal data, honours Do Not Track / GPC |
+
+### What is new in 2.4.2
+- Shared fixes for every OpenCart edition: on PHP 5.6 the Turnstile check also fails closed when the connection throws; the background image path may also be `data/…` (OpenCart 1.5); the storefront script refreshes the cart amounts after the OpenCart 1.5 mini-cart reload too.
+- OpenCart 4: double opt-in e-mail through the shop SMTP settings on 4.0.0.x–4.0.1.x; category search in the message form on 4.1.0.0.
+- New editions with the same features: OpenCart 2.0–2.3 and OpenCart 1.5 (see `COMPATIBILITY.md`).
 
 ### What is new in 2.4.1
 - **Cloudflare Turnstile (optional):** anti-bot check of the e-mail sign-up form. *Settings → E-mail sign-ups*: "Turnstile site key" and "Turnstile secret key" (free, Cloudflare dashboard → Turnstile). On only when both keys are set. The secret key is never shown on any page (the field stays empty; saving with an empty field keeps the saved key; "Remove the saved secret key" or an empty site key switches it off) and never reaches the storefront or an export. The server checks every sign-up with Cloudflare's `siteverify` (same visitor IP as the rate limit, 8 s timeout); without a passed check — also when Cloudflare cannot be reached — no sign-up is accepted. All existing checks stay.

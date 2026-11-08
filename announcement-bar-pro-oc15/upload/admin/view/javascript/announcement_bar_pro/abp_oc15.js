@@ -1,4 +1,4 @@
-/* Announcement Bar Pro v2.4.1 — OpenCart 1.5 admin adapter. The shared admin script (abp_admin.js) needs no framework;
+/* Announcement Bar Pro v2.4.2 — OpenCart 1.5 admin adapter. The shared admin script (abp_admin.js) needs no framework;
    this file adds what Bootstrap does in the newer admins: tabs, closable alerts, the date + time picker (jQuery UI
    timepicker of OpenCart 1.5) and OpenCart 1.5's image manager (jQuery UI dialog). jQuery 1.7 is only used where
    OpenCart 1.5 itself needs it (dialog, picker). */

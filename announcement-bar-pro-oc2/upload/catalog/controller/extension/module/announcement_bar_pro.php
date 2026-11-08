@@ -7,10 +7,10 @@ require_once(DIR_SYSTEM . 'library/announcementbarpro/oc2.php'); // OpenCart 2.x
  * fallback); OpenCart 2.0/2.1 call the same handlers from the template loader (install.xml → AbpOc2::view()).
  * Inline boxes (2.4.0): checkout/cart, product/product and common/cart views; each fails silently without its hook.
  * Public endpoints: track, cart, subscribe (POST, JSON), confirm / unsubscribe (pages). None writes the session.
- * @version 2.4.1
+ * @version 2.4.2
  */
 class ControllerExtensionModuleAnnouncementBarPro extends Controller {
-	const VERSION = '2.4.1';
+	const VERSION = '2.4.2';
 	const CODE    = 'module_announcement_bar_pro';
 	const ROUTE   = 'extension/module/announcement_bar_pro';
 
@@ -1046,22 +1046,6 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 	 * with Cloudflare's siteverify, for the same client IP as the rate limit. Fails closed. '' = passed or off, else
 	 * the message for the visitor (no token yet / check failed or unavailable).
 	 */
-	/**
-	 * Transport for the Turnstile check that never throws: the shared library catches \Throwable, which PHP 5.6 does not
-	 * have — a failure is reported as "no answer" (fail closed) on every PHP version.
-	 */
-	private function tsTransport() {
-		$fx = $this->fx;
-
-		return function ($url, array $fields) use ($fx) {
-			try {
-				return $fx->httpPost($url, $fields);
-			} catch (\Exception $e) {
-				return false;
-			}
-		};
-	}
-
 	private function turnstileError(array $post) {
 		$site   = $this->config->get(self::CODE . '_ts_site');
 		$secret = $this->config->get(self::CODE . '_ts_secret');
@@ -1071,7 +1055,7 @@ class ControllerExtensionModuleAnnouncementBarPro extends Controller {
 		}
 
 		$codes  = array();
-		$result = $this->fx->tsVerify($secret, isset($post['cf-turnstile-response']) ? $post['cf-turnstile-response'] : '', $this->clientIp(), $this->tsTransport(), $codes);
+		$result = $this->fx->tsVerify($secret, isset($post['cf-turnstile-response']) ? $post['cf-turnstile-response'] : '', $this->clientIp(), array($this->fx, 'httpPost'), $codes);
 
 		if ($result === 'ok') {
 			return '';

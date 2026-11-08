@@ -1,4 +1,4 @@
-// Announcement Bar Pro 2.4.1 for OpenCart 1.5 on a REAL local OpenCart 1.5.x shop (Playwright Chromium).
+// Announcement Bar Pro 2.4.2 for OpenCart 1.5 on a REAL local OpenCart 1.5.x shop (Playwright Chromium).
 // Derived from the OpenCart 3 / 4 E2E of the universal package (same feature checks), with the OpenCart 1.5 ways:
 // install through Extensions > Modules after the files were copied (FTP-style) and vQmod is installed; settings in
 // oc_setting.`group`; PHP sessions (address chosen through the cart's shipping estimate); mini-cart in #cart .content.
@@ -527,7 +527,7 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
 		await p.screenshot({ path: `${SHOTS}/${TAG}-admin-form-image-font.png` });
 	}, 'Image background with serif font');
 	const idImg = id;
-	ok('image + font saved', !e && optOf(idImg).image === img.replace(/^data\//, 'catalog/') && optOf(idImg).overlay === 70 && optOf(idImg).font === 'serif', e + q(`select options from oc_abp_message where message_id=${idImg}`));
+	ok('image + font saved', !e && optOf(idImg).image === img && optOf(idImg).overlay === 70 && optOf(idImg).font === 'serif', e + q(`select options from oc_abp_message where message_id=${idImg}`));
 	const evilCss = '#abp-bar{letter-spacing:1px}</style><script>alert(1)</script> @import url(//evil.example/x.css); .abp{background:url(javascript:alert(1))} .abp{width:expression(alert(1))}';
 	ok('custom CSS saved', (await settings({ custom_css: evilCss, font: 'mono' })) === '');
 	const storedCss = setting('custom_css');

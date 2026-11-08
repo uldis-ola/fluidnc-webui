@@ -363,6 +363,6 @@ if __name__ == '__main__':
     if '--admin15' in sys.argv:
         src = admin15(src)
     out = Converter().convert(src)
-    head = '<?php /* Announcement Bar Pro 2.4.1 — generated from the OpenCart 3 Twig template by tools/twig2tpl.py, then adapted for OpenCart 1.5. */ ?>\n'
+    head = '<?php /* Announcement Bar Pro 2.4.2 — generated from the OpenCart 3 Twig template by tools/twig2tpl.py, then adapted for OpenCart 1.5. */ ?>\n'
     open(sys.argv[2], 'w', encoding='utf-8', newline='\n').write(head + out)
     print(sys.argv[2])

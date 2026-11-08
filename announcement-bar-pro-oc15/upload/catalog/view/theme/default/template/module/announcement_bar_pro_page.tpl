@@ -1,4 +1,4 @@
-<?php /* Announcement Bar Pro 2.4.1 — generated from the OpenCart 3 Twig template by tools/twig2tpl.py, then adapted for OpenCart 1.5. */ ?>
+<?php /* Announcement Bar Pro 2.4.2 — generated from the OpenCart 3 Twig template by tools/twig2tpl.py, then adapted for OpenCart 1.5. */ ?>
 <?php echo abp15_v($header); ?>
 <div id="abp-page" class="container">
   <div class="row"><?php echo abp15_v($column_left); ?>

@@ -1,4 +1,4 @@
-# Announcement Bar Pro 2.4.1 for OpenCart 1.5.x — Installation
+# Announcement Bar Pro 2.4.2 for OpenCart 1.5.x — Installation
 
 Requirements: OpenCart 1.5.4 – 1.5.6.4, **PHP 5.6 or newer** (7.x recommended), **vQmod 2.4+**, MySQL 5.1+ / MariaDB.
 Support: 3DP SIA, extension@3dp.lv

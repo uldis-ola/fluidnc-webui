@@ -1,12 +1,12 @@
-# Announcement Bar Pro 2.4.1 — instalēšana (OpenCart 2.0.x–2.3.x)
+# Announcement Bar Pro 2.4.2 — instalēšana (OpenCart 2.0.x–2.3.x)
 
 **Vispirms izveido failu un datubāzes rezerves kopiju.** Prasības: OpenCart 2.0.0.0–2.3.0.2, PHP 5.6 vai jaunāks
 (PHP 5.6 gadījumā — OpenSSL paplašinājums).
 
 Izvēlies paku pēc OpenCart versijas (to rāda admina kājene vai *System › Maintenance*):
 
-- OpenCart **2.0.x, 2.1.x, 2.2.x** → `announcement_bar_pro_oc2.0-2.2_v2.4.1.ocmod.zip`
-- OpenCart **2.3.x** → `announcement_bar_pro_oc2.3_v2.4.1.ocmod.zip`
+- OpenCart **2.0.x, 2.1.x, 2.2.x** → `announcement_bar_pro_oc2.0-2.2_v2.4.2.ocmod.zip`
+- OpenCart **2.3.x** → `announcement_bar_pro_oc2.3_v2.4.2.ocmod.zip`
 
 ## A. Ar Extension Installer (OpenCart ir iestatīts FTP)
 

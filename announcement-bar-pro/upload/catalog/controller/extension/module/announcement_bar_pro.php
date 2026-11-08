@@ -5,10 +5,10 @@ defined('VERSION') || exit; // not callable directly (in the universal package t
  * Bars: event catalog/view/common/header/after (footer/after + view/[any]/after as automatic fallback).
  * Inline boxes (2.4.0): checkout/cart, product/product and common/cart views; each fails silently without its hook.
  * Public endpoints: track, cart, subscribe (POST, JSON), confirm / unsubscribe (pages). None writes the session.
- * @version 2.4.1
+ * @version 2.4.2
  */
 class ControllerExtensionModuleAnnouncementBarPro extends Controller {
-	const VERSION = '2.4.1';
+	const VERSION = '2.4.2';
 	const CODE    = 'module_announcement_bar_pro';
 	const ROUTE   = 'extension/module/announcement_bar_pro';
 

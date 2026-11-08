@@ -1,16 +1,17 @@
 // Announcement Bar Pro 2.4.x on a REAL local OpenCart (Playwright Chromium).
 // OC 3.0.5.1: install 2.3.0 with messages, upgrade to 2.4.0 through the Extension Installer, migration 7→8 on the
-// first admin visit, then (with a third zip) upgrade 2.4.0 → 2.4.1 (schema stays 8). OC 4.1.0.4: fresh install of the
+// first admin visit, then (with further zips) upgrade 2.4.0 → 2.4.1 → 2.4.2 (schema stays 8). OC 4.1.0.4: fresh install of the
 // newest zip. Then every 2.4.x feature through the real admin UI and the storefront at 1366 and 390 px: no JS errors,
 // no PHP log entries, no horizontal scroll, contrast ≥ 4.5:1. 2.4.1: Cloudflare Turnstile with Cloudflare's dummy keys
 // (real siteverify), the secret never printed, consent wait, and the re-subscribe rule.
 // Env: OCBASE OCDIR OCDB MYSQL MYSQLARGS SHOTS [SMTPPORT, default 2525] [DEV=1: use the module already installed, skip install/upgrade]
-// argv: zip230 zip240 [zip241]
+// argv: zip230 zip240 [zip241 [zip242 …]]
 const { chromium } = require('playwright');
 const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const [ZIP230, ZIP240, ZIP241] = process.argv.slice(2);
+const [ZIP230, ZIP240, ...LATER] = process.argv.slice(2); // LATER: newer zips (2.4.1, 2.4.2, …), each a files-only upgrade
+const ZIP241 = LATER[LATER.length - 1]; // the newest zip (fresh install on OpenCart 4)
 const ZIPNEW = ZIP241 || ZIP240;
 const crypto = require('crypto');
 const sha256 = s => crypto.createHash('sha256').update(s).digest('hex');
@@ -215,17 +216,20 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
 		const s1 = await shop(); await s1.pg.goto(BASE); await s1.pg.waitForSelector('#abp-bar'); await sleep(800);
 		const keysAfter = (await s1.pg.$$eval('#abp-bar .abp-item', l => l.map(i => i.dataset.key))).sort(); await s1.c.close();
 		ok('dismiss keys unchanged by the upgrade (closed messages stay closed)', JSON.stringify(keysAfter) === JSON.stringify(keysBefore), keysBefore.join() + ' → ' + keysAfter.join());
-		if (ZIP241) {
-			// 2.4.0 → 2.4.1: files only (schema stays 8, Turnstile settings need no migration).
+		// 2.4.0 → 2.4.1 → 2.4.2 …: every further zip is a files-only upgrade (schema stays 8, no migration needed).
+		let prevV = '2.4.0';
+		for (const zipN of LATER) {
+			const newV = (zipN.match(/v(\d+\.\d+\.\d+)/) || [])[1] || '2.4.1';
 			const secret0 = setting('secret'), events0 = q("select count(*) from oc_event where `code`='announcement_bar_pro'");
-			await upload(ZIP241);
+			await upload(zipN);
 			const front = await (await p.request.get(BASE)).text();
-			ok('2.4.0 → 2.4.1 files: storefront still renders before the admin visit, new assets (?v=2.4.1)', /id="abp-bar"/.test(front) && /announcement_bar_pro\.js\?v=2\.4\.1/.test(front) && /<\/html>/i.test(front));
+			ok(`${prevV} → ${newV} files: storefront still renders before the admin visit, new assets (?v=${newV})`, /id="abp-bar"/.test(front) && front.includes('announcement_bar_pro.js?v=' + newV) && /<\/html>/i.test(front));
 			await p.goto(A(ROUTE));
-			ok('2.4.0 → 2.4.1: schema 8, same form secret, same events, settings kept, Turnstile off (no keys)', setting('schema') === '8' && setting('secret') === secret0 && q("select count(*) from oc_event where `code`='announcement_bar_pro'") === events0 && setting('mode') === 'stack' && setting('dismiss_days') === '7' && !setting('ts_site') && !setting('ts_secret'), [setting('schema'), events0, setting('ts_site')].join('/'));
+			ok(`${prevV} → ${newV}: schema 8, same form secret, same events, settings kept, Turnstile off (no keys)`, setting('schema') === '8' && setting('secret') === secret0 && q("select count(*) from oc_event where `code`='announcement_bar_pro'") === events0 && setting('mode') === 'stack' && setting('dismiss_days') === '7' && !setting('ts_site') && !setting('ts_secret'), [setting('schema'), events0, setting('ts_site')].join('/'));
 			const s2 = await shop(); await s2.pg.goto(BASE); await s2.pg.waitForSelector('#abp-bar'); await sleep(800);
-			const keys241 = (await s2.pg.$$eval('#abp-bar .abp-item', l => l.map(i => i.dataset.key))).sort(); await s2.c.close();
-			ok('2.4.0 → 2.4.1: dismiss keys unchanged', JSON.stringify(keys241) === JSON.stringify(keysBefore), keys241.join());
+			const keysN = (await s2.pg.$$eval('#abp-bar .abp-item', l => l.map(i => i.dataset.key))).sort(); await s2.c.close();
+			ok(`${prevV} → ${newV}: dismiss keys unchanged`, JSON.stringify(keysN) === JSON.stringify(keysBefore), keysN.join());
+			prevV = newV;
 		}
 	} else {
 		await upload(ZIPNEW);

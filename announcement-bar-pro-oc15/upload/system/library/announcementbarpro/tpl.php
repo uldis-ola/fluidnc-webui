@@ -3,7 +3,7 @@
  * Announcement Bar Pro — template helpers of the OpenCart 1.5 edition (the .tpl files are converted from the Twig
  * templates of the newer editions by tools/twig2tpl.py and keep Twig's rules: a missing value is null without a PHP
  * notice, escaping as Twig's e / e('url') / e('js') filters).
- * @version 2.4.1
+ * @version 2.4.2
  */
 defined('VERSION') || exit;
 

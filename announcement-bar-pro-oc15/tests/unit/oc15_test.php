@@ -42,23 +42,23 @@ $item = array('id' => 3, 'key' => 'abcdef012345', 'variants' => array(array('nam
 	'style' => 'solid', 'btn_style' => 'filled', 'icon' => 'fa fa-truck', 'link' => 'https://example.com/?a=1&b=2', 'new_tab' => true, 'coupon' => 'SALE10', 'copy_aria' => 'Copy SALE10', 'fs' => false, 'done' => false, 'pct' => 0, 'progress' => false,
 	'steps' => array(), 'k' => 0, 'wd' => '', 't1' => '', 't2' => '', 'off' => false, 'end' => 0, 'font' => '', 'image' => '', 'utm' => '', 'vis' => '', 'trig' => '', 'cc' => false, 'coff' => false, 'email' => null);
 $c = array('id' => 'abp-bar', 'inline' => false, 'placement' => 'top', 'mode' => 'rotate', 'items' => array($item), 'sticky' => false, 'arrows' => false, 'dismissible' => true, 'pause' => false, 'autohide' => 0);
-$html = $render(array('containers' => array($c), 'assets' => true, 'pre' => true, 'fa' => 'catalog/view/javascript/announcement_bar_pro/fa/css/font-awesome.min.css?v=4.7.0', 'base' => 'catalog/view/javascript/announcement_bar_pro/', 'version' => '2.4.1', 'custom_css' => '', 'fallback' => false,
+$html = $render(array('containers' => array($c), 'assets' => true, 'pre' => true, 'fa' => 'catalog/view/javascript/announcement_bar_pro/fa/css/font-awesome.min.css?v=4.7.0', 'base' => 'catalog/view/javascript/announcement_bar_pro/', 'version' => '2.4.2', 'custom_css' => '', 'fallback' => false,
 	'transition' => 'fade', 'label' => 'Announcements', 'close' => 'Close', 'dismiss_days' => 1, 'interval' => 5, 'speed' => 60, 'now' => 1, 'tz' => 0, 'color_mode' => 'custom', 'days' => 'd', 'track' => 'index.php?route=module/announcement_bar_pro/track', 'cart' => '', 'max' => 0,
 	'ga4' => true, 'consent' => false, 'font' => '', 'copy' => 'Copy', 'copied' => 'Copied', 'prev' => 'Previous', 'next' => 'Next', 'show' => 'Show', 'pause_label' => 'Pause', 'play_label' => 'Play'));
 check('OC15 render: bar with id, item, raw safe text, escaped button text and link, coupon, icon', strpos($html, 'id="abp-bar"') !== false && strpos($html, 'data-id="3"') !== false && strpos($html, 'Hello <b>world</b>') !== false && strpos($html, 'Go&quot;') !== false && strpos($html, 'href="https://example.com/?a=1&amp;b=2"') !== false && strpos($html, 'SALE10') !== false && strpos($html, 'fa fa-truck') !== false, $html);
-check('OC15 render: assets (shared CSS + JS, OpenCart 1.5 adapter CSS + JS, Font Awesome) once', substr_count($html, 'announcement_bar_pro.css?v=2.4.1') === 1 && substr_count($html, 'announcement_bar_pro.js?v=2.4.1') === 1 && substr_count($html, 'announcement_bar_pro_oc15.js') === 1 && substr_count($html, 'font-awesome.min.css') === 1 && strpos($html, '<script>') === false);
-$html2 = $render(array('containers' => array($c), 'assets' => false, 'pre' => false, 'fa' => '', 'base' => 'x/', 'version' => '2.4.1', 'custom_css' => '', 'fallback' => false));
+check('OC15 render: assets (shared CSS + JS, OpenCart 1.5 adapter CSS, Font Awesome) once; no adapter JS (the shared script handles the 1.5 mini-cart)', substr_count($html, 'announcement_bar_pro.css?v=2.4.2') === 1 && substr_count($html, 'announcement_bar_pro.js?v=2.4.2') === 1 && substr_count($html, 'announcement_bar_pro_oc15.css') === 1 && strpos($html, 'announcement_bar_pro_oc15.js') === false && substr_count($html, 'font-awesome.min.css') === 1 && strpos($html, '<script>') === false);
+$html2 = $render(array('containers' => array($c), 'assets' => false, 'pre' => false, 'fa' => '', 'base' => 'x/', 'version' => '2.4.2', 'custom_css' => '', 'fallback' => false));
 check('OC15 render: no assets → no CSS / JS tags, no PHP notices for the missing values', strpos($html2, '<link') === false && strpos($html2, '<script') === false && strpos($html2, 'Notice') === false);
 
-// 5. Image path mapping (OpenCart 1.5 image/data/ ↔ the shared "catalog/" rule).
+// 5. Images: OpenCart 1.5 image manager paths (data/…) are stored as they are (the shared rule accepts data/ since 2.4.2).
 $dir = sys_get_temp_dir() . '/abp15img' . mt_rand();
 @mkdir($dir . '/data/demo', 0777, true);
 file_put_contents($dir . '/data/demo/a.jpg', 'x');
 if (!defined('DIR_IMAGE')) { define('DIR_IMAGE', $dir . '/'); }
 list($m15) = make('ModelModuleAnnouncementBarPro');
 $real = DIR_IMAGE === $dir . '/';
-check('OC15 images: data/x → catalog/x (stored), back to data/x; only existing files; no traversal', $m15->imageToStored('data/demo/a.jpg') === 'catalog/demo/a.jpg' && $m15->imageToStored('catalog/b.png') === 'catalog/b.png' && $m15->imageFile('catalog/demo/a.jpg', true) === 'data/demo/a.jpg'
-	&& (!$real || ($m15->imageFile('catalog/demo/a.jpg') === 'data/demo/a.jpg' && $m15->imageFile('catalog/demo/none.jpg') === '' && $m15->imageFile('catalog/../data/demo/a.jpg') === '')));
+check('OC15 images: data/x stored as it is, shared rule accepts it; only existing files; no traversal', !method_exists($m15, 'imageToStored') && $m15->features()->imagePath('data/demo/a.jpg')
+	&& (!$real || ($m15->imageFile('data/demo/a.jpg') === 'data/demo/a.jpg' && $m15->imageFile('data/demo/none.jpg') === '' && $m15->imageFile('catalog/demo/a.jpg') === '' && $m15->imageFile('data/../data/demo/a.jpg') === '')));
 @unlink($dir . '/data/demo/a.jpg'); @rmdir($dir . '/data/demo'); @rmdir($dir . '/data'); @rmdir($dir);
 
 // 6. vQmod file: well-formed, every hook guarded, each search line exists in OpenCart 1.5.6.4 / 1.5.5.1 when present.

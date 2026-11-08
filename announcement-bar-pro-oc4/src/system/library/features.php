@@ -3,7 +3,7 @@
  * Announcement Bar Pro (OpenCart 4) — 2.4.0 feature helpers: message options (targeting, goals, triggers, countdown,
  * look), free-shipping overrides, cart conditions, recurring cut-off times, custom CSS, templates and form tokens.
  * Pure PHP without database access, shared by admin and catalog.
- * @version 2.4.1
+ * @version 2.4.2
  */
 namespace Opencart\System\Library\Extension\AnnouncementBarPro;
 \defined('VERSION') || exit; // not callable directly
@@ -420,9 +420,12 @@ class Features {
 		return array($o, $err);
 	}
 
-	/** Image manager path below image/ (catalog/…), safe for a CSS url(): no "..", quotes or brackets. */
+	/**
+	 * Image manager path below image/ — catalog/… (OpenCart 2–4) or data/… (OpenCart 1.5) — safe for a CSS url():
+	 * no "..", quotes or brackets.
+	 */
 	public function imagePath($path) {
-		return is_string($path) && strlen($path) <= 255 && strpos($path, '..') === false && (bool)preg_match('#^catalog/[A-Za-z0-9 _\-./]+\.(jpe?g|png|gif|webp|avif)$#i', $path);
+		return is_string($path) && strlen($path) <= 255 && strpos($path, '..') === false && (bool)preg_match('#^(catalog|data)/[A-Za-z0-9 _\-./]+\.(jpe?g|png|gif|webp|avif)$#i', $path);
 	}
 
 	/**
@@ -898,7 +901,9 @@ class Features {
 
 		try {
 			$body = call_user_func($transport, self::TS_VERIFY_URL, $fields);
-		} catch (\Throwable $e) {
+		} catch (\Exception $e) { // PHP 5.6 (no \Throwable there)
+			$body = false;
+		} catch (\Throwable $e) { // PHP 7+ errors
 			$body = false;
 		}
 

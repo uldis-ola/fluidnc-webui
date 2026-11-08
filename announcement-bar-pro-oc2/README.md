@@ -16,8 +16,8 @@ price and in the mini-cart: promotions, shipping terms, sign-up forms, notices.
 
 | OpenCart | Package |
 |---|---|
-| 2.0.0.0 – 2.2.0.0 | `announcement_bar_pro_oc2.0-2.2_v2.4.1.ocmod.zip` |
-| 2.3.0.0 – 2.3.0.2 | `announcement_bar_pro_oc2.3_v2.4.1.ocmod.zip` |
+| 2.0.0.0 – 2.2.0.0 | `announcement_bar_pro_oc2.0-2.2_v2.4.2.ocmod.zip` |
+| 2.3.0.0 – 2.3.0.2 | `announcement_bar_pro_oc2.3_v2.4.2.ocmod.zip` |
 
 Why two: OpenCart 2.0–2.2 open modules from `admin/controller/module/`, 2.3 from `admin/controller/extension/module/`, and each folder breaks the other side: OpenCart 2.0.x resolves routes folder-first, so an `admin/controller/extension/module/` folder hides its own Extensions › Modules page.
 The 2.0–2.2 package needs an entry file in `admin/controller/module/`; on 2.3 that same file makes OpenCart's

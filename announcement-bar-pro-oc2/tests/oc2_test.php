@@ -77,10 +77,10 @@ foreach (array('admin/view/template/extension/module/announcement_bar_pro.tpl', 
 $html = AbpOc2::render($root . '/upload/catalog/view/theme/default/template/extension/module/announcement_bar_pro.tpl', array(
 	'containers' => array(array('id' => 'abp-bar', 'inline' => false, 'placement' => 'top', 'mode' => 'rotate', 'sticky' => true, 'dismissible' => true, 'arrows' => false, 'pause' => false, 'autohide' => 0,
 		'items' => array(array('id' => 5, 'key' => 'k', 'style' => 'solid', 'bg_color' => '#222222', 'text_color' => '#ffffff', 'device' => 'all', 'image' => '', 'variants' => array(array('name' => 'a', 'wrap_link' => false, 'txt' => 'Hello <b>x</b>', 'link_text' => '')), 'link' => '', 'icon' => '', 'coupon' => 'ABC"1', 'copy_aria' => 'Copy')))),
-	'transition' => 'fade', 'label' => 'Notice', 'base' => 'catalog/view/javascript/announcement_bar_pro/', 'version' => '2.4.1', 'pre' => true, 'assets' => true, 'copy' => 'Copy'));
+	'transition' => 'fade', 'label' => 'Notice', 'base' => 'catalog/view/javascript/announcement_bar_pro/', 'version' => '2.4.2', 'pre' => true, 'assets' => true, 'copy' => 'Copy'));
 restore_error_handler();
 check('bar template: markup, escaping, assets once', strpos($html, 'id="abp-bar"') !== false && strpos($html, 'abp-item abp-active') !== false && strpos($html, 'Hello <b>x</b>') !== false && strpos($html, 'data-code="ABC&quot;1"') !== false
-	&& substr_count($html, 'announcement_bar_pro.js?v=2.4.1') === 1 && !$errors, implode(' | ', $errors));
+	&& substr_count($html, 'announcement_bar_pro.js?v=2.4.2') === 1 && !$errors, implode(' | ', $errors));
 
 // Admin model: events registered on 2.2+ only, with the theme wildcard; removed by code
 class FakeEvent { public $added = array(), $deleted = array(); function addEvent($c, $t, $a) { $this->added[] = array($c, $t, $a); } function deleteEvent($c) { $this->deleted[] = $c; } }
@@ -112,7 +112,7 @@ if (!$v22) {
 	check('2.0/2.1: hook leaves non-string output alone', AbpOc2::view(null, 'default/template/common/home.tpl', null) === null);
 }
 $xml = simplexml_load_file($root . '/install.xml');
-check('install.xml: code, version 2.4.1, loader operation with error="skip" and the version guard', (string)$xml->code === 'announcement_bar_pro' && (string)$xml->version === '2.4.1'
+check('install.xml: code, version 2.4.2, loader operation with error="skip" and the version guard', (string)$xml->code === 'announcement_bar_pro' && (string)$xml->version === '2.4.2'
 	&& (string)$xml->file['path'] === 'system/engine/loader.php' && (string)$xml->file->operation['error'] === 'skip' && strpos((string)$xml->file->operation->add, "version_compare(VERSION, '2.2.0.0', '<')") !== false && strpos((string)$xml->file->operation->add, "!defined('DIR_CATALOG')") !== false);
 
 // Language stubs: every folder points to the shared texts; every text file defines the same keys

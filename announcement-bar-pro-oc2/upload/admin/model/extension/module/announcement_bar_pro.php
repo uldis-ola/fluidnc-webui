@@ -4,7 +4,7 @@ require_once(DIR_SYSTEM . 'library/announcementbarpro/oc2.php'); // OpenCart 2.x
 /**
  * Announcement Bar Pro — admin model (OpenCart 2.0.x–2.3.x; same route in every version)
  * Tables: {prefix}abp_message, {prefix}abp_message_description, {prefix}abp_subscriber, {prefix}abp_rate
- * @version 2.4.1
+ * @version 2.4.2
  */
 class ModelExtensionModuleAnnouncementBarPro extends Model {
 	const CODE           = 'module_announcement_bar_pro';
