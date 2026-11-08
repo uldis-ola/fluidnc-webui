@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Announcement Bar Pro — Configurator (Embed @@VERSION@@)</title>
+<!-- Built by build.sh from configurator/template.html: edit the template, not index.html.
+     One self-contained file: works offline and from file://. Nothing is sent anywhere; your work is kept in this
+     browser's localStorage (Reset clears it). -->
+<style>
+:root{--ink:#1f2937;--muted:#5b6474;--line:#e5e7eb;--soft:#f8fafc;--accent:#2563eb;--bg:#f3f4f6}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;color:var(--ink);background:var(--bg)}
+[hidden]{display:none!important}
+header.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 20px;background:#111827;color:#fff}
+header.top h1{margin:0;font-size:17px;font-weight:650}
+header.top .ver{font-size:12px;opacity:.75}
+header.top .sp{flex:1}
+header.top button{background:#1f2937;color:#fff;border:1px solid #374151}
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;padding:18px;max-width:1500px;margin:0 auto}
+@media (max-width:1100px){main{grid-template-columns:1fr}}
+.col{min-width:0}
+.card{border-radius:10px;border:1px solid var(--line);box-shadow:0 1px 2px rgba(16,24,40,.04);margin-bottom:18px;background:#fff}
+.card>h2{display:flex;align-items:center;gap:10px;margin:0;padding:12px 18px;border-bottom:1px solid var(--line);font-size:15px;font-weight:600}
+.card>h2 .badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:#eef2ff;color:#4338ca;font-size:14px}
+.card>h2 small{margin-left:auto;font-weight:400;color:var(--muted);font-size:12px}
+.card .body{padding:16px 18px 8px}
+.sticky{position:sticky;top:8px;z-index:5}
+@media (max-width:1100px){.sticky{position:static}}
+fieldset{border:0;border-top:1px solid var(--line);margin:6px 0 0;padding:12px 0 4px}
+fieldset:first-of-type{border-top:0;padding-top:0}
+legend{padding:0;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.row{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 14px;margin:8px 0}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f.wide{grid-column:1/-1}
+label.l{font-size:12.5px;font-weight:600;color:#334155}
+.help{font-size:12px;color:var(--muted);line-height:1.45}
+input[type=text],input[type=url],input[type=number],input[type=datetime-local],input[type=time],select,textarea{width:100%;padding:7px 9px;border:1px solid #cbd5e1;border-radius:7px;font:inherit;color:var(--ink);background:#fff}
+textarea{min-height:64px;resize:vertical}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.chk{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;margin:2px 0}
+.chk input{width:16px;height:16px}
+button{font:inherit;font-size:13px;padding:6px 12px;border-radius:7px;border:1px solid #cbd5e1;background:#fff;color:var(--ink);cursor:pointer}
+button:hover{border-color:#94a3b8}
+button.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+button.danger{color:#b91c1c}
+button.sm{padding:3px 9px;font-size:12px}
+.seg{display:inline-flex;flex-wrap:wrap;padding:3px;gap:2px;border-radius:9px;background:#f1f5f9;border:1px solid var(--line)}
+.seg button{border:0;background:transparent;padding:4px 11px;border-radius:7px;font-size:12.5px;color:#334155}
+.seg button[aria-pressed=true]{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08);font-weight:600}
+.tools{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-bottom:10px}
+.tools .lab{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+#pv-wrap{border-radius:10px;overflow:hidden;border:1px solid var(--line);background:#f3f4f6;margin:0 auto;max-width:100%;transition:max-width .2s}
+#pv-wrap.phone{max-width:390px;border:8px solid #111827;border-radius:22px}
+#pv{display:block;width:100%;height:230px;border:0;background:#fff}
+#pv-wrap.phone #pv{height:330px}
+.note{font-size:12px;color:var(--muted);margin:8px 0 0}
+.msgs{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.msg{display:flex;align-items:center;gap:10px;padding:7px 9px;border:1.5px solid var(--line);border-radius:9px;background:#fff}
+.msg.on{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+.msg .sw{flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:7px;font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border:0;text-align:left}
+.msg .meta{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.msg.off .sw{opacity:.5}
+.tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin:8px 0 12px}
+.tpl{display:flex;flex-direction:column;gap:6px;padding:7px;border:1.5px solid var(--line);border-radius:10px;background:#fff;text-align:left}
+.tpl .sw{display:flex;align-items:center;gap:6px;height:28px;padding:0 9px;border-radius:6px;font-size:11px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.tpl .nm{font-size:12.5px;font-weight:600;line-height:1.3}
+.langs{display:inline-flex;flex-wrap:wrap;gap:4px;padding:3px;border-radius:9px;background:#f1f5f9;border:1px solid var(--line)}
+.langs button{border:0;background:transparent;padding:4px 10px;border-radius:7px;font-size:12.5px}
+.langs button[aria-pressed=true]{background:#fff;font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#4338ca;background:#eef2ff;border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:middle}
+.styles{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+.styles button{display:flex;flex-direction:column;align-items:stretch;gap:5px;padding:6px;border:1.5px solid var(--line);border-radius:10px;text-align:left}
+.styles button[aria-pressed=true]{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+.styles .sw{height:24px;border-radius:6px}
+.styles .nm{font-size:12px;font-weight:600}
+.sw-solid{background:#4338ca}.sw-gradient{background:linear-gradient(100deg,#4338ca,#6d28d9 55%,#9d174d)}.sw-soft{background:#e0e7ff}.sw-minimal{background:#f8fafc;box-shadow:inset 0 3px 0 #4338ca}.sw-glass{background:linear-gradient(120deg,rgba(67,56,202,.78),rgba(67,56,202,.6)),repeating-linear-gradient(90deg,#fca5a5 0 10px,#93c5fd 10px 20px)}
+.days{display:flex;flex-wrap:wrap;gap:6px}
+.days label{position:relative}
+.days input{position:absolute;opacity:0;width:1px;height:1px}
+.days span{display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:32px;padding:0 9px;border:1.5px solid var(--line);border-radius:999px;font-size:12.5px;font-weight:600;color:#334155;cursor:pointer;background:#fff}
+.days input:checked+span{background:var(--accent);border-color:var(--accent);color:#fff}
+.days input:focus-visible+span{box-shadow:0 0 0 3px rgba(37,99,235,.35)}
+.colors{display:flex;align-items:center;gap:8px}
+.colors input[type=color]{width:42px;height:34px;padding:2px;border:1px solid #cbd5e1;border-radius:7px;background:#fff}
+.contrast{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:600}
+.contrast.ok{background:#ecfdf5;color:#065f46}.contrast.bad{background:#fef2f2;color:#991b1b}
+.rules{display:flex;flex-direction:column;gap:6px}
+.rule{display:grid;grid-template-columns:130px 1fr auto;gap:6px}
+pre.code,textarea.code{font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;background:#0f172a;color:#e2e8f0;border-radius:8px;padding:10px;white-space:pre-wrap;word-break:break-all;max-height:220px;overflow:auto;margin:6px 0}
+textarea.code{width:100%;min-height:120px;border:0}
+.hint{display:flex;gap:8px;padding:9px 12px;margin:0 0 12px;border-radius:8px;background:#f0f9ff;color:#075985;font-size:12.5px;line-height:1.45;border:1px solid #e0f2fe}
+.warn{background:#fffbeb;color:#92400e;border-color:#fde68a}
+.err{color:#b91c1c;font-size:12.5px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px}
+details{border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin:8px 0}
+details summary{cursor:pointer;font-weight:600;font-size:13px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+footer{padding:4px 20px 24px;text-align:center;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Announcement Bar Pro — Configurator</h1><span class="ver">Embed @@VERSION@@ · works offline · nothing leaves this browser</span>
+  <span class="sp"></span>
+  <button type="button" id="btn-reset" title="Start again with an empty configuration">Reset</button>
+</header>
+<main>
+  <div class="col">
+    <section class="card" aria-labelledby="h-msgs">
+      <h2 id="h-msgs"><span class="badge" aria-hidden="true">✉</span>Messages <small>highest priority first</small></h2>
+      <div class="body">
+        <div class="msgs" id="msg-list"></div>
+        <div class="btns"><button type="button" class="pri" id="btn-add">+ Add message</button><button type="button" id="btn-tpl" aria-expanded="false" aria-controls="tpls">From a template…</button></div>
+        <div id="tpls" hidden><div class="tpl-grid" id="tpl-grid"></div></div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="h-edit" id="editor-card">
+      <h2 id="h-edit"><span class="badge" aria-hidden="true">✎</span>Edit message <small id="edit-name"></small></h2>
+      <div class="body" id="editor"></div>
+    </section>
+
+    <section class="card" aria-labelledby="h-set">
+      <h2 id="h-set"><span class="badge" aria-hidden="true">⚙</span>Bar settings <small>all messages</small></h2>
+      <div class="body" id="settings"></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card sticky" aria-labelledby="h-pv">
+      <h2 id="h-pv"><span class="badge" aria-hidden="true">👁</span>Live preview <small>the real runtime on a sample page</small></h2>
+      <div class="body">
+        <div class="tools">
+          <span class="lab">Screen</span><span class="seg" id="pv-dev"><button type="button" data-v="desktop" aria-pressed="true">Desktop</button><button type="button" data-v="phone" aria-pressed="false">Phone</button></span>
+          <span class="lab">Page language</span><span class="langs" id="pv-lang"></span>
+          <label class="chk" title="Simulates ABP.setCart() for free-shipping messages">Cart subtotal <input type="number" id="pv-cart" min="0" step="1" value="20" style="width:90px"></label>
+          <button type="button" class="sm" id="pv-reload">Reload</button>
+        </div>
+        <div id="pv-wrap"><iframe id="pv" title="Preview of the announcement bar" sandbox="allow-scripts"></iframe></div>
+        <p class="note">In the preview every message shows at once: triggers (delay, scroll, exit), page rules, UTM / referrer and new-visitor rules are applied only on your real pages, and "remember close" needs storage, which the preview sandbox does not have.</p>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="h-exp">
+      <h2 id="h-exp"><span class="badge" aria-hidden="true">⇩</span>Install on your site</h2>
+      <div class="body">
+        <div class="f wide"><label class="l" for="exp-base">Where you host the two files (folder URL)</label>
+          <input type="url" id="exp-base" placeholder="https://www.example.com/abp/">
+          <span class="help">Upload <b>abp-embed.min.js</b> and <b>abp-embed.min.css</b> from the package to one folder of your site or CDN and enter that folder. Leave empty if you use option C.</span></div>
+        <div class="err" id="exp-err" role="alert"></div>
+        <h3 style="font-size:14px;margin:14px 0 2px">A. Config inside the page (recommended)</h3>
+        <p class="help">Paste before <code>&lt;/body&gt;</code> (Shopify: theme.liquid · Squarespace / Webflow: footer code · HTML: every page).</p>
+        <pre class="code" id="exp-a"></pre><div class="btns"><button type="button" class="sm" data-copy="exp-a">Copy</button></div>
+        <h3 style="font-size:14px;margin:14px 0 2px">B. Config as a JSON file on your site</h3>
+        <p class="help">Upload the JSON below as e.g. <code>abp-config.json</code> next to the script. Changing messages then means replacing one file. Your Content-Security-Policy must allow it in <code>connect-src</code>.</p>
+        <pre class="code" id="exp-b"></pre><div class="btns"><button type="button" class="sm" data-copy="exp-b">Copy</button></div>
+        <h3 style="font-size:14px;margin:14px 0 2px">C. All-in-one (no file hosting; Wix, Tilda, site builders)</h3>
+        <p class="help">Styles, config and script in one paste (about 70 KB). Not for pages with a strict Content-Security-Policy.</p>
+        <div class="btns"><button type="button" class="sm" id="copy-c">Copy all-in-one code</button><a id="dl-c" class="sm" download="abp-all-in-one.html" href="#">Download as file</a></div>
+        <h3 style="font-size:14px;margin:14px 0 2px">Config (JSON)</h3>
+        <textarea class="code" id="exp-json" spellcheck="false" aria-label="Configuration as JSON"></textarea>
+        <div class="btns"><button type="button" class="sm" data-copy="exp-json">Copy</button><a id="dl-json" class="sm" download="abp-config.json" href="#">Download abp-config.json</a><button type="button" class="sm" id="btn-import">Load the JSON above</button></div>
+        <div class="err" id="imp-err" role="alert"></div>
+        <span class="sr" role="status" aria-live="polite" id="live"></span>
+      </div>
+    </section>
+  </div>
+</main>
+<footer>Announcement Bar Pro Embed @@VERSION@@ · 3DP SIA · support: extension@3dp.lv</footer>
+
+<script type="text/plain" id="rt-js">/*@@RUNTIME_JS@@*/</script>
+<script type="text/plain" id="rt-css">/*@@RUNTIME_CSS@@*/</script>
+<script>
+/*@@CORE@@*/
+</script>
+<script>
+(function () {
+  'use strict';
+  var C = ABPCore, $ = function (id) { return document.getElementById(id); };
+  var LANGS = { en: 'English', lv: 'Latviešu', ru: 'Русский', de: 'Deutsch', lt: 'Lietuvių', et: 'Eesti', pl: 'Polski' };
+  // Visitor-facing labels in the 7 built-in languages (any other language: type them in Bar settings → Labels).
+  var LABELS = {
+    en: C.LABELS,
+    lv: { label: 'Paziņojums', close: 'Aizvērt', days: 'd.', copy: 'Kopēt', copied: 'Nokopēts!', copy_code: 'Kopēt kodu %s', prev: 'Iepriekšējais paziņojums', next: 'Nākamais paziņojums', show: 'Rādīt paziņojumus', pause: 'Apturēt paziņojumus', play: 'Turpināt paziņojumus' },
+    ru: { label: 'Объявление', close: 'Закрыть', days: 'д.', copy: 'Копировать', copied: 'Скопировано!', copy_code: 'Скопировать код %s', prev: 'Предыдущее сообщение', next: 'Следующее сообщение', show: 'Показать объявления', pause: 'Остановить сообщения', play: 'Продолжить сообщения' },
+    de: { label: 'Ankündigung', close: 'Schließen', days: 'T.', copy: 'Kopieren', copied: 'Kopiert!', copy_code: 'Code %s kopieren', prev: 'Vorherige Nachricht', next: 'Nächste Nachricht', show: 'Ankündigungen anzeigen', pause: 'Nachrichten anhalten', play: 'Nachrichten fortsetzen' },
+    lt: { label: 'Pranešimas', close: 'Uždaryti', days: 'd.', copy: 'Kopijuoti', copied: 'Nukopijuota!', copy_code: 'Kopijuoti kodą %s', prev: 'Ankstesnis pranešimas', next: 'Kitas pranešimas', show: 'Rodyti pranešimus', pause: 'Sustabdyti pranešimus', play: 'Tęsti pranešimus' },
+    et: { label: 'Teadaanne', close: 'Sulge', days: 'p', copy: 'Kopeeri', copied: 'Kopeeritud!', copy_code: 'Kopeeri kood %s', prev: 'Eelmine teade', next: 'Järgmine teade', show: 'Näita teadaandeid', pause: 'Peata teated', play: 'Jätka teateid' },
+    pl: { label: 'Ogłoszenie', close: 'Zamknij', days: 'd', copy: 'Kopiuj', copied: 'Skopiowano!', copy_code: 'Kopiuj kod %s', prev: 'Poprzedni komunikat', next: 'Następny komunikat', show: 'Pokaż ogłoszenia', pause: 'Wstrzymaj komunikaty', play: 'Wznów komunikaty' }
+  };
+  var STYLES = [['solid', 'Solid', 'Your colours as they are'], ['gradient', 'Gradient', 'Two tones, same hue'], ['soft', 'Soft', 'Light tint, dark text'], ['minimal', 'Minimal', 'Almost white, accent line'], ['glass', 'Glass', 'Translucent, blurred']];
+  var DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  var t3 = function (en, lv, ru) { return { en: en, lv: lv, ru: ru }; };
+  // Ready-made messages (texts from the OpenCart / WordPress editions; icons are emoji, no icon font needed).
+  var TEMPLATES = [
+    { n: 'Free-shipping progress', icon: '🚚', bg: '#0f766e', type: 'free_shipping', threshold: 50, text: t3('Add {remaining} more to your cart for free shipping', 'Pievieno grozam vēl {remaining} un saņem bezmaksas piegādi', 'Добавьте в корзину ещё {remaining} — и доставка будет бесплатной'), success_text: t3('You have unlocked free shipping!', 'Tev ir bezmaksas piegāde!', 'Вам доступна бесплатная доставка!') },
+    { n: 'Flash sale + countdown', icon: '⚡', bg: '#b91c1c', style: 'gradient', countdown: true, end_days: 2, text: t3('Flash sale: up to 30% off — ends in {countdown}', 'Zibakcija: līdz −30% — beidzas pēc {countdown}', 'Распродажа: скидки до 30% — до конца {countdown}'), link_text: t3('Shop now', 'Iepirkties', 'В магазин'), link: '/' },
+    { n: 'Same-day dispatch cut-off', icon: '⏰', bg: '#1e3a8a', countdown: true, recur: 'daily', recur_time: '14:00', recur_skip: '67', text: t3('Order within {countdown} for same-day dispatch', 'Pasūti {countdown} laikā — nosūtīsim vēl šodien', 'Закажите в течение {countdown} — отправим сегодня') },
+    { n: 'Welcome coupon', icon: '🎟', bg: '#7c2d12', style: 'soft', coupon: 'WELCOME10', text: t3('Welcome! 10% off your first order with this code:', 'Laipni lūgti! −10% pirmajam pasūtījumam ar šo kodu:', 'Добро пожаловать! −10% на первый заказ с этим кодом:') },
+    { n: 'Newsletter (link to your form)', icon: '✉', bg: '#111827', button_style: 'filled', link: '/newsletter', text: t3('Get our news and offers first', 'Saņem jaunumus un piedāvājumus pirmais', 'Узнавайте о новинках и акциях первыми'), link_text: t3('Subscribe', 'Pieteikties', 'Подписаться') },
+    { n: 'New arrivals', icon: '⭐', bg: '#065f46', style: 'gradient', link: '/', text: t3('New arrivals are here — discover the latest products', 'Jaunumi ir klāt — apskati jaunākās preces', 'Новинки уже здесь — посмотрите последние товары'), link_text: t3('See what\'s new', 'Skatīt jaunumus', 'Смотреть новинки') },
+    { n: 'Back in stock', icon: '📦', bg: '#0e7490', link: '/', text: t3('Back in stock: popular products are available again', 'Atkal pieejams: populārās preces atkal ir pārdošanā', 'Снова в наличии: популярные товары снова в продаже'), link_text: t3('Shop now', 'Iepirkties', 'В магазин') },
+    { n: 'Holiday greeting', icon: '❄', bg: '#14532d', style: 'gradient', text: t3('Happy holidays! Thank you for shopping with us this year', 'Priecīgus svētkus! Paldies, ka šogad iepirkies pie mums', 'С праздниками! Спасибо, что делали покупки у нас в этом году') },
+    { n: 'Weekend offer (Sat–Sun)', icon: '%', bg: '#9d174d', weekdays: '67', link: '/', text: t3('Weekend offer: extra 15% off selected products', 'Nedēļas nogales piedāvājums: papildu −15% izvēlētām precēm', 'Акция выходного дня: дополнительно −15% на избранные товары'), link_text: t3('See offers', 'Skatīt piedāvājumus', 'Смотреть акции') },
+    { n: 'Exit-intent offer', icon: '✋', bg: '#312e81', coupon: 'STAY10', trigger: 'exit', placement: 'bottom', text: t3('Before you go: 10% off your order with this code', 'Pirms aizej: −10% pasūtījumam ar šo kodu', 'Перед уходом: −10% на заказ с этим кодом') },
+    { n: 'Business customers (B2B)', icon: '💼', bg: '#334155', style: 'minimal', link: '/contact', text: t3('Buying for a business? Ask about trade prices and invoice payment', 'Pērc uzņēmumam? Jautā par vairumcenām un apmaksu ar rēķinu', 'Покупаете для компании? Спросите об оптовых ценах и оплате по счёту'), link_text: t3('Contact us', 'Sazināties', 'Связаться') },
+    { n: 'Privacy-friendly shop', icon: '🛡', bg: '#1f2937', style: 'minimal', text: t3('No tracking cookies here — shop with peace of mind', 'Šeit nav izsekošanas sīkdatņu — iepērcies mierīgi', 'Здесь нет отслеживающих cookie — покупайте спокойно') }
+  ];
+
+  /* ---------------- State (kept in localStorage) ---------------- */
+  var KEY = 'abp-embed-configurator';
+  var tzHere = (window.Intl && Intl.DateTimeFormat().resolvedOptions().timeZone) || 'UTC';
+  function blank() {
+    return { version: 1, settings: { position: 'top', mode: 'rotate', transition: 'fade', interval: 5, speed: 60, font_size: 14, padding: 8, sticky: true, arrows: true, dismissible: true, dismiss_days: 1, pause_button: true, autohide: 0, max_messages: 0, color_mode: 'custom', font: '', ga4: false, consent_wait: false, allow_html: true, custom_css: '', timezone: tzHere, currency: 'EUR', languages: ['en'], default_language: 'en', labels: { en: C.LABELS } }, messages: [] };
+  }
+  var st = null, sel = 0, lang = 'en', pvLang = '', base = '';
+  try { var saved = JSON.parse(localStorage.getItem(KEY) || 'null'); if (saved && saved.cfg) { st = saved.cfg; base = saved.base || ''; } } catch (e) { st = null; }
+  if (!st || !Array.isArray(st.messages) || !st.settings) { st = blank(); st.messages.push(fromTpl(TEMPLATES[3])); }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify({ cfg: st, base: base })); } catch (e) { /* file:// without storage */ } }
+  function nextId() { return st.messages.reduce(function (m, x) { return Math.max(m, +x.id || 0); }, 0) + 1; }
+  function langs() { return st.settings.languages; }
+  function localDate(ms) { var d = new Date(ms - new Date(ms).getTimezoneOffset() * 60000); return d.toISOString().slice(0, 16); }
+
+  function fromTpl(t) {
+    var m = { id: st ? nextId() : 1, name: t ? t.n : 'Message', enabled: true, priority: 0, text: {}, bg_color: t ? t.bg : '#1e3a8a', text_color: '#ffffff', style: (t && t.style) || 'solid', button_style: (t && t.button_style) || 'outline', icon: (t && t.icon) || '' };
+    var ls = st ? langs() : ['en'];
+    ['text', 'link_text', 'success_text'].forEach(function (k) {
+      if (!t || !t[k]) { return; }
+      m[k] = {};
+      ls.forEach(function (l) { m[k][l] = t[k][l] || t[k].en; });
+    });
+    if (!t) { ls.forEach(function (l) { m.text[l] = ''; }); m.text[ls[0]] = 'Free delivery on orders over 50 €'; }
+    ['type', 'threshold', 'countdown', 'recur', 'recur_time', 'recur_skip', 'coupon', 'weekdays', 'trigger', 'placement', 'link'].forEach(function (k) { if (t && t[k] !== undefined) { m[k] = t[k]; } });
+    if (t && t.end_days) { m.date_end = localDate(Date.now() + t.end_days * 86400000); }
+    return m;
+  }
+  function cur() { return st.messages[sel] || null; }
+
+  /* ---------------- Small DOM helpers (textContent only) ---------------- */
+  function h(tag, attrs, kids) {
+    var e = document.createElement(tag);
+    for (var k in attrs || {}) {
+      var v = attrs[k];
+      if (v === null || v === undefined || v === false) { continue; }
+      if (k === 'text') { e.textContent = v; } else if (k.slice(0, 2) === 'on') { e.addEventListener(k.slice(2), v); } else if (k === 'checked' || k === 'value') { e[k] = v; } else { e.setAttribute(k, v === true ? '' : v); }
+    }
+    (kids || []).forEach(function (c) { if (c) { e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); } });
+    return e;
+  }
+  var uid = 0;
+  function field(label, input, help, wide) {
+    var id = input.id || (input.id = 'f' + (++uid));
+    return h('div', { class: 'f' + (wide ? ' wide' : '') }, [h('label', { class: 'l', for: id, text: label }), input, help ? h('span', { class: 'help', text: help }) : null]);
+  }
+  function check(label, get, set, help) {
+    var i = h('input', { type: 'checkbox', checked: !!get(), onchange: function () { set(i.checked); changed(); } });
+    return h('div', { class: 'f' }, [h('label', { class: 'chk' }, [i, label]), help ? h('span', { class: 'help', text: help }) : null]);
+  }
+  function inp(type, get, set, attrs) {
+    var a = { type: type, value: get() === undefined || get() === null ? '' : String(get()) }, k;
+    for (k in attrs || {}) { a[k] = attrs[k]; }
+    a.oninput = function () { set(type === 'number' ? (i.value === '' ? '' : +i.value) : i.value); changed(true); };
+    var i = h('input', a);
+    return i;
+  }
+  function area(get, set, attrs) { var a = attrs || {}; a.oninput = function () { set(t.value); changed(true); }; var t = h('textarea', a); t.value = get() || ''; return t; }
+  function select(opts, get, set) {
+    var s = h('select', { onchange: function () { set(s.value); changed(); } }, opts.map(function (o) { return h('option', { value: o[0], text: o[1] }); }));
+    s.value = get() === undefined ? opts[0][0] : String(get());
+    return s;
+  }
+  function seg(opts, get, set) {
+    var box = h('span', { class: 'seg', role: 'group' });
+    opts.forEach(function (o) {
+      box.appendChild(h('button', { type: 'button', 'aria-pressed': String((get() || opts[0][0]) === o[0]), text: o[1], onclick: function () { set(o[0]); changed(); draw(); } }));
+    });
+    return box;
+  }
+  function row(kids) { return h('div', { class: 'row' }, kids); }
+  function group(title, kids) { return h('fieldset', null, [h('legend', { text: title })].concat(kids)); }
+  function langTabs(onPick) {
+    var box = h('span', { class: 'langs', role: 'group', 'aria-label': 'Language of the texts' });
+    langs().forEach(function (l) { box.appendChild(h('button', { type: 'button', 'aria-pressed': String(l === lang), text: (LANGS[l] || l.toUpperCase()), onclick: function () { lang = l; onPick(); } })); });
+    return box;
+  }
+  function tr(m, k) { return function () { var v = m[k]; return v && typeof v === 'object' ? v[lang] || '' : typeof v === 'string' ? v : ''; }; }
+  function trSet(m, k) { return function (v) { if (!m[k] || typeof m[k] !== 'object') { var old = typeof m[k] === 'string' ? m[k] : ''; m[k] = {}; langs().forEach(function (l) { m[k][l] = old; }); } m[k][lang] = v; }; }
+
+  /* ---------------- Colour contrast (WCAG) ---------------- */
+  function lum(hex) { return [1, 3, 5].map(function (i) { var v = parseInt(hex.substr(i, 2), 16) / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }).reduce(function (s, v, i) { return s + v * [0.2126, 0.7152, 0.0722][i]; }, 0); }
+  function ratio(a, b) { var x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
+
+  /* ---------------- Message list + templates ---------------- */
+  function drawList() {
+    var box = $('msg-list');
+    box.textContent = '';
+    if (!st.messages.length) { box.appendChild(h('p', { class: 'help', text: 'No messages yet. Add one or start from a template.' })); }
+    st.messages.forEach(function (m, i) {
+      var n = C.normalize({ settings: st.settings, messages: [m] }).messages[0] || {};
+      var txt = C.plainOf(C.rich(C.pick(n.text, lang, st.settings.default_language), true)).trim() || '(no text)';
+      var place = m.placement || st.settings.position, badges = [place];
+      if (m.type === 'free_shipping') { badges.push('free shipping'); }
+      if (m.coupon) { badges.push('coupon'); }
+      if (m.countdown) { badges.push('countdown'); }
+      if (m.date_start || m.date_end || m.weekdays || m.time_start) { badges.push('scheduled'); }
+      if (m.trigger && m.trigger !== 'none') { badges.push(m.trigger); }
+      var sw = h('button', { type: 'button', class: 'sw', title: 'Edit', onclick: function () { sel = i; draw(); } }, [(m.icon ? m.icon + ' ' : '') + txt]);
+      sw.style.background = n.bg_color; sw.style.color = n.text_color;
+      box.appendChild(h('div', { class: 'msg' + (i === sel ? ' on' : '') + (m.enabled === false ? ' off' : '') }, [
+        sw,
+        h('span', { class: 'meta', text: 'P' + (m.priority || 0) + ' · ' + badges.join(' · ') + (m.enabled === false ? ' · off' : '') }),
+        h('button', { type: 'button', class: 'sm', title: 'Copy this message', 'aria-label': 'Duplicate message ' + (i + 1), text: '⧉', onclick: function () { var c = JSON.parse(JSON.stringify(m)); c.id = nextId(); c.name = (m.name || 'Message') + ' (copy)'; st.messages.splice(i + 1, 0, c); sel = i + 1; changed(); draw(); } }),
+        h('button', { type: 'button', class: 'sm danger', title: 'Delete', 'aria-label': 'Delete message ' + (i + 1), text: '✕', onclick: function () { if (confirm('Delete this message?')) { st.messages.splice(i, 1); sel = Math.max(0, Math.min(sel, st.messages.length - 1)); changed(); draw(); } } })
+      ]));
+    });
+  }
+  function drawTemplates() {
+    var g = $('tpl-grid');
+    g.textContent = '';
+    TEMPLATES.forEach(function (t) {
+      var sw = h('span', { class: 'sw', text: t.icon + ' ' + (t.text[lang] || t.text.en) });
+      sw.style.background = t.bg; sw.style.color = '#fff';
+      if (t.style === 'soft') { sw.style.background = '#fde7dc'; sw.style.color = '#5b1f08'; }
+      if (t.style === 'minimal') { sw.style.background = '#f8fafc'; sw.style.color = t.bg; sw.style.boxShadow = 'inset 0 3px 0 ' + t.bg; }
+      g.appendChild(h('button', { type: 'button', class: 'tpl', onclick: function () { st.messages.push(fromTpl(t)); sel = st.messages.length - 1; $('tpls').hidden = true; $('btn-tpl').setAttribute('aria-expanded', 'false'); changed(); draw(); } }, [sw, h('span', { class: 'nm', text: t.n })]));
+    });
+  }
+
+  /* ---------------- Message editor ---------------- */
+  function drawEditor() {
+    var box = $('editor'), m = cur();
+    box.textContent = '';
+    $('edit-name').textContent = m ? (m.name || '') : '';
+    if (!m) { box.appendChild(h('p', { class: 'help', text: 'Select or add a message.' })); return; }
+    var redraw = function () { drawEditor(); };
+    var S = st.settings, fs = m.type === 'free_shipping';
+
+    box.appendChild(group('Message', [
+      row([field('Name (only for you)', inp('text', function () { return m.name; }, function (v) { m.name = v; }, { maxlength: 80 })),
+        field('Priority (0–100)', inp('number', function () { return m.priority || 0; }, function (v) { m.priority = v; }, { min: 0, max: 100 }), 'Higher shows first.'),
+        field('Placement', select([['', 'Bar default (' + S.position + ')'], ['top', 'Top bar'], ['bottom', 'Bottom bar']], function () { return m.placement || ''; }, function (v) { m.placement = v; })),
+        check('Enabled', function () { return m.enabled !== false; }, function (v) { m.enabled = v; })]),
+      row([field('Type', seg([['standard', 'Standard'], ['free_shipping', 'Free-shipping progress']], function () { return m.type || 'standard'; }, function (v) { m.type = v; }), fs ? 'Needs the cart adapter on your site (ABP.setCart) — see the install guide.' : '', true)])
+    ]));
+
+    var texts = [
+      h('div', { class: 'tools' }, [h('span', { class: 'lab', text: 'Texts in' }), langTabs(redraw)]),
+      row([field('Text' + (lang ? '' : ''), area(tr(m, 'text'), trSet(m, 'text'), { rows: 2, maxlength: 2000 }), (S.allow_html ? 'Simple HTML allowed: <b> <i> <u> <s> <br> <a href>. ' : '') + 'Placeholders: {countdown}' + (fs ? ', {remaining}' : '') + '.', true)]),
+      row([field('Shorter text for phones (optional)', area(tr(m, 'mobile_text'), trSet(m, 'mobile_text'), { rows: 1, maxlength: 2000 }), 'Shown below 768 px instead of the text above.', true)])
+    ];
+    if (fs) { texts.push(row([field('Text when free shipping is reached', area(tr(m, 'success_text'), trSet(m, 'success_text'), { rows: 1, maxlength: 2000 }), '', true)])); }
+    texts.push(row([
+      field('Icon (emoji or short text)', inp('text', function () { return m.icon; }, function (v) { m.icon = v; }, { maxlength: 16, placeholder: '🚚' })),
+      field('Link URL', inp('url', function () { return m.link; }, function (v) { m.link = v; }, { placeholder: 'https://… or /sale' }), m.link && !C.url(m.link) ? '⚠ Not accepted: use https://…, http://… or a path like /sale.' : 'Whole message or button.'),
+      field('Button text', inp('text', tr(m, 'link_text'), trSet(m, 'link_text'), { maxlength: 80 }), 'Empty: the whole message is the link.'),
+      field('Button style', seg([['outline', 'Outline'], ['filled', 'Filled'], ['link', 'Link']], function () { return m.button_style; }, function (v) { m.button_style = v; })),
+      check('Open in a new tab', function () { return m.new_tab; }, function (v) { m.new_tab = v; }),
+      field('Coupon code (Copy button)', inp('text', function () { return m.coupon; }, function (v) { m.coupon = v.toUpperCase(); }, { maxlength: 32, placeholder: 'WELCOME10' }), m.coupon && !C.coupon(m.coupon) ? '⚠ Letters A–Z, digits, - and _ only.' : 'A–Z, 0–9, - _ (max 32).')
+    ]));
+    box.appendChild(group('Content', texts));
+    if (fs) {
+      box.appendChild(group('Free shipping', [row([
+        field('Free shipping from (' + S.currency + ')', inp('number', function () { return typeof m.threshold === 'object' ? (m.threshold[S.currency] || '') : m.threshold; }, function (v) { if (typeof m.threshold === 'object' && m.threshold) { m.threshold[S.currency] = v; } else { m.threshold = v; } }, { min: 0, step: '0.01' })),
+        field('Other currencies (optional)', inp('text', function () { return typeof m.threshold === 'object' ? Object.keys(m.threshold).filter(function (k) { return k !== S.currency; }).map(function (k) { return k + '=' + m.threshold[k]; }).join(', ') : ''; },
+          function (v) { var o = {}; o[S.currency] = typeof m.threshold === 'object' ? m.threshold[S.currency] : m.threshold; v.split(',').forEach(function (p) { var x = /^\s*([A-Za-z]{3})\s*=\s*([\d.]+)\s*$/.exec(p); if (x) { o[x[1].toUpperCase()] = +x[2]; } }); m.threshold = Object.keys(o).length > 1 ? o : o[S.currency]; }, { placeholder: 'USD=60, GBP=45' }), 'Fixed amounts, never converted. A cart in another currency hides the message.'),
+        check('Progress bar', function () { return m.progress_bar !== false; }, function (v) { m.progress_bar = v; })
+      ])]));
+    }
+
+    var cdRow = [check('Countdown', function () { return m.countdown; }, function (v) { m.countdown = v; redraw(); }, 'Put {countdown} in the text, or it follows the text.')];
+    if (m.countdown) {
+      cdRow.push(field('Counts down to', select([['', 'End date (below)'], ['daily', 'A time every day'], ['weekly', 'A time every week']], function () { return m.recur || ''; }, function (v) { m.recur = v; redraw(); })));
+      if (m.recur) {
+        cdRow.push(field('Cut-off time', inp('time', function () { return m.recur_time || '14:00'; }, function (v) { m.recur_time = v; })));
+        if (!m.recur_time) { m.recur_time = '14:00'; }
+        if (m.recur === 'weekly') { cdRow.push(field('Day', select(DAYS.map(function (d, i) { return [String(i + 1), d]; }), function () { return m.recur_day || 5; }, function (v) { m.recur_day = +v; }))); }
+      }
+    }
+    var look = [
+      row([h('div', { class: 'f wide' }, [h('span', { class: 'l', text: 'Style' }), (function () {
+        var g = h('div', { class: 'styles', role: 'group', 'aria-label': 'Style' });
+        STYLES.forEach(function (s) { g.appendChild(h('button', { type: 'button', 'aria-pressed': String((m.style || 'solid') === s[0]), onclick: function () { m.style = s[0]; changed(); drawEditor(); } }, [h('span', { class: 'sw sw-' + s[0] }), h('span', { class: 'nm', text: s[1] }), h('span', { class: 'help', text: s[2] })])); });
+        return g;
+      })()])]),
+      row([colorField('Background', 'bg_color', '#1e3a8a'), colorField('Text', 'text_color', '#ffffff'), (function () {
+        var r = ratio(C.color(m.bg_color, '#222222'), C.color(m.text_color, '#ffffff'));
+        return h('div', { class: 'f' }, [h('span', { class: 'l', text: 'Contrast' }), h('span', { class: 'contrast ' + (r >= 4.5 ? 'ok' : 'bad'), text: r.toFixed(1) + ':1 ' + (r >= 4.5 ? 'readable' : 'too low (min 4.5)') }), h('span', { class: 'help', text: (m.style || 'solid') === 'solid' ? 'Solid keeps your colours exactly.' : 'This style corrects contrast itself.' })]);
+      })()]),
+      row([field('Font', select([['', 'Bar default'], ['system', 'System'], ['humanist', 'Humanist'], ['geometric', 'Geometric'], ['serif', 'Serif'], ['mono', 'Monospace'], ['rounded', 'Rounded']], function () { return m.font || ''; }, function (v) { m.font = v; })),
+        field('Background image URL', inp('url', function () { return m.image; }, function (v) { m.image = v; }, { placeholder: 'https://…/banner.jpg' }), m.image && !C.url(m.image) ? '⚠ Not accepted (https://… or /path).' : 'Your colour is laid over it.'),
+        field('Colour over the image (%)', inp('number', function () { return m.overlay === undefined ? 55 : m.overlay; }, function (v) { m.overlay = v; }, { min: 0, max: 90 }))])
+    ];
+    box.appendChild(group('Countdown', [row(cdRow)]));
+    box.appendChild(group('Look', look));
+    box.appendChild(group('When (time zone: ' + (S.timezone || tzHere) + ')', [
+      row([field('Start', inp('datetime-local', function () { return m.date_start; }, function (v) { m.date_start = v; })), field('End', inp('datetime-local', function () { return m.date_end; }, function (v) { m.date_end = v; }), 'Also the countdown target.'),
+        field('Daily from', inp('time', function () { return m.time_start; }, function (v) { m.time_start = v; })), field('Daily until', inp('time', function () { return m.time_end; }, function (v) { m.time_end = v; }), 'A window past midnight belongs to the day it starts.')]),
+      h('div', { class: 'f' }, [h('span', { class: 'l', text: 'Weekdays (none = every day)' }), days(function () { return String(m.weekdays || ''); }, function (v) { m.weekdays = v; })])
+    ].concat(m.recur === 'daily' && m.countdown ? [h('div', { class: 'f' }, [h('span', { class: 'l', text: 'Skip the daily cut-off on' }), days(function () { return String(m.recur_skip || ''); }, function (v) { m.recur_skip = v; })])] : [])));
+
+    var pages = m.pages || (m.pages = { mode: 'all', rules: [] });
+    var ruleBox = h('div', { class: 'rules' });
+    (pages.rules || []).forEach(function (r, i) {
+      ruleBox.appendChild(h('div', { class: 'rule' }, [
+        select([['contains', 'URL contains'], ['equals', 'Path equals'], ['wildcard', 'Matches (* = any)']], function () { return r.type; }, function (v) { r.type = v; }),
+        inp('text', function () { return r.value; }, function (v) { r.value = v; }, { placeholder: r.type === 'wildcard' ? '/products/*' : '/sale', 'aria-label': 'Page rule ' + (i + 1) }),
+        h('button', { type: 'button', class: 'sm danger', text: '✕', 'aria-label': 'Remove rule ' + (i + 1), onclick: function () { pages.rules.splice(i, 1); changed(); redraw(); } })
+      ]));
+    });
+    box.appendChild(group('Who and where', [
+      row([field('Devices', select([['all', 'All devices'], ['desktop', 'Desktop only (768 px+)'], ['mobile', 'Phones only']], function () { return m.device || 'all'; }, function (v) { m.device = v; })),
+        field('Visitors', select([['all', 'Everyone'], ['new', 'New visitors (first 30 min)'], ['returning', 'Returning visitors']], function () { return m.visitor || 'all'; }, function (v) { m.visitor = v; }), 'Uses one first-party value in localStorage; never with Do Not Track / GPC.'),
+        field('Pages', select([['all', 'Every page'], ['include', 'Only pages matching a rule'], ['exclude', 'All except matching pages']], function () { return pages.mode; }, function (v) { pages.mode = v; if (v !== 'all' && !pages.rules.length) { pages.rules.push({ type: 'contains', value: '' }); } redraw(); }))]),
+      pages.mode !== 'all' ? h('div', { class: 'f wide' }, [ruleBox, h('div', { class: 'btns' }, [h('button', { type: 'button', class: 'sm', text: '+ Rule', onclick: function () { pages.rules.push({ type: 'contains', value: '' }); changed(); redraw(); } })]), h('span', { class: 'help', text: 'Matched against the path and query of the page (e.g. /collections/sale?page=2), case-insensitive. * in "Matches" stands for anything; every other character is literal.' })]) : null,
+      langs().length > 1 ? h('div', { class: 'f' }, [h('span', { class: 'l', text: 'Only in these languages (none = all)' }), (function () {
+        var g = h('div', { class: 'days' });
+        langs().forEach(function (l) {
+          var on = (m.languages || []).indexOf(l) !== -1, i = h('input', { type: 'checkbox', checked: on, onchange: function () { var a = (m.languages || []).filter(function (x) { return x !== l; }); if (i.checked) { a.push(l); } m.languages = a; changed(); } });
+          g.appendChild(h('label', null, [i, h('span', { text: l.toUpperCase() })]));
+        });
+        return g;
+      })()]) : null,
+      row([field('UTM source', inp('text', function () { return m.utm_source; }, function (v) { m.utm_source = v; }, { placeholder: 'newsletter, facebook' })),
+        field('UTM medium', inp('text', function () { return m.utm_medium; }, function (v) { m.utm_medium = v; }, { placeholder: 'email' })),
+        field('UTM campaign', inp('text', function () { return m.utm_campaign; }, function (v) { m.utm_campaign = v; }, { placeholder: 'black-friday' })),
+        field('Came from site', inp('text', function () { return m.referrer; }, function (v) { m.referrer = v; }, { placeholder: 'google.com, instagram.com' }), 'Comma-separated; remembered for the visit (sessionStorage).')])
+    ]));
+    box.appendChild(group('Show it', [row([
+      field('Appears', select([['none', 'At once'], ['delay', 'After N seconds'], ['scroll', 'After scrolling N %'], ['exit', 'When leaving the page (desktop)']], function () { return m.trigger || 'none'; }, function (v) { m.trigger = v; redraw(); })),
+      m.trigger === 'delay' || m.trigger === 'scroll' ? field(m.trigger === 'delay' ? 'Seconds' : 'Percent', inp('number', function () { return m.trigger_value || (m.trigger === 'delay' ? 5 : 50); }, function (v) { m.trigger_value = v; }, { min: 1, max: m.trigger === 'delay' ? 600 : 100 })) : null
+    ])]));
+  }
+  function colorField(label, k, def) {
+    var c = h('input', { type: 'color', value: C.color(cur()[k], def), 'aria-label': label + ' colour picker', oninput: function () { cur()[k] = c.value; t.value = c.value; changed(true); } });
+    var t = h('input', { type: 'text', value: C.color(cur()[k], def), maxlength: 7, 'aria-label': label + ' colour (hex)', oninput: function () { if (C.color(t.value, '')) { cur()[k] = t.value.toLowerCase(); c.value = t.value; changed(true); } } });
+    t.style.width = '90px';
+    t.addEventListener('change', drawEditor);
+    c.addEventListener('change', drawEditor);
+    return h('div', { class: 'f' }, [h('span', { class: 'l', text: label }), h('div', { class: 'colors' }, [c, t])]);
+  }
+  function days(get, set) {
+    var g = h('div', { class: 'days', role: 'group' });
+    DAYS.forEach(function (d, i) {
+      var i2 = h('input', { type: 'checkbox', checked: get().indexOf(String(i + 1)) !== -1, onchange: function () { var v = get().replace(String(i + 1), ''); if (i2.checked) { v += String(i + 1); } set(v.split('').sort().join('')); changed(); } });
+      g.appendChild(h('label', null, [i2, h('span', { text: d })]));
+    });
+    return g;
+  }
+
+  /* ---------------- Bar settings ---------------- */
+  function drawSettings() {
+    var box = $('settings'), S = st.settings;
+    box.textContent = '';
+    var g = function (k) { return function () { return S[k]; }; }, s = function (k) { return function (v) { S[k] = v; }; };
+    box.appendChild(group('Bar', [
+      row([field('Default position', seg([['top', 'Top'], ['bottom', 'Bottom']], g('position'), s('position'))),
+        field('Several messages', seg([['rotate', 'Rotate'], ['marquee', 'Scrolling'], ['stack', 'All at once']], g('mode'), s('mode'))),
+        field('Change', seg([['fade', 'Fade'], ['slide', 'Slide']], g('transition'), s('transition'))),
+        field('Seconds per message', inp('number', g('interval'), s('interval'), { min: 2, max: 60 })),
+        field('Scrolling speed (px/s)', inp('number', g('speed'), s('speed'), { min: 20, max: 300 })),
+        field('Most messages at once (0 = all)', inp('number', g('max_messages'), s('max_messages'), { min: 0, max: 20 })),
+        field('Font size (px)', inp('number', g('font_size'), s('font_size'), { min: 10, max: 30 })),
+        field('Padding (px)', inp('number', g('padding'), s('padding'), { min: 0, max: 30 })),
+        field('Font', select([['', 'Site font'], ['system', 'System'], ['humanist', 'Humanist'], ['geometric', 'Geometric'], ['serif', 'Serif'], ['mono', 'Monospace'], ['rounded', 'Rounded']], g('font'), s('font')), 'System fonts only — nothing is downloaded.'),
+        field('Colours', select([['custom', 'Each message\'s own colours'], ['auto', 'Automatic: take the site\'s main colour']], g('color_mode'), s('color_mode')))]),
+      row([check('Stays visible when scrolling (top bar)', g('sticky'), s('sticky')), check('Previous / next arrows', g('arrows'), s('arrows')), check('Pause button', g('pause_button'), s('pause_button'), 'WCAG 2.2.2: moving content can be stopped.'), check('Close button', g('dismissible'), s('dismissible'))]),
+      row([field('Remember "closed" for (days, 0 = this visit)', inp('number', g('dismiss_days'), s('dismiss_days'), { min: 0, max: 365 })),
+        field('Fold into a small tab after (s, 0 = never)', inp('number', g('autohide'), s('autohide'), { min: 0, max: 600 }))])
+    ]));
+    var known = Object.keys(LANGS);
+    box.appendChild(group('Languages', [
+      h('div', { class: 'f wide' }, [h('span', { class: 'l', text: 'Languages of your site' }), (function () {
+        var wrap = h('div', { class: 'days' });
+        known.concat(S.languages.filter(function (l) { return known.indexOf(l) === -1; })).forEach(function (l) {
+          var i = h('input', { type: 'checkbox', checked: S.languages.indexOf(l) !== -1, onchange: function () { setLang(l, i.checked); } });
+          wrap.appendChild(h('label', { title: LANGS[l] || l }, [i, h('span', { text: l.toUpperCase() })]));
+        });
+        return wrap;
+      })(), h('span', { class: 'help', text: 'The bar picks the language from the URL (/lv/…, ?lang=lv), then from <html lang="…">. Other pages get the default language.' })]),
+      row([field('Default language', select(S.languages.map(function (l) { return [l, LANGS[l] || l]; }), g('default_language'), s('default_language'))),
+        field('Add another language (2-letter code)', (function () { var i = inp('text', function () { return ''; }, function () {}, { maxlength: 2, placeholder: 'fr' }); i.addEventListener('change', function () { var v = i.value.toLowerCase(); if (/^[a-z]{2}$/.test(v)) { setLang(v, true); } }); return i; })())])
+    ]));
+    var labelBox = h('details', null, [h('summary', { text: 'Labels for visitors (Close, Copy, …) — ' + (LANGS[lang] || lang) })]);
+    var L = S.labels[lang] || (S.labels[lang] = JSON.parse(JSON.stringify(LABELS[lang] || C.LABELS)));
+    labelBox.appendChild(row(Object.keys(C.LABELS).map(function (k) { return field(C.LABELS[k], inp('text', function () { return L[k]; }, function (v) { L[k] = v; }, { maxlength: 80 })); })));
+    box.appendChild(group('Texts for visitors', [h('div', { class: 'tools' }, [langTabs(function () { drawSettings(); drawEditor(); })]), labelBox]));
+    box.appendChild(group('Time, money, privacy', [
+      row([field('Time zone of your shop', inp('text', g('timezone'), s('timezone'), { placeholder: 'Europe/Riga' }), 'IANA name. Schedules and countdowns use it.'),
+        field('Currency of amounts', inp('text', g('currency'), function (v) { S.currency = v.toUpperCase(); }, { maxlength: 3, placeholder: 'EUR' })),
+        check('Allow simple HTML in texts', g('allow_html'), s('allow_html'), 'b, strong, i, em, u, s, br, span, a[href] — everything else is removed.')]),
+      row([check('GA4 events (only if your site already loads GA4 / GTM)', g('ga4'), s('ga4'), 'abp_view, abp_click, abp_copy with message number and placement only.'),
+        check('Wait for cookie consent', g('consent_wait'), s('consent_wait'), 'Nothing is stored or sent until your consent tool sets window.abpConsent = true and fires "abp:consent". Do Not Track / GPC are always respected.')]),
+      row([field('Custom CSS', area(g('custom_css'), s('custom_css'), { rows: 3, spellcheck: 'false', placeholder: '.abp-bar { letter-spacing: .02em; }' }), 'Filtered: no @import, no javascript:, url() only for https / site paths / data:image.', true)])
+    ]));
+  }
+  function setLang(l, on) {
+    var S = st.settings;
+    if (on && S.languages.indexOf(l) === -1) {
+      S.languages.push(l);
+      if (!S.labels[l]) { S.labels[l] = JSON.parse(JSON.stringify(LABELS[l] || C.LABELS)); }
+      st.messages.forEach(function (m) { ['text', 'link_text', 'success_text', 'mobile_text'].forEach(function (k) { if (m[k] && typeof m[k] === 'object' && m[k][l] === undefined) { m[k][l] = ''; } }); });
+    }
+    if (!on && S.languages.length > 1) { S.languages = S.languages.filter(function (x) { return x !== l; }); if (S.default_language === l) { S.default_language = S.languages[0]; } if (lang === l) { lang = S.default_language; } }
+    changed(); draw();
+  }
+
+  /* ---------------- Export ---------------- */
+  // The config as you built it (the runtime checks and cleans everything again on every page).
+  function cleanConfig() { return JSON.stringify({ version: 1, settings: st.settings, messages: st.messages }, null, 2); }
+  function safeJson(s) { return s.replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029'); }
+  function exportAll() {
+    var json = cleanConfig(), b = base.trim(), err = '';
+    if (b && !/^https?:\/\/[^\s"'<>]+$/i.test(b) && !/^\/[^\s"'<>]*$/.test(b)) { err = 'The folder URL must start with https:// (or a site path such as /assets/abp/).'; }
+    var folder = (b && !err ? b : 'https://YOUR-SITE/abp/').replace(/\/?$/, '/');
+    $('exp-err').textContent = err;
+    $('exp-a').textContent = '<script type="application/json" id="abp-config">' + safeJson(JSON.stringify(JSON.parse(json))) + '<\/script>\n<script src="' + folder + 'abp-embed.min.js" defer><\/script>';
+    $('exp-b').textContent = '<script src="' + folder + 'abp-embed.min.js" data-config="' + folder + 'abp-config.json" defer><\/script>';
+    if (document.activeElement !== $('exp-json')) { $('exp-json').value = json; }
+    setHref($('dl-json'), json, 'application/json');
+    setHref($('dl-c'), allInOne(json), 'text/html');
+  }
+  function allInOne(json) {
+    return '<!-- Announcement Bar Pro Embed @@VERSION@@ (all-in-one) -->\n<style>' + $('rt-css').textContent + '</style>\n<script type="application/json" id="abp-config">' + safeJson(JSON.stringify(JSON.parse(json))) + '<\/script>\n<script data-css="none">' + $('rt-js').textContent + '<\/script>\n';
+  }
+  var urls = {};
+  function setHref(a, text, type) { if (urls[a.id]) { URL.revokeObjectURL(urls[a.id]); } urls[a.id] = URL.createObjectURL(new Blob([text], { type: type })); a.href = urls[a.id]; }
+  function copy(text) {
+    var done = function () { $('live').textContent = ''; setTimeout(function () { $('live').textContent = 'Copied to the clipboard'; }, 30); };
+    if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(text).then(done, fallback); } else { fallback(); }
+    function fallback() { var t = h('textarea'); t.value = text; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch (e) { /* select manually */ } t.remove(); }
+  }
+
+  /* ---------------- Preview ---------------- */
+  var pvTimer = null, device = 'desktop';
+  function preview() {
+    clearTimeout(pvTimer);
+    pvTimer = setTimeout(function () {
+      var S = st.settings, l = pvLang && S.languages.indexOf(pvLang) !== -1 ? pvLang : S.default_language;
+      var cfg = JSON.parse(cleanConfig());
+      cfg.messages.forEach(function (m) { m.pages = { mode: 'all', rules: [] }; if (m.trigger && m.trigger !== 'none') { m.trigger = 'none'; } m.utm_source = m.utm_medium = m.utm_campaign = m.referrer = ''; m.visitor = 'all'; });
+      var cart = { subtotal: +$('pv-cart').value || 0, currency: S.currency };
+      var page = '<!DOCTYPE html><html lang="' + l + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>' + $('rt-css').textContent + '</style>' +
+        '<style>body{margin:0;font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#1f2937;background:#fff}header.site{display:flex;align-items:center;gap:18px;padding:14px 20px;border-bottom:1px solid #e5e7eb}header.site b{font-size:18px}nav a{color:#1d4ed8;margin-right:12px;text-decoration:none}main{padding:20px;max-width:900px}.ph{height:14px;background:#eef2f7;border-radius:6px;margin:10px 0}.btn-primary{display:inline-block;background:#4338ca;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none}</style></head><body>' +
+        '<header class="site"><b>Your shop</b><nav><a href="#">Home</a><a href="#">Shop</a><a href="#">Contact</a></nav></header><main><h1 style="font-size:22px;margin:0 0 6px">Sample page</h1><div class="ph" style="width:70%"></div><div class="ph" style="width:55%"></div><div class="ph" style="width:62%"></div><a class="btn-primary" href="#">Main colour</a><div style="height:500px"></div></main>' +
+        '<script>window.abpConfig=' + safeJson(JSON.stringify(cfg)) + ';window.abpCart=' + JSON.stringify(cart) + ';<\/script><script data-css="none">' + $('rt-js').textContent + '<\/script></body></html>';
+      $('pv').srcdoc = page;
+    }, 250);
+  }
+
+  /* ---------------- Wiring ---------------- */
+  var exTimer = null;
+  function changed(soft) {
+    save();
+    clearTimeout(exTimer);
+    exTimer = setTimeout(exportAll, 200);
+    if (!soft) { drawList(); } else { clearTimeout(changed.t); changed.t = setTimeout(drawList, 300); }
+    preview();
+  }
+  function drawPvLang() {
+    var box = $('pv-lang');
+    box.textContent = '';
+    st.settings.languages.forEach(function (l) { box.appendChild(h('button', { type: 'button', 'aria-pressed': String(l === (pvLang || st.settings.default_language)), text: l.toUpperCase(), onclick: function () { pvLang = l; drawPvLang(); preview(); } })); });
+  }
+  function draw() { if (st.settings.languages.indexOf(lang) === -1) { lang = st.settings.default_language; } drawList(); drawTemplates(); drawEditor(); drawSettings(); drawPvLang(); exportAll(); preview(); }
+
+  $('btn-add').addEventListener('click', function () { st.messages.push(fromTpl(null)); sel = st.messages.length - 1; changed(); draw(); });
+  $('btn-tpl').addEventListener('click', function () { var t = $('tpls'); t.hidden = !t.hidden; this.setAttribute('aria-expanded', String(!t.hidden)); });
+  $('btn-reset').addEventListener('click', function () { if (confirm('Start again? Your messages in this configurator are removed (export them first if you need them).')) { st = blank(); sel = 0; base = ''; $('exp-base').value = ''; changed(); draw(); } });
+  $('pv-dev').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) { return; } device = b.getAttribute('data-v'); Array.prototype.forEach.call(this.children, function (x) { x.setAttribute('aria-pressed', String(x === b)); }); $('pv-wrap').classList.toggle('phone', device === 'phone'); });
+  $('pv-cart').addEventListener('input', preview);
+  $('pv-reload').addEventListener('click', preview);
+  $('exp-base').value = base;
+  $('exp-base').addEventListener('input', function () { base = this.value; save(); exportAll(); });
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-copy]'); if (b) { var el = $(b.getAttribute('data-copy')); copy(el.value !== undefined && el.tagName === 'TEXTAREA' ? el.value : el.textContent); } });
+  $('copy-c').addEventListener('click', function () { copy(allInOne(cleanConfig())); });
+  $('btn-import').addEventListener('click', function () {
+    var err = $('imp-err');
+    err.textContent = '';
+    try {
+      var j = JSON.parse($('exp-json').value);
+      if (!j || typeof j !== 'object' || !Array.isArray(j.messages) || !j.settings || typeof j.settings !== 'object') { throw new Error('needs "settings" and "messages"'); }
+      var b = blank();
+      Object.keys(b.settings).forEach(function (k) { if (j.settings[k] === undefined) { j.settings[k] = b.settings[k]; } });
+      if (!Array.isArray(j.settings.languages) || !j.settings.languages.length) { j.settings.languages = ['en']; }
+      st = j; sel = 0; lang = st.settings.default_language || st.settings.languages[0];
+      changed(); draw();
+      $('live').textContent = 'Configuration loaded';
+    } catch (e) { err.textContent = 'Not loaded: ' + e.message; }
+  });
+  lang = st.settings.default_language || 'en';
+  draw();
+})();
+</script>
+</body>
+</html>

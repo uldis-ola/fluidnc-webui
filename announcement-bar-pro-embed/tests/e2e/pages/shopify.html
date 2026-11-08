@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fake Shopify theme — ABP embed + cart adapter</title>
+<link rel="stylesheet" href="site.css">
+<script>window.Shopify = { shop: 'demo.myshopify.com', routes: { root: '/' }, currency: { active: 'EUR' } };</script>
+</head>
+<body>
+<header class="site fixed" id="shopify-section-header"><b>Demo Store</b><nav><a href="#">Catalog</a><a href="#" id="cart-count">Cart (0)</a></nav></header>
+<main style="padding-top:80px">
+  <div class="product">
+    <div class="img"></div>
+    <div>
+      <h1>Ceramic mug</h1>
+      <p>17,50 €</p>
+      <button class="add" id="add" type="button">Add to cart</button>
+    </div>
+  </div>
+  <div class="tall"></div>
+</main>
+<script>
+  // The theme's own AJAX cart (like Dawn): POST /cart/add.js with fetch.
+  document.getElementById('add').addEventListener('click', function () {
+    fetch('/cart/add.js', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"id":1,"quantity":1}' })
+      .then(function () { return fetch('/cart.js'); }).then(function (r) { return r.json(); })
+      .then(function (c) { document.getElementById('cart-count').textContent = 'Cart (' + c.item_count + ')'; });
+  });
+</script>
+<script src="../../../examples/cart-adapter-shopify.js"></script>
+<script src="../../../dist/abp-embed/abp-embed.min.js" data-config="shopify-config.json" defer></script>
+</body>
+</html>

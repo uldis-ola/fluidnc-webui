@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CSP with nonce — ABP embed</title>
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<!-- Served with script-src 'self' 'nonce-t3st4bp'; style-src 'self' 'nonce-t3st4bp': the inline JSON config is data
+     (type application/json is never executed), and the custom CSS gets the script's nonce. -->
+<header class="site"><b>Nonce Shop</b></header>
+<main><h1>CSP with a nonce</h1><div class="tall"></div></main>
+<script type="application/json" id="abp-config">{"settings":{"custom_css":".abp-bar{outline:3px solid rgb(250, 204, 21)}","timezone":"UTC"},"messages":[{"id":31,"bg_color":"#312e81","text":"Nonce page <b>works</b>"}]}</script>
+<script src="../../../dist/abp-embed/abp-embed.min.js" nonce="t3st4bp" defer></script>
+</body>
+</html>

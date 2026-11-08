@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rules and triggers — ABP embed</title>
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<header class="site"><b>Rules</b></header>
+<main><h1>Targeting</h1><div class="tall"></div></main>
+<script type="application/json" id="abp-config">
+{
+  "settings": { "mode": "stack", "timezone": "UTC", "languages": ["en", "de"], "default_language": "en", "dismiss_days": 3 },
+  "messages": [
+    { "id": 1, "text": "Always" },
+    { "id": 2, "text": "Only on rules.html?promo", "pages": { "mode": "include", "rules": [{ "type": "contains", "value": "promo" }] } },
+    { "id": 3, "text": "Not on promo", "pages": { "mode": "exclude", "rules": [{ "type": "wildcard", "value": "/tests/*/rules.html?*promo*" }] } },
+    { "id": 4, "text": "Newsletter visitors", "utm_source": "newsletter" },
+    { "id": 5, "text": "After 1 second", "trigger": "delay", "trigger_value": 1 },
+    { "id": 6, "text": "After scrolling 50%", "trigger": "scroll", "trigger_value": 50 },
+    { "id": 7, "text": "Phones only", "device": "mobile" },
+    { "id": 8, "text": "Desktop only", "device": "desktop" },
+    { "id": 9, "text": "Deutsch", "languages": ["de"] },
+    { "id": 10, "text": "Never today", "weekdays": [1, 2, 3, 4, 5, 6, 7], "time_start": "00:00", "time_end": "00:01" },
+    { "id": 11, "text": "New visitors", "visitor": "new" }
+  ]
+}
+</script>
+<script src="../../../dist/abp-embed/abp-embed.min.js" defer></script>
+</body>
+</html>

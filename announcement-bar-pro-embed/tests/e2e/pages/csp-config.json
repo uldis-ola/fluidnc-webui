@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "settings": { "position": "bottom", "mode": "stack", "timezone": "Europe/Riga", "languages": ["en", "lv"], "default_language": "en",
+    "custom_css": ".abp-bar .abp-txt { letter-spacing: .03em; } .abp-bar { outline: 3px solid rgb(250, 204, 21); }", "autohide": 0,
+    "labels": { "lv": { "close": "Aizvērt", "copy": "Kopēt", "copied": "Nokopēts!", "copy_code": "Kopēt kodu %s" } } },
+  "messages": [
+    { "id": 21, "bg_color": "#14532d", "style": "gradient", "coupon": "CSP-OK", "text": { "en": "Strict CSP works", "lv": "Stingrs CSP darbojas" } },
+    { "id": 22, "bg_color": "#334155", "style": "minimal", "link": "https://example.com/?a=1&b=2", "link_text": { "en": "Read", "lv": "Lasīt" }, "text": { "en": "Second message", "lv": "Otrais paziņojums" } }
+  ]
+}

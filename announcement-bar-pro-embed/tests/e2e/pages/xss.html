@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hostile config — ABP embed</title>
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<!-- In the JSON below "</" is written as "<\/" (valid JSON): a raw "</script>" would end the config tag early.
+     The Configurator writes "<" as < for the same reason. -->
+<main><h1>Hostile config</h1><p>Nothing in the config may run as code.</p></main>
+<script>window.__pwned = 0;</script>
+<script type="application/json" id="abp-config">
+{
+  "settings": { "custom_css": "<\/style><script>window.__pwned++<\/script> a{background:url(javascript:window.__pwned++)} @import url(https://evil.example/x.css);", "timezone": "UTC",
+    "labels": { "en": { "close": "<img src=x onerror=window.__pwned++>", "copy": "\"><svg onload=window.__pwned++>" } } },
+  "messages": [
+    { "id": 1, "bg_color": "#111827\" onmouseover=\"window.__pwned++", "text_color": "red;background:url(javascript:alert(1))",
+      "text": "<img src=x onerror=window.__pwned++><script>window.__pwned++<\/script><b onclick=window.__pwned++>bold<\/b> <a href=\"javascript:window.__pwned++\">js link<\/a> <a href=\" jAvAsCrIpT:window.__pwned++\">js2<\/a> <svg><animate onbegin=window.__pwned++ attributeName=x dur=1s><\/svg><iframe srcdoc=\"<script>parent.__pwned++<\/script>\"><\/iframe><style>*{display:none}<\/style>",
+      "link": "javascript:window.__pwned++", "link_text": "<img src=x onerror=window.__pwned++>", "icon": "<img src=x onerror=window.__pwned++>",
+      "coupon": "\"><img src=x onerror=window.__pwned++>", "image": "javascript:window.__pwned++" },
+    { "id": 2, "text": "Safe <a href=\"/ok\" target=\"_blank\" onclick=\"window.__pwned++\">link<\/a> &lt;script&gt; stays text", "image": "/x\"), url(javascript:window.__pwned++" }
+  ]
+}
+</script>
+<script src="../../../dist/abp-embed/abp-embed.min.js" defer></script>
+</body>
+</html>

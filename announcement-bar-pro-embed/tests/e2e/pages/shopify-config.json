@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "settings": { "position": "top", "mode": "rotate", "interval": 5, "timezone": "Europe/Riga", "currency": "EUR", "languages": ["en"], "default_language": "en", "color_mode": "custom" },
+  "messages": [
+    { "id": 11, "priority": 50, "type": "free_shipping", "threshold": { "EUR": 50, "USD": 60 }, "icon": "🚚", "bg_color": "#0f766e",
+      "text": "Add {remaining} more for free shipping", "success_text": "You have unlocked free shipping!", "progress_bar": true },
+    { "id": 12, "priority": 10, "bg_color": "#1e3a8a", "text": "Same-day dispatch before {countdown}", "countdown": true, "recur": "daily", "recur_time": "14:00", "recur_skip": "67" }
+  ]
+}

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Static HTML shop — ABP embed test</title>
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<header class="site sticky"><b>Static Shop</b><nav><a href="#">Home</a><a href="#">Products</a><a href="#">Contact</a></nav></header>
+<main>
+  <h1>Plain HTML page</h1>
+  <p>Any site: the bar comes from one script tag and a JSON config in the page.</p>
+  <a class="btn-primary" href="#">Main colour</a>
+  <div class="tall"></div>
+  <p id="end">End of page</p>
+</main>
+<script type="application/json" id="abp-config">
+{
+  "version": 1,
+  "settings": { "position": "top", "mode": "rotate", "interval": 4, "timezone": "Europe/Riga", "currency": "EUR", "languages": ["en", "lv"], "default_language": "en",
+    "dismiss_days": 1, "pause_button": true, "autohide": 0,
+    "labels": { "lv": { "label": "Paziņojums", "close": "Aizvērt", "days": "d.", "copy": "Kopēt", "copied": "Nokopēts!", "copy_code": "Kopēt kodu %s", "prev": "Iepriekšējais paziņojums", "next": "Nākamais paziņojums", "show": "Rādīt paziņojumus", "pause": "Apturēt paziņojumus", "play": "Turpināt paziņojumus" } } },
+  "messages": [
+    { "id": 1, "priority": 30, "icon": "🎟", "bg_color": "#7c2d12", "text_color": "#ffffff", "style": "soft", "coupon": "WELCOME10",
+      "text": { "en": "Welcome! <b>10% off</b> your first order:", "lv": "Laipni lūgti! <b>−10%</b> pirmajam pasūtījumam:" } },
+    { "id": 2, "priority": 20, "icon": "⚡", "bg_color": "#b91c1c", "style": "gradient", "countdown": true, "date_end": "2030-01-01T00:00", "link": "/sale", "link_text": { "en": "Shop now", "lv": "Iepirkties" }, "button_style": "filled",
+      "text": { "en": "Flash sale ends in {countdown}", "lv": "Zibakcija beidzas pēc {countdown}" }, "mobile_text": { "en": "Sale: {countdown}", "lv": "Akcija: {countdown}" } },
+    { "id": 3, "priority": 10, "bg_color": "#1e3a8a", "text": { "en": "Free delivery over 50 € — <a href=\"/delivery\">details</a>", "lv": "Bezmaksas piegāde no 50 € — <a href=\"/delivery\">sīkāk</a>" } },
+    { "id": 4, "placement": "bottom", "bg_color": "#111827", "link": "/newsletter", "link_text": "Subscribe", "button_style": "outline", "text": "Get our news first" }
+  ]
+}
+</script>
+<script src="../../../dist/abp-embed/abp-embed.min.js" defer></script>
+</body>
+</html>

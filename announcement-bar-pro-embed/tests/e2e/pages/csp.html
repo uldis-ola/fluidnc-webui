@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strict CSP page — ABP embed</title>
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<!-- Served with: default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'
+     (no 'unsafe-inline', no 'unsafe-eval'). The config is a JSON file on the same site. -->
+<header class="site"><b>CSP Shop</b><nav><a href="#">Sākums</a></nav></header>
+<main><h1>Strict Content-Security-Policy</h1><div class="tall"></div></main>
+<script src="../../../dist/abp-embed/abp-embed.min.js" data-config="csp-config.json" defer></script>
+</body>
+</html>
