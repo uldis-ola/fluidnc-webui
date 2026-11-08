@@ -18,6 +18,47 @@ Only what was actually installed and tested is listed. Everything else is **not 
   these runs.
 - Scripts of the test environment: `abp-testenv/compat/` (own MariaDB :3313, MySQL 8 :3308, ports 8160–8169).
 
+## 2.4.2 — runs of 2026-11-08 (OpenCart 2.4.2, WordPress 1.0.1, Embed 1.0.1)
+
+Same method as below, own test instances (`abp-testenv/run242/`: MariaDB 11.4.4 on :3314 with its own datadir and global
+`sql_mode=NO_ENGINE_SUBSTITUTION` — OpenCart 3 / 4 and WordPress set their own session SQL mode; PHP built-in servers
+on :8170–8178, SMTP sinks :8185–8189). Every row is a fresh shop.
+
+| Edition | Platform | PHP | Test | Result |
+|---|---|---|---|---|
+| OpenCart 3 (universal zip) | 3.0.5.1 | 8.3.36 | `abp24-e2e.js`: 2.3.0 → 2.4.0 → 2.4.1 → **2.4.2** upgrades through the Extension Installer | ✅ 169/169 (an earlier attempt stopped at the double opt-in mail: the test env had pointed its SMTP sink at another run's mail folder — env error, fixed) |
+| OpenCart 4 (universal zip) | 4.1.0.4 | 8.3.36 | `abp24-e2e.js`: fresh install of 2.4.2 | ✅ 150/150 |
+| OpenCart 4 (universal zip) | 4.0.2.3 | 8.1.34 | `abp24-e2e.js`: fresh install of 2.4.2 | ✅ 150/150 |
+| OpenCart 2.3 zip | 2.3.0.2 | 7.4.33 | `announcement-bar-pro-oc2/tests/e2e/abp-oc2-e2e.js` | ✅ 136/136 |
+| OpenCart 2.0–2.2 zip | 2.0.3.1 | 5.6.40 | same | ✅ 136/136 (first run 135/136: one database read of the test returned nothing while three other shops were being installed; fresh-shop rerun clean) |
+| OpenCart 2.0–2.2 zip | 2.0.0.0 | 5.6.40 | same, with the fixed test (modification check on 2.0.0.0) | ✅ 136/136 |
+| OpenCart 1.5 zip (vQmod 2.6.6) | 1.5.6.4 | 5.6.40 | `announcement-bar-pro-oc15/tests/e2e/abp15-e2e.js` (images stored as `data/…`, no adapter script) | ✅ 177/177 |
+| WordPress free 1.0.1 + Premium 1.0.1 | WordPress 7.1.4, WooCommerce 11.2.2 | 8.3.36 | `wp-e2e.js` | ✅ 191/191 |
+| WordPress free 1.0.1 + Premium 1.0.1 | WordPress 6.5, WooCommerce 9.3.3 | 7.4.33 | `wp-e2e.js` | ✅ 191/191 with Twenty Twenty-Four as block theme (`BLOCKTHEME=twentytwentyfour`; two runs started without it failed the 2 block-theme checks, since 6.5 has no Twenty Twenty-Five) |
+| Embed 1.0.1 | static pages, **Chromium only** | — | `announcement-bar-pro-embed/tests/e2e/e2e.js` (basic, rules, CSP, nonce, XSS, Shopify adapter, Configurator, all-in-one snippet) | ✅ 101/101 |
+
+Unit tests (2.4.2): universal `schema_test.php` 243/243 on PHP 7.4 / 8.0 / 8.1 / 8.2 / 8.3; OpenCart 2.x `schema_test.php`
+140/140 on PHP 5.6 / 7.4 / 8.3 and `oc2_test.php` passed; OpenCart 1.5 `run.sh` 147/147 on PHP 5.6 and 7.4 (bare and with
+ini); WordPress `run.php` 80/80 on PHP 7.4 and 8.3; embed unit 151/151; demo `tests/demo/test.js` 64/64.
+`php -l`: OpenCart 3 on PHP 7.4–8.3, OpenCart 4 on 8.0–8.3, OpenCart 2.x and 1.5 on 5.6, 7.4 and 8.0–8.3, WordPress on
+7.4–8.3 — no errors.
+
+## OpenCart 1.5 and 2.x editions — 2.4.1 runs (kit reports, 2026-11-08)
+
+| Edition | OpenCart | PHP | Database | Result |
+|---|---|---|---|---|
+| OpenCart 1.5 (vQmod 2.6.6) | 1.5.6.4 | 5.6.40 | MariaDB 11.4 | ✅ 177/177 |
+| OpenCart 1.5 (vQmod 2.6.6) | 1.5.6.4 | 7.4.33 (OpenSSL `encryption.php`, 1.5 needs mcrypt) | MariaDB 11.4 | ✅ 177/177 |
+| OpenCart 1.5 (vQmod 2.6.6) | 1.5.5.1 | 5.6.40 | MariaDB 11.4 | ✅ 177/177 |
+| OpenCart 2.0–2.2 zip | 2.0.0.0 | 5.6.40 | MariaDB 11.4 | ⚠️ 135/136 — test issue (modification check), fixed in the test; 2.4.2 rerun 136/136 |
+| OpenCart 2.0–2.2 zip | 2.0.3.1 | 5.6.40 | MariaDB 11.4 | ✅ 136/136 |
+| OpenCart 2.0–2.2 zip | 2.1.0.2 | 5.6.40 | MariaDB 11.4 | ✅ 136/136 |
+| OpenCart 2.0–2.2 zip | 2.2.0.0 | 7.4.33 | MariaDB 11.4 | ✅ 136/136 |
+| OpenCart 2.3 zip | 2.3.0.2 | 7.4.33 | MariaDB 11.4 | ✅ 136/136 |
+
+PHP minimum of these editions: **5.6** (the shared library uses array class constants). PHP 5.4 / 5.5 are not supported
+and were not tested. Not tested: OpenCart 1.5.4.x, 2.1.0.1, 2.3.0.0–2.3.0.1, PHP 8.x with these editions.
+
 ## OpenCart — package `announcement_bar_pro.ocmod.zip` 2.4.1
 
 | OpenCart | PHP | Database | Result | Date |
