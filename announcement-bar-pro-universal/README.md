@@ -5,8 +5,9 @@ Paziņojumu josla veikala augšā vai apakšā: akcijas, piegādes nosacījumi, 
 
 - **Versija / Version:** 2.4.1
 - **Viena paka visām versijām / One package for all versions:** `announcement_bar_pro.ocmod.zip`
-  - OpenCart **3.0.x** (tested 3.0.5.1; code uses only APIs present since 3.0.0.0), PHP 7.3+
-  - OpenCart **4.0.x / 4.1.x** (tested 4.0.2.3 and 4.1.0.4; 4.0.0–4.0.1 handled in code, not runtime-tested), PHP 8.0+
+  - OpenCart **3.0.x** (tested 3.0.3.8 and 3.0.5.1; code uses only APIs present since 3.0.0.0), PHP 7.3+ (tested 7.4–8.3 within each OpenCart version's own PHP range; 7.3 not tested)
+  - OpenCart **4.0.x / 4.1.x** (tested 4.0.0.0, 4.0.1.1, 4.0.2.3, 4.1.0.0, 4.1.0.4), PHP 8.0+ (4.0.0.x–4.0.1.x: PHP 8.0 / 8.1, see COMPATIBILITY.md)
+  - Databases tested: MariaDB 11.4, MySQL 8.4. Full matrix: `COMPATIBILITY.md`
 - **Valodas / Languages:** English, Latviešu, Русский. Other languages get the English labels.
 - **Licence / License:** GPL-3.0
 

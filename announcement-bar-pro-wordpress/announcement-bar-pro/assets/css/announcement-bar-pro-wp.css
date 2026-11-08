@@ -12,5 +12,7 @@
 .abp button{min-height:0;line-height:1;}
 /* WooCommerce mini-cart and blocks. */
 .widget_shopping_cart_content .abp-inline-minicart,.woocommerce-mini-cart__empty-message+.abp-inline-minicart{margin:0 0 10px;}
+/* Mini-Cart block drawer (a box placed there by an add-on): same side padding as the drawer content. */
+.wc-block-mini-cart__drawer .abp-inline-minicart{width:auto;margin:12px 16px 16px;flex:none;}
 .wp-block-woocommerce-cart+.abp-inline,.abp-inline+.wp-block-woocommerce-cart{margin-top:12px;}
 .wp-block-woocommerce-product-price+.abp-inline-product{margin-top:8px;}

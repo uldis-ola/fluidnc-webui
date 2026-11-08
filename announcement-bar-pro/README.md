@@ -4,7 +4,7 @@ Paziņojumu josla veikala augšā vai apakšā: akcijas, piegādes nosacījumi, 
 *An announcement bar for the top or bottom of every store page: promotions, shipping terms, notices.*
 
 - **Versija / Version:** 2.4.1
-- **Saderība / Compatibility:** OpenCart 3.0.0.0–3.0.5.1 (tested on 3.0.5.1), PHP 7.3+ (tested: PHP 8.3). OpenCart 4.0.x / 4.1.x: separate package in `announcement-bar-pro-oc4`.
+- **Saderība / Compatibility:** OpenCart 3.0.0.0–3.0.5.1 (tested on 3.0.3.8 with PHP 7.4 / 8.0 and 3.0.5.1 with PHP 8.1 / 8.2 / 8.3 — OpenCart 3.0.5.1 itself needs PHP 8.1+), PHP 7.3+ (7.3 not tested); MariaDB 11.4 and MySQL 8.4. Matrix: `announcement-bar-pro-universal/COMPATIBILITY.md`. OpenCart 4.0.x / 4.1.x: separate package in `announcement-bar-pro-oc4`.
 - **Valodas / Languages:** English, Latviešu, Русский
 - **Licence / License:** GPL-3.0 (see `LICENSE.txt`)
 

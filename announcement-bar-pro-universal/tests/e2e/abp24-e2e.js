@@ -4,7 +4,7 @@
 // newest zip. Then every 2.4.x feature through the real admin UI and the storefront at 1366 and 390 px: no JS errors,
 // no PHP log entries, no horizontal scroll, contrast ≥ 4.5:1. 2.4.1: Cloudflare Turnstile with Cloudflare's dummy keys
 // (real siteverify), the secret never printed, consent wait, and the re-subscribe rule.
-// Env: OCBASE OCDIR OCDB MYSQL MYSQLARGS SHOTS [DEV=1: use the module already installed, skip install/upgrade]
+// Env: OCBASE OCDIR OCDB MYSQL MYSQLARGS SHOTS [SMTPPORT, default 2525] [DEV=1: use the module already installed, skip install/upgrade]
 // argv: zip230 zip240 [zip241]
 const { chromium } = require('playwright');
 const { execFileSync } = require('child_process');
@@ -36,7 +36,9 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
 (async () => {
 	fs.mkdirSync(SHOTS, { recursive: true });
 	const VER = fs.readFileSync(DIR + '/index.php', 'utf8').match(/define\('VERSION', '([^']+)'/)[1];
-	const OC4 = VER.startsWith('4'), SEP = OC4 ? '.' : '/', TAG = OC4 ? 'oc4' : 'oc3';
+	// Method separator: '/' on OC3, '|' on OC 4.0.0.x–4.0.1.x, '.' from 4.0.2.0.
+	const vnum = v => v.split('.').map(Number).reduce((s, x) => s * 100 + x, 0);
+	const OC4 = VER.startsWith('4'), SEP = OC4 ? (vnum(VER) >= vnum('4.0.2.0') ? '.' : '|') : '/', TAG = OC4 ? 'oc4' : 'oc3';
 	const ROUTE = OC4 ? 'extension/announcement_bar_pro/module/announcement_bar_pro' : 'extension/module/announcement_bar_pro';
 	const logFile = DIR + '/system/storage/logs/error.log', log0 = fs.existsSync(logFile) ? fs.statSync(logFile).size : 0;
 	const b = await chromium.launch();
@@ -227,12 +229,12 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
 		}
 	} else {
 		await upload(ZIPNEW);
-		await p.request.get(A('extension/module.install', '&extension=announcement_bar_pro&code=announcement_bar_pro')); await sleep(500);
+		await p.request.get(A('extension/module' + SEP + 'install', '&extension=announcement_bar_pro&code=announcement_bar_pro')); await sleep(500);
 		await p.goto(A(ROUTE));
 		ok('fresh 2.4.0: schema 8, switched on, tables + secret + 6 events', setting('schema') === '8' && setting('status') === '1' && q("select count(*) from information_schema.tables where table_schema=database() and table_name in ('oc_abp_subscriber','oc_abp_rate')") === '2' && /^[0-9a-f]{64}$/.test(setting('secret')) && q("select count(*) from oc_event where `code`='announcement_bar_pro'") === '6', setting('schema') + ' ' + q("select count(*) from oc_event where `code`='announcement_bar_pro'"));
 	}
 	await settings({ mode: 'stack', dismissible: 1, color_mode: 'custom' });
-	cfg('config_mail_engine', 'smtp'); cfg('config_mail_smtp_hostname', '127.0.0.1'); cfg('config_mail_smtp_port', '2525'); cfg('config_mail_smtp_timeout', '5');
+	cfg('config_mail_engine', 'smtp'); cfg('config_mail_smtp_hostname', '127.0.0.1'); cfg('config_mail_smtp_port', process.env.SMTPPORT || '2525'); cfg('config_mail_smtp_timeout', '5');
 	cfg('config_mail_smtp_username', 'test'); cfg('config_mail_smtp_password', 'test'); cfg('config_email', 'shop@example.com');
 	q('delete from oc_abp_rate');
 
@@ -337,8 +339,8 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
 		await c.close();
 		({ c, pg } = await shop());
 		await pg.goto(BASE); await sleep(800);
-		// visitor's currency EUR: fixed amount 100 € (no conversion)
-		if (OC4) { await pg.evaluate(() => document.querySelector('#form-currency [data-code="EUR"]').click()); await sleep(3000); } else {
+		// visitor's currency EUR: fixed amount 100 € (no conversion); OC 4.0.0.x–4.0.1.x: <a href="EUR">, later data-code
+		if (OC4) { await pg.evaluate(() => document.querySelector('#form-currency [data-code="EUR"], #form-currency a[href="EUR"]').click()); await sleep(3000); } else {
 			await Promise.all([pg.waitForNavigation({ timeout: 15000 }).catch(() => {}), pg.evaluate(() => { const f = document.getElementById('form-currency'); f.querySelector('[name="code"]').value = 'EUR'; f.submit(); })]);
 		}
 		await pg.goto(BASE); await sleep(1000);
@@ -623,7 +625,9 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
 	q("delete from oc_abp_subscriber"); q('delete from oc_abp_rate');
 	const custEmail = 'abp.customer@example.com';
 	q(`delete from oc_customer where email='${custEmail}'`);
-	q(OC4 ? `insert into oc_customer (customer_group_id,store_id,language_id,firstname,lastname,email,telephone,password,custom_field,ip,status,safe,token,code,newsletter,date_added) values (1,0,1,'A','B','${custEmail}','1','x','','',1,0,'','',0,NOW())` : `insert into oc_customer (customer_group_id,store_id,language_id,firstname,lastname,email,telephone,fax,password,salt,custom_field,ip,status,safe,token,code,newsletter,date_added) values (1,0,1,'A','B','${custEmail}','1','','x','','','',1,0,'','',0,NOW())`);
+	// OC 4.0.0.x has a NOT NULL customer.wishlist column (no default).
+	const wl = OC4 && q("select count(*) from information_schema.columns where table_schema=database() and table_name='oc_customer' and column_name='wishlist'") === '1';
+	q(OC4 ? `insert into oc_customer (customer_group_id,store_id,language_id,firstname,lastname,email,telephone,password,custom_field,${wl ? 'wishlist,' : ''}ip,status,safe,token,code,newsletter,date_added) values (1,0,1,'A','B','${custEmail}','1','x','',${wl ? "''," : ''}'',1,0,'','',0,NOW())` : `insert into oc_customer (customer_group_id,store_id,language_id,firstname,lastname,email,telephone,fax,password,salt,custom_field,ip,status,safe,token,code,newsletter,date_added) values (1,0,1,'A','B','${custEmail}','1','','x','','','',1,0,'','',0,NOW())`);
 	const mails0 = fs.existsSync(MAILDIR) ? fs.readdirSync(MAILDIR).filter(f => f.endsWith('.eml')).length : 0;
 	{
 		const { c, pg } = await shop(); await pg.goto(BASE); await sleep(1200);

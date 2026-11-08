@@ -53,6 +53,7 @@ class Pro_Render {
 		add_action( 'woocommerce_single_product_summary', array( __CLASS__, 'print_product_box' ), 11 );
 		add_action( 'woocommerce_before_mini_cart', array( __CLASS__, 'print_minicart_box' ), 5 );
 		add_filter( 'render_block', array( __CLASS__, 'render_block' ), 10, 3 );
+		add_action( 'wp_footer', array( __CLASS__, 'print_minicart_block_box' ), 5 );
 	}
 
 	/**
@@ -824,7 +825,35 @@ class Pro_Render {
 	}
 
 	/**
-	 * Blocks: cart block (box above it) and the product price block of the main product (box under it).
+	 * Mini-Cart block on this page (its drawer is drawn in the browser).
+	 *
+	 * @var bool
+	 */
+	private static $minicart_block = false;
+
+	/**
+	 * Mini-Cart block: the box for its drawer, once per page in a <template> (assets/minicart-block.js copies it into
+	 * the drawer each time the drawer is drawn). In the footer, so the shared scripts of the head are already there.
+	 */
+	public static function print_minicart_block_box() {
+		if ( ! self::$minicart_block ) {
+			return;
+		}
+
+		self::$minicart_block = false;
+		$box                  = self::box( 'minicart', false );
+
+		if ( '' === $box ) {
+			return;
+		}
+
+		wp_enqueue_script( 'announcement-bar-pro-premium-minicart', ABPRO_PREMIUM_URL . 'assets/minicart-block.js', array( 'announcement-bar-pro' ), ABPRO_PREMIUM_VERSION, true );
+		echo '<template id="abp-minicart-block-tpl">' . $box . '</template>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts.
+	}
+
+	/**
+	 * Blocks: cart block (box above it), the product price block of the main product (box under it) and the Mini-Cart
+	 * block (noted here; its box is printed in the footer).
 	 *
 	 * @param string         $content  Block HTML.
 	 * @param array          $block    Block.
@@ -838,6 +867,11 @@ class Pro_Render {
 
 		if ( 'woocommerce/cart' === $block['blockName'] ) {
 			return self::box( 'cart' ) . $content;
+		}
+
+		if ( 'woocommerce/mini-cart' === $block['blockName'] ) {
+			self::$minicart_block = true;
+			return $content;
 		}
 
 		if ( 'woocommerce/product-price' === $block['blockName'] && function_exists( 'is_product' ) && is_product() ) {

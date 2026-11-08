@@ -680,6 +680,14 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Model {
 		return array_map('intval', array_column($query->rows, 'id'));
 	}
 
+	/** Categories whose name (admin language) contains the text, with their path ("Desktops > Mac"), at most 10. */
+	public function searchCategories(string $filter, int $language_id): array {
+		$like  = $this->db->escape(addcslashes($filter, '%_\\'));
+		$query = $this->db->query("SELECT cp.`category_id`, GROUP_CONCAT(cd1.`name` ORDER BY cp.`level` SEPARATOR ' > ') AS `name` FROM `" . DB_PREFIX . "category_path` cp LEFT JOIN `" . DB_PREFIX . "category_description` cd1 ON (cd1.`category_id` = cp.`path_id` AND cd1.`language_id` = '" . (int)$language_id . "') LEFT JOIN `" . DB_PREFIX . "category_description` cd2 ON (cd2.`category_id` = cp.`category_id` AND cd2.`language_id` = '" . (int)$language_id . "') WHERE cd2.`name` LIKE '%" . $like . "%' GROUP BY cp.`category_id` ORDER BY `name` LIMIT 10");
+
+		return $query->rows;
+	}
+
 	/** Coupons whose name or code contains $filter (autocomplete), at most 10, active ones first. */
 	public function searchCoupons(string $filter): array {
 		$like  = $this->db->escape(addcslashes($filter, '%_\\'));

@@ -355,7 +355,8 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 				'thousand' => $this->language->get('thousand_point') !== 'thousand_point' ? $this->language->get('thousand_point') : ''
 			],
 			'autocomplete' => [
-				'category' => str_replace('&amp;', '&', $this->link('catalog/category' . $this->sep() . 'autocomplete')),
+				// Own search: OpenCart 4.1.0.0's catalog/category.autocomplete finds whole names only.
+				'category' => str_replace('&amp;', '&', $this->link(self::ROUTE . $this->sep() . 'categories')),
 				'product'  => str_replace('&amp;', '&', $this->link('catalog/product' . $this->sep() . 'autocomplete')),
 				'coupon'   => str_replace('&amp;', '&', $this->link(self::ROUTE . $this->sep() . 'coupons'))
 			],
@@ -1587,6 +1588,22 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 		$raw = isset($this->request->get['country_id']) && is_string($this->request->get['country_id']) ? $this->request->get['country_id'] : '';
 
 		$this->json(preg_match('/^\d{1,10}$/', $raw) ? $this->model_extension_announcement_bar_pro_module_announcement_bar_pro->getZones((int)$raw) : array());
+	}
+
+	/** Category autocomplete: names containing the text, as "Parent > Child" (same answer as OpenCart's own). */
+	public function categories() {
+		$this->bootstrap();
+
+		$filter = isset($this->request->get['filter_name']) && is_string($this->request->get['filter_name']) ? $this->abp->plain($this->abp->decode($this->request->get['filter_name'])) : '';
+		$out    = array();
+
+		if ($filter !== '') {
+			foreach ($this->model_extension_announcement_bar_pro_module_announcement_bar_pro->searchCategories($this->substr($filter, 64), (int)$this->config->get('config_language_id')) as $row) {
+				$out[] = array('category_id' => (int)$row['category_id'], 'name' => (string)$row['name']);
+			}
+		}
+
+		$this->json($out);
 	}
 
 	/** Coupon autocomplete: "CODE — name (disabled / expired)". */

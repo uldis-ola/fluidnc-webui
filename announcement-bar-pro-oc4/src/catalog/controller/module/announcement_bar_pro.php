@@ -1171,14 +1171,23 @@ class AnnouncementBarPro extends \Opencart\System\Engine\Controller {
 			. '<p style="font-size:12px;color:#4b5563;">' . $e($l('abp_mail_unsubscribe')) . ' <a href="' . $e($leave) . '">' . $e($leave) . '</a></p></body></html>';
 
 		try {
-			$mail = new \Opencart\System\Library\Mail((string)$this->config->get('config_mail_engine'), [
+			$options = [
 				'parameter'     => $this->config->get('config_mail_parameter'),
 				'smtp_hostname' => $this->config->get('config_mail_smtp_hostname'),
 				'smtp_username' => $this->config->get('config_mail_smtp_username'),
 				'smtp_password' => html_entity_decode((string)$this->config->get('config_mail_smtp_password'), ENT_QUOTES, 'UTF-8'),
 				'smtp_port'     => $this->config->get('config_mail_smtp_port'),
 				'smtp_timeout'  => $this->config->get('config_mail_smtp_timeout')
-			]);
+			];
+			$mail = new \Opencart\System\Library\Mail((string)$this->config->get('config_mail_engine'), $options);
+
+			// OpenCart 4.0.0.x–4.0.1.x: the Mail constructor takes the engine only; the options are public properties
+			// (as in OpenCart's own mail controllers), handed to the engine on send().
+			if (version_compare(VERSION, '4.0.2.0', '<')) {
+				foreach ($options as $key => $value) {
+					$mail->{$key} = $value;
+				}
+			}
 
 			// No CR / LF can reach a header (the address was validated already; this is a second line of defence).
 			$mail->setTo($this->fx->headerText($email));

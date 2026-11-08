@@ -7,18 +7,22 @@
 //    the single-plugin build 1.0.0 (Pro data) to the free plugin + add-on. Everything at 1366 and 390 px: no JS errors,
 //    no PHP notices in debug.log, no horizontal scroll, contrast ≥ 4.5:1.
 // Env also: SINGLE (folder of the unpacked single-plugin build 1.0.0), PLUGINS (wp-content/plugins), FREESRC, PREMSRC.
-// Env: WPBASE (http://localhost:8150) WPDIR (shops/wp) WPUSER WPPASS SHOTS MAILDIR WPCLI (command prefix) MYSQL MYSQLARGS
+// Env: WPBASE (http://localhost:8150) WPDIR (shops/wp) WPUSER WPPASS SHOTS MAILDIR WPCLI (command prefix) MYSQL MYSQLARGS [BLOCKTHEME]
 const { chromium } = require('playwright');
 const { execSync, execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
 const BASE = process.env.WPBASE, DIR = process.env.WPDIR, SHOTS = process.env.SHOTS, MAILDIR = process.env.MAILDIR;
+// Block theme for the cart / checkout block part: Twenty Twenty-Five (WP 6.7+); older WordPress: BLOCKTHEME=twentytwentyfour / twentytwentythree.
+const BLOCKTHEME = process.env.BLOCKTHEME || 'twentytwentyfive';
 const R = [];
 const ok = (n, c, x = '') => { R.push((c ? 'PASS ' : 'FAIL ') + n + (!c && x !== '' ? ' — ' + String(x).slice(0, 600) : '')); console.log(R[R.length - 1]); };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const wp = args => { try { return execSync(process.env.WPCLI + ' ' + args, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().replace(/^.*wp_update_plugins.*$/mg, '').trim(); } catch (e) { return 'WPERR ' + (e.stdout || '') + (e.stderr || ''); } };
-const q = s => { try { return execFileSync(process.env.MYSQL, [...process.env.MYSQLARGS.split(' '), '-N', '-e', s], { stdio: ['pipe', 'pipe', 'ignore'] }).toString().trim(); } catch (e) { return 'SQLERR ' + e.message.slice(0, 200); } };
+const q1 = s => { try { return execFileSync(process.env.MYSQL, [...process.env.MYSQLARGS.split(' '), '-N', '-e', s], { stdio: ['pipe', 'pipe', 'ignore'] }).toString().trim(); } catch (e) { return 'SQLERR ' + e.message.slice(0, 200); } };
+// The Windows database client fails now and then under load: up to 4 tries, each failed try printed (as in abp24-e2e.js).
+const q = s => { let r = q1(s); for (let i = 1; i < 4 && r.startsWith('SQLERR'); i++) { console.log('SQLRETRY ' + i + ': ' + r.slice(0, 120) + ' | ' + s.slice(0, 80)); execFileSync(process.execPath, ['-e', 'setTimeout(()=>{},300)']); r = q1(s); } return r; };
 const lum = rgb => { const c = rgb.map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
 const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
 const logFile = DIR + '/wp-content/debug.log';
@@ -84,6 +88,7 @@ function licenceKey(body) { let sum = 0; body.split('').forEach((ch, i) => { sum
 		await p.evaluate(() => { const set = (n, v) => { const e = document.querySelector('[name="' + n + '"]'); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); }; set('bg_color', '#7c2d12'); set('text_color', '#ffffff'); });
 		await sleep(900);
 		const fr = p.frameLocator('#abp-preview-frame');
+		await fr.locator('.abp-item .abp-txt', { hasText: /\d{2}:\d{2}:\d{2}/ }).first().waitFor({ timeout: 10000 }).catch(() => {}); // slow test server
 		const pvText = await fr.locator('.abp-item .abp-txt').first().textContent({ timeout: 8000 }).catch(() => '');
 		ok('preview: sandboxed frame shows the bar with a running countdown', /Autumn sale/.test(pvText) && /\d{2}:\d{2}:\d{2}/.test(pvText), pvText);
 		ok('preview: frame is sandboxed (allow-scripts only)', await p.getAttribute('#abp-preview-frame', 'sandbox') === 'allow-scripts');
@@ -323,7 +328,24 @@ function licenceKey(body) { let sum = 0; body.split('').forEach((ch, i) => { sum
 	ok('pro storefront: e-mail form with consent box and privacy link', /class="abp-form"/.test(h) && /test consent text/.test(h) && /privacy/i.test(await sp.getAttribute('.abp-consent a', 'href') || ''));
 	ok('turnstile off: no data-ts, no widget box, no Cloudflare script', !/data-ts=|class="abp-ts"|challenges\.cloudflare\.com/.test(h) && await sp.evaluate(() => !document.querySelector('script[src*="challenges.cloudflare.com"]')));
 	ok('pro storefront: background image + overlay + font on the recurring countdown', await sp.evaluate(() => { const e = document.querySelector('.abp-item[data-img="1"]'); return !!e && /linear-gradient/.test(e.getAttribute('style')) && e.getAttribute('data-font') === 'serif' && !!e.querySelector('.abp-countdown[data-recur="d|14:00|"]'); }));
-	ok('pro storefront: trigger message waits (data-toff) and appears after 2 s', await sp.evaluate(() => !!document.querySelector('.abp-item[data-trig="delay:2"][data-toff]')) && (await (async () => { await sleep(2600); return sp.evaluate(() => !document.querySelector('.abp-item[data-trig="delay:2"]').hasAttribute('data-toff')); })()));
+	// Watched from the first parsed byte of a fresh load (a trigger fires once per browser session, so the session memory is
+	// cleared first): the message must arrive with data-toff and lose it about 2 s later. A clock in the page, because on the
+	// single-threaded test server DOMContentLoaded can come later than 2 s after the bar script started.
+	await sp.addInitScript(() => {
+		window.abpTrigSeen = { on: null, off: null };
+		new MutationObserver(() => {
+			const e = document.querySelector('.abp-item[data-trig^="delay"]'), w = window.abpTrigSeen, t = performance.now();
+			if (!e) { return; }
+			if (e.hasAttribute('data-toff')) { if (w.on === null) { w.on = t; } } else if (w.on !== null && w.off === null) { w.off = t; }
+		}).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-toff'] });
+	});
+	await sleep(2500); // the current page's own 2 s trigger must have fired before the session memory is cleared
+	await sp.evaluate(() => sessionStorage.clear());
+	await sp.reload({ waitUntil: 'load' }); await sleep(2600);
+	{
+		const tr = await sp.evaluate(() => Object.assign({ trig: (document.querySelector('.abp-item[data-trig^="delay"]') || { getAttribute: () => '' }).getAttribute('data-trig') }, window.abpTrigSeen));
+		ok('pro storefront: trigger message waits (data-toff) and appears after 2 s', tr.trig === 'delay:2' && tr.on !== null && tr.off !== null && tr.off - tr.on >= 1500, JSON.stringify(tr));
+	}
 	ok('pro storefront: custom CSS printed as inline style, cleaned', /<style id="announcement-bar-pro-wp-inline-css">[^<]*letter-spacing/.test(h));
 	// Copy button.
 	await gctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE });
@@ -522,7 +544,7 @@ function licenceKey(body) { let sum = 0; body.split('').forEach((ch, i) => { sum
 	ok('list: "Use B" makes variant B the main text and ends the test', q(`select concat(m.ab_test,'|',t.text) from wp_abpro_messages m join wp_abpro_message_texts t using(message_id) where message_id=${P7.id} and locale='en_US'`) === '0|Variant B text');
 
 	/* ---------------- Block theme: Twenty Twenty-Five, cart / checkout blocks ---------------- */
-	wp('theme activate twentytwentyfive');
+	wp('theme activate ' + BLOCKTHEME);
 	await sp.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
 	h = await storeCheck('/', 'tt5-home', 1366);
 	ok('block theme: top bar first in <body> (wp_body_open)', (await sp.evaluate(firstEl)) === 'abp-bar', await sp.evaluate(firstEl));
@@ -530,25 +552,76 @@ function licenceKey(body) { let sum = 0; body.split('').forEach((ch, i) => { sum
 	h = await storeCheck(purl.replace(BASE, ''), 'tt5-product', 1366);
 	ok('block theme: product box right after the product price block', /wp-block-woocommerce-product-price[\s\S]{0,1500}?abp-inline-product/.test(h) && /ships in 24 hours/.test(h));
 	await storeCheck(purl.replace(BASE, ''), 'tt5-product', 390);
-	// Add to cart on the block product page (Store API) → then the cart block.
-	h = await storeCheck('/cart/', 'tt5-cart-block', 1366);
-	ok('block theme: cart box above the cart block', /abp-inline-cart[\s\S]*wp-block-woocommerce-cart/.test(h));
-	const tierBefore = await sp.evaluate(() => (document.querySelector('.abp-progress.abp-steps') || { getAttribute: () => '' }).getAttribute('data-p'));
-	const plus = await sp.$('.wc-block-components-quantity-selector__button--plus');
-	if (plus) {
-		const rq = sp.waitForResponse(r => r.url().includes('wc-ajax=abpro_cart'), { timeout: 15000 }).catch(() => null);
-		await plus.click();
-		const rr = await rq;
-		let tierAfter = tierBefore;
-		for (let i = 0; i < 40 && tierAfter === tierBefore; i++) { await sleep(250); tierAfter = await sp.evaluate(() => (document.querySelector('.abp-progress.abp-steps') || { getAttribute: () => '' }).getAttribute('data-p')); }
-		ok('cart block: quantity change → bars refresh through the cart endpoint', !!rr && tierAfter !== tierBefore, tierBefore + ' → ' + tierAfter);
+	// WooCommerce < 8.3 creates shortcode cart / checkout pages: the cart / checkout block checks need its block pages.
+	const blockPages = wp(`eval "echo has_block( 'woocommerce/cart', wc_get_page_id( 'cart' ) ) && has_block( 'woocommerce/checkout', wc_get_page_id( 'checkout' ) ) ? 1 : 0;"`) === '1';
+	if (!blockPages) {
+		console.log('SKIP cart / checkout block checks: the cart and checkout pages of this WooCommerce version are shortcode pages');
 	} else {
-		ok('cart block: quantity buttons found', false, 'no quantity selector');
+		// Add to cart on the block product page (Store API) → then the cart block.
+		h = await storeCheck('/cart/', 'tt5-cart-block', 1366);
+		ok('block theme: cart box above the cart block', /abp-inline-cart[\s\S]*wp-block-woocommerce-cart/.test(h));
+		const tierBefore = await sp.evaluate(() => (document.querySelector('.abp-progress.abp-steps') || { getAttribute: () => '' }).getAttribute('data-p'));
+		const plus = await sp.$('.wc-block-components-quantity-selector__button--plus');
+		if (plus) {
+			const rq = sp.waitForResponse(r => r.url().includes('wc-ajax=abpro_cart'), { timeout: 15000 }).catch(() => null);
+			await plus.click();
+			const rr = await rq;
+			let tierAfter = tierBefore;
+			for (let i = 0; i < 40 && tierAfter === tierBefore; i++) { await sleep(250); tierAfter = await sp.evaluate(() => (document.querySelector('.abp-progress.abp-steps') || { getAttribute: () => '' }).getAttribute('data-p')); }
+			ok('cart block: quantity change → bars refresh through the cart endpoint', !!rr && tierAfter !== tierBefore, tierBefore + ' → ' + tierAfter);
+		} else {
+			ok('cart block: quantity buttons found', false, 'no quantity selector');
+		}
+		await storeCheck('/cart/', 'tt5-cart-block', 390);
+		h = await storeCheck('/checkout/', 'tt5-checkout-block', 1366);
+		ok('checkout block: page works, no box added to the checkout', /wp-block-woocommerce-checkout/.test(h) && !/abp-inline-cart/.test(h));
+		await storeCheck('/checkout/', 'tt5-checkout-block', 390);
 	}
-	await storeCheck('/cart/', 'tt5-cart-block', 390);
-	h = await storeCheck('/checkout/', 'tt5-checkout-block', 1366);
-	ok('checkout block: page works, no box added to the checkout', /wp-block-woocommerce-checkout/.test(h) && !/abp-inline-cart/.test(h));
-	await storeCheck('/checkout/', 'tt5-checkout-block', 390);
+
+	/* ---------------- Mini-Cart block (drawer drawn in the browser) ---------------- */
+	// A page with the Mini-Cart block, so the test does not depend on the theme's header (WordPress 6.2 themes have none).
+	wp(`eval "if ( ! get_page_by_path( 'mini-cart-block' ) ) { wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => 'Mini-cart block', 'post_name' => 'mini-cart-block', 'post_content' => '<!-- wp:woocommerce/mini-cart /-->' ) ); }"`);
+	// The page's own block is the last one (block themes of WordPress 6.4+ also get one in the header, whose closed drawer
+	// can hold a copy of the box too; the checks look at the open drawer only). The button works
+	// once the block's script has started; the drawer is closed with its close button.
+	const openMiniCart = async (pg) => {
+		await pg.waitForSelector('.wc-block-mini-cart__button:not([disabled])', { timeout: 20000 });
+		await sleep(1200);
+		// The first click also loads the drawer's scripts (slow on a cold local server): click again if it did not open.
+		for (let i = 0; i < 3; i++) {
+			await pg.locator('.wc-block-mini-cart__button').last().click();
+			if (await pg.waitForSelector('.wc-block-components-drawer__screen-overlay:not(.wc-block-components-drawer__screen-overlay--is-hidden) .wc-block-mini-cart__drawer:not(.is-loading)', { timeout: 10000 }).then(() => true).catch(() => false)) { break; }
+		}
+		// The drawer loads its inner-block scripts on first open (many files; slow on the single-threaded test server).
+		return pg.waitForSelector('.wc-block-mini-cart__drawer .abp-inline-minicart .abp-item >> visible=true', { timeout: 45000 }).then(() => true).catch(() => false);
+	};
+	const closeMiniCart = async (pg) => { await pg.locator('.wc-block-components-drawer__close').first().click({ timeout: 5000 }).catch(() => pg.keyboard.press('Escape')); await sleep(700); };
+	for (const w of [1366, 390]) {
+		await sp.setViewportSize({ width: w, height: w < 500 ? 844 : 900 });
+		await sp.goto(BASE + '/mini-cart-block/'); await sp.waitForLoadState('load'); await sleep(700);
+		// The drawer may first draw the empty cart while the cart loads; the box then moves above the product list.
+		const opened = await openMiniCart(sp) && await sp.waitForSelector('.wc-block-mini-cart__drawer .abp-inline-minicart + .wc-block-mini-cart__items', { timeout: 15000 }).then(() => true).catch(() => false);
+		const mc = await sp.evaluate(() => { const box = document.querySelector('.wc-block-components-drawer__screen-overlay:not(.wc-block-components-drawer__screen-overlay--is-hidden) .wc-block-mini-cart__drawer .abp-inline-minicart'); const d = box && box.closest('.wc-block-mini-cart__drawer'); const items = d && d.querySelector('.wc-block-mini-cart__items'); return { box: !!box, items: !!items, text: !!box && /Mini-cart box: free returns/.test(box.textContent), before: !!box && !!items && !!(box.compareDocumentPosition(items) & Node.DOCUMENT_POSITION_FOLLOWING), h: box ? Math.round(box.getBoundingClientRect().height) : 0 }; });
+		ok(`mini-cart block ${w}px: box inside the drawer (filled cart, above the products)`, opened && mc.box && mc.items && mc.text && mc.before && mc.h > 0, JSON.stringify(Object.assign({ opened }, mc)));
+		await sleep(800); // the drawer slides in
+		ok(`mini-cart block ${w}px: box inside the drawer area, no horizontal scroll`, await sp.evaluate(() => { const b = document.querySelector('.wc-block-components-drawer__screen-overlay:not(.wc-block-components-drawer__screen-overlay--is-hidden) .wc-block-mini-cart__drawer .abp-inline-minicart'); const d = b.closest('.wc-block-mini-cart__drawer').getBoundingClientRect(); const r = b.getBoundingClientRect(); return r.left >= d.left - 1 && r.right <= d.right + 1 && document.documentElement.scrollWidth <= window.innerWidth; }));
+		await sp.screenshot({ path: `${SHOTS}/minicart-block-${w}.png` });
+		await closeMiniCart(sp);
+	}
+	{
+		// Reopened drawer (drawn again) → one box again; empty cart (a new guest) → box at the top of the empty drawer.
+		await sp.setViewportSize({ width: 1366, height: 900 });
+		await sp.goto(BASE + '/mini-cart-block/'); await sp.waitForLoadState('load'); await sleep(500);
+		await openMiniCart(sp); await closeMiniCart(sp);
+		const again = await openMiniCart(sp);
+		ok('mini-cart block: reopened drawer has exactly one box (per drawer)', again && await sp.evaluate(() => [...document.querySelectorAll('.wc-block-mini-cart__drawer')].every(d => d.querySelectorAll('.abp-inline-minicart').length <= 1) && document.querySelectorAll('.wc-block-components-drawer__screen-overlay:not(.wc-block-components-drawer__screen-overlay--is-hidden) .wc-block-mini-cart__drawer .abp-inline-minicart').length === 1));
+		await closeMiniCart(sp);
+		const ectx = await b.newContext({ viewport: { width: 1366, height: 900 } }); const ep = await ectx.newPage(); watch(ep, 'store-empty');
+		await ep.goto(BASE + '/mini-cart-block/'); await ep.waitForLoadState('load'); await sleep(700);
+		ok('mini-cart block: empty cart → box at the top of the empty drawer', await openMiniCart(ep) && await ep.evaluate(() => !!document.querySelector('.wc-block-mini-cart__drawer .wp-block-woocommerce-empty-mini-cart-contents-block .abp-inline-minicart')));
+		await ep.screenshot({ path: `${SHOTS}/minicart-block-empty-1366.png` });
+		await ectx.close();
+	}
 
 	/* ---------------- Wait for cookie consent ---------------- */
 	wp('option patch update abpro_settings consent_wait 1');
@@ -571,7 +644,8 @@ function licenceKey(body) { let sum = 0; body.split('').forEach((ch, i) => { sum
 	ok('licence: removed through the settings screen', /removed from this site/.test(await html()) && /Activate/.test(await html()));
 	await sp.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
 	h = await storeCheck('/', 'free-again-home', 1366);
-	ok('free again: Pro-targeted messages hidden, free ones shown, no bottom bar, no statistics', /Autumn sale/.test(h) && !/id="abp-bar-bottom"/.test(h) && !/Only on the sale page|newsletter reader|Add \S+ more to unlock/.test(h) && !/data-track=/.test(h) && !/abp-pause/.test(h));
+	// The pause BUTTON must be missing; the class abp-paused (rotation paused while the mouse is over the bar) is fine.
+	ok('free again: Pro-targeted messages hidden, free ones shown, no bottom bar, no statistics', /Autumn sale/.test(h) && !/id="abp-bar-bottom"/.test(h) && !/Only on the sale page|newsletter reader|Add \S+ more to unlock/.test(h) && !/data-track=/.test(h) && !/abp-pause(?!d)/.test(h));
 	ok('free again: Pro looks fall back (no gradient / glass styles)', !/data-style="(gradient|glass)"/.test(h));
 	h = await storeCheck('/classic-cart/', 'free-again-cart', 1366);
 	ok('free again: no inline boxes', !/abp-inline/.test(h));
@@ -591,8 +665,10 @@ function licenceKey(body) { let sum = 0; body.split('').forEach((ch, i) => { sum
 	ok('add-on: activated again', /Success/.test(wp('plugin activate announcement-bar-pro-premium')));
 
 	/* ---------------- Logs ---------------- */
-	// WP-CLI's own update check cannot reach WordPress.org here (WP_HTTP_BLOCK_EXTERNAL): not the plugin.
-	const log = fs.readFileSync(logFile, 'utf8').split(/\r?\n/).filter(l => l.trim() !== '' && !/wp_update_(plugins|themes)\(\)/.test(l));
+	// WP-CLI's own update check cannot reach WordPress.org here (WP_HTTP_BLOCK_EXTERNAL): not the plugin. Older WordPress
+	// (6.2–6.5) logs it from wp-includes/update.php as "An unexpected error occurred. Something may be wrong with
+	// WordPress.org … (WordPress could not establish a secure connection to WordPress.org …)", over one or two lines.
+	const log = fs.readFileSync(logFile, 'utf8').split(/\r?\n/).filter(l => l.trim() !== '' && !/wp_update_(plugins|themes)\(\)|Something may be wrong with WordPress\.org|could not establish a secure connection to WordPress\.org/.test(l));
 	const ours = log.filter(l => /announcement-bar-pro|AnnouncementBarPro|abpro/i.test(l));
 	ok('debug.log: no PHP notices / warnings / errors from the plugin', ours.length === 0, ours.slice(0, 5).join('\n'));
 	ok('debug.log: nothing else either (WP_DEBUG on)', log.length === 0, log.slice(0, 3).join('\n'));

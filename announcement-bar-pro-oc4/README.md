@@ -4,7 +4,10 @@ Paziņojumu josla veikala augšā vai apakšā: akcijas, piegādes nosacījumi, 
 *An announcement bar for the top or bottom of every store page.*
 
 - **Versija / Version:** 2.4.1 (same features as the OpenCart 3 package)
-- **Saderība / Compatibility:** OpenCart 4.0.2.x – 4.1.0.x, tested on 4.0.2.3 and 4.1.0.4 with PHP 8.3 (PHP 8.0+ required). The code also handles 4.0.0.x–4.0.1.x (route separator `|`, library loading, language flags), but those versions were **not** installed and tested.
+- **Saderība / Compatibility:** OpenCart 4.0.0.0 – 4.1.0.4, PHP 8.0+. Fresh install + full end-to-end test (2026-11-08) on 4.0.0.0, 4.0.1.1, 4.0.2.3 and 4.1.0.0 with PHP 8.0 and 8.1, and on 4.1.0.4 with PHP 8.1 and 8.3; MariaDB 11.4. Matrix: `announcement-bar-pro-universal/COMPATIBILITY.md`.
+  - OpenCart's own PHP minimum applies: 4.1.0.4 needs PHP 8.1+ (4.1.0.0: 8.0.2+).
+  - OpenCart 4.0.0.x–4.0.1.x: use PHP 8.0 or 8.1. On PHP 8.3 the OpenCart 4.0.0.0 core prints deprecation notices and its installer stops on them (OpenCart, not the module; 8.2 not tried).
+  - OpenCart 4.0.0.x–4.0.1.x install the same way; their *Extensions → Installer* and module list look slightly different.
 - **Valodas / Languages:** English, Latviešu, Русский
 - **Licence / License:** GPL-3.0 (see `LICENSE.txt`)
 - OpenCart 3.0.x: use the separate package in `announcement-bar-pro`.

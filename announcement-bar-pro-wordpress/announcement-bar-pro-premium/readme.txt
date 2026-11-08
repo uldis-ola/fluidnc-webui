@@ -17,7 +17,7 @@ Needs the free plugin "Announcement Bar Pro" (WordPress.org), version 1.0.0 or n
 
 With a licence key (Announcement Bar → Settings → Premium licence):
 
-* A bottom bar and boxes on the cart page (classic page and cart block), under the product price and in the classic mini-cart — each message with its own placement and priority; a scrolling ticker; gradient and glass styles.
+* A bottom bar and boxes on the cart page (classic page and cart block), under the product price and in the mini-cart (classic mini-cart and the drawer of the Mini-Cart block) — each message with its own placement and priority; a scrolling ticker; gradient and glass styles.
 * Free-shipping amounts by country, state or currency; reward tiers with several goals and labels.
 * Cart conditions (subtotal, number of items, products, categories), country targeting, UTM campaign / referrer and new or returning visitor rules, user roles, page rules, product and category pages.
 * Triggers: after a delay, after scrolling, or on exit intent.
@@ -52,3 +52,4 @@ Coming from the single-plugin build 1.0.0 (licence key inside the plugin)? Updat
 
 = 1.0.0 =
 * First release as an add-on of the free plugin: every Pro feature of the single-plugin build 1.0.0, plus the optional Cloudflare Turnstile check of the e-mail sign-up, and the re-subscribe rule (an unsubscribe is never overwritten by a new sign-up; only the owner's confirmation subscribes the address again).
+* Mini-cart box also in the drawer of the WooCommerce Mini-Cart block (block themes): copied in by a small script each time the drawer opens; the classic mini-cart keeps its server-side box.
