@@ -1,0 +1,46 @@
+<?php
+defined('VERSION') || exit; // not callable directly (in the universal package these files also sit, unused, inside OpenCart 4)
+$_['abp_text_label'] = 'Paziņojums';
+$_['abp_text_close'] = 'Aizvērt';
+$_['abp_text_days']  = 'd.';
+$_['abp_text_copy']      = 'Kopēt';
+$_['abp_text_copied']    = 'Nokopēts!';
+$_['abp_text_copy_code'] = 'Kopēt kodu %s';
+$_['abp_text_prev']      = 'Iepriekšējais paziņojums';
+$_['abp_text_next']      = 'Nākamais paziņojums';
+// 2.4.0
+$_['abp_text_show']               = 'Rādīt paziņojumus';
+$_['abp_text_pause']              = 'Apturēt paziņojumus';
+$_['abp_text_play']               = 'Turpināt paziņojumus';
+$_['abp_text_privacy']            = 'Privātuma politika';
+$_['abp_text_email_placeholder']  = 'Tava e-pasta adrese';
+$_['abp_text_email_button']       = 'Pieteikties';
+$_['abp_text_email_consent']      = 'Piekrītu saņemt jaunumus un piedāvājumus e-pastā. Varu atteikties jebkurā brīdī.';
+$_['abp_text_email_success']      = 'Gandrīz gatavs — lūdzu, apstiprini ar saiti, ko nosūtījām uz tavu e-pastu.';
+$_['abp_text_email_done']         = 'Paldies — tu esi pieteicies!';
+$_['abp_text_sending']            = 'Sūta…';
+$_['abp_error_email']             = 'Lūdzu, ievadi derīgu e-pasta adresi.';
+$_['abp_error_consent']           = 'Lūdzu, atzīmē rūtiņu, lai piekristu.';
+$_['abp_error_token']             = 'Šī lapa ir novecojusi — lūdzu, pārlādē to un mēģini vēlreiz.';
+$_['abp_error_rate']              = 'Pārāk daudz mēģinājumu — lūdzu, mēģini vēlāk.';
+$_['abp_error_failed']            = 'Diemžēl pieteikšanās neizdevās. Lūdzu, mēģini vēlāk.';
+$_['abp_heading_confirm']         = 'Apstiprini pieteikšanos';
+$_['abp_text_confirm_intro']      = 'Lūdzu, apstiprini, ka %s drīkst sūtīt jaunumus un piedāvājumus uz %s.';
+$_['abp_button_confirm']          = 'Apstiprināt pieteikšanos';
+$_['abp_text_confirmed']          = 'Paldies — tava pieteikšanās ir apstiprināta.';
+$_['abp_text_invalid_link']       = 'Šī saite nav derīga vai tai ir beidzies termiņš.';
+$_['abp_heading_unsubscribe']     = 'Atteikties no jaunumiem';
+$_['abp_text_unsubscribe_intro']  = 'Pārtraukt %s e-pastus uz %s?';
+$_['abp_button_unsubscribe']      = 'Atteikties';
+$_['abp_text_unsubscribed']       = 'Tu esi atteicies. Vairs nesūtīsim tev e-pastus.';
+$_['abp_mail_subject']            = 'Lūdzu, apstiprini pieteikšanos — %s';
+$_['abp_mail_hello']              = 'Sveiki!';
+$_['abp_mail_body']               = 'lūdzu, apstiprini, ka vēlies saņemt %s jaunumus un piedāvājumus uz šo adresi. Atver šo saiti un nospied pogu:';
+$_['abp_mail_ignore']             = 'Ja to neesi pieprasījis, vienkārši ignorē šo e-pastu — tu netiksi pieteikts. Saite derīga 7 dienas.';
+$_['abp_mail_unsubscribe']        = 'Atteikties var jebkurā brīdī:';
+$_['abp_text_continue']           = 'Turpināt iepirkties';
+// 2.4.1 Cloudflare Turnstile (optional anti-bot check of the sign-up form)
+$_['abp_text_ts_wait']              = 'Šī veidlapa izmanto Cloudflare pretrobotu pārbaudi. Lūdzu, pieņem sīkdatnes, lai to izmantotu.';
+$_['abp_error_ts_wait']             = 'Pretrobotu pārbaude vēl nav gatava — lūdzu, mazliet pagaidi vai pārlādē lapu.';
+$_['abp_error_ts_missing']          = 'Lūdzu, mazliet pagaidi, kamēr pretrobotu pārbaude beidzas, un tad sūti vēlreiz.';
+$_['abp_error_ts_failed']           = 'Pretrobotu pārbaude neizdevās. Lūdzu, pārlādē lapu un mēģini vēlreiz.';

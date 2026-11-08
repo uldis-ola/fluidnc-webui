@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Announcement Bar Pro 2.4.1 for OpenCart 1.5.x (1.5.4 – 1.5.6.4) — 3DP SIA, extension@3dp.lv, GPL-3.0
+  OpenCart 1.5 has no event system: these vQmod hooks hand the finished HTML of the header, footer, cart page,
+  product page and mini-cart to catalog/controller/module/announcement_bar_pro.php, which adds the bars / boxes.
+  Every hook does nothing while the module is uninstalled, switched off or has nothing to show, never throws,
+  and is skipped silently (error="skip") when a theme or another extension changed the line it looks for.
+  Core files on disk are never changed (vQmod works on cached copies in vqmod/vqcache/).
+-->
+<modification>
+	<id>Announcement Bar Pro</id>
+	<version>2.4.1</version>
+	<vqmver>2.4.0</vqmver>
+	<author>3DP SIA (extension@3dp.lv)</author>
+
+	<!-- Bars: right after <body> of the header. -->
+	<file name="catalog/controller/common/header.php" error="skip">
+		<operation error="skip" info="Announcement Bar Pro: bars after the body tag">
+			<search position="replace"><![CDATA[$this->render();]]></search>
+			<add><![CDATA[$this->render();
+		if (is_file(DIR_APPLICATION . 'controller/module/announcement_bar_pro.php')) {
+			require_once(DIR_APPLICATION . 'controller/module/announcement_bar_pro.php');
+			$this->output = ControllerModuleAnnouncementBarPro::hookHeader($this->registry, $this->output);
+		}]]></add>
+		</operation>
+	</file>
+
+	<!-- Fallback for themes whose header has no <body> tag: a marker in the footer, resolved in Response::setOutput(). -->
+	<file name="catalog/controller/common/footer.php" error="skip">
+		<operation error="skip" info="Announcement Bar Pro: footer marker">
+			<search position="replace"><![CDATA[$this->render();]]></search>
+			<add><![CDATA[$this->render();
+		if (is_file(DIR_APPLICATION . 'controller/module/announcement_bar_pro.php')) {
+			require_once(DIR_APPLICATION . 'controller/module/announcement_bar_pro.php');
+			$this->output = ControllerModuleAnnouncementBarPro::hookFooter($this->registry, $this->output);
+		}]]></add>
+		</operation>
+	</file>
+
+	<file name="system/library/response.php" error="skip">
+		<operation error="skip" info="Announcement Bar Pro: footer fallback (storefront pages only)">
+			<search position="replace"><![CDATA[$this->output = $output;]]></search>
+			<add><![CDATA[if (class_exists('ControllerModuleAnnouncementBarPro', false) && method_exists('ControllerModuleAnnouncementBarPro', 'hookResponse')) {
+			$output = ControllerModuleAnnouncementBarPro::hookResponse($output);
+		}
+		$this->output = $output;]]></add>
+		</operation>
+	</file>
+
+	<!-- Inline boxes (2.4.0): cart page (with products), product page, mini-cart. -->
+	<file name="catalog/controller/checkout/cart.php" error="skip">
+		<operation error="skip" info="Announcement Bar Pro: box on the cart page">
+			<search position="replace" index="1"><![CDATA[$this->response->setOutput($this->render());]]></search>
+			<add><![CDATA[$this->render();
+			if (is_file(DIR_APPLICATION . 'controller/module/announcement_bar_pro.php')) {
+				require_once(DIR_APPLICATION . 'controller/module/announcement_bar_pro.php');
+				$this->output = ControllerModuleAnnouncementBarPro::hookInline($this->registry, 'cart', $this->output);
+			}
+			$this->response->setOutput($this->output);]]></add>
+		</operation>
+	</file>
+
+	<file name="catalog/controller/product/product.php" error="skip">
+		<operation error="skip" info="Announcement Bar Pro: box under the product price">
+			<search position="replace" index="1"><![CDATA[$this->response->setOutput($this->render());]]></search>
+			<add><![CDATA[$this->render();
+			if (is_file(DIR_APPLICATION . 'controller/module/announcement_bar_pro.php')) {
+				require_once(DIR_APPLICATION . 'controller/module/announcement_bar_pro.php');
+				$this->output = ControllerModuleAnnouncementBarPro::hookInline($this->registry, 'product', $this->output);
+			}
+			$this->response->setOutput($this->output);]]></add>
+		</operation>
+	</file>
+
+	<file name="catalog/controller/module/cart.php" error="skip">
+		<operation error="skip" info="Announcement Bar Pro: box in the mini-cart">
+			<search position="replace"><![CDATA[$this->response->setOutput($this->render());]]></search>
+			<add><![CDATA[$this->render();
+		if (is_file(DIR_APPLICATION . 'controller/module/announcement_bar_pro.php')) {
+			require_once(DIR_APPLICATION . 'controller/module/announcement_bar_pro.php');
+			$this->output = ControllerModuleAnnouncementBarPro::hookInline($this->registry, 'minicart', $this->output);
+		}
+		$this->response->setOutput($this->output);]]></add>
+		</operation>
+	</file>
+</modification>

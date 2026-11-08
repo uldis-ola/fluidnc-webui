@@ -1,0 +1,126 @@
+/* Announcement Bar Pro v2.4.1 — OpenCart 1.5 admin: the layout classes the shared admin pages use (Bootstrap 3 names),
+   scoped to .abp15 so nothing else in the OpenCart 1.5 admin changes. Loaded after abp_admin.css (shared). */
+.abp15{--abp15-ink:#1f2937;--abp15-muted:#6b7280;--abp15-line:#e5e7eb;--abp15-input:#cbd5e1;--abp15-accent:#2563eb;--abp15-accent-d:#1d4ed8;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:13px;line-height:1.5;color:var(--abp15-ink);}
+#content.abp15{background:#f4f6f9;padding:0 24px 40px;min-width:0;}
+.abp15 *,.abp15 *:before,.abp15 *:after{box-sizing:border-box;}
+.abp15 a,.abp15 a:visited{color:var(--abp15-accent);text-decoration:none;}
+.abp15 a:hover{text-decoration:underline;}
+.abp15 input,.abp15 select,.abp15 textarea,.abp15 button,.abp15 td,.abp15 th,.abp15 option{font-family:inherit;font-size:13px;color:var(--abp15-ink);}
+.abp15 label{font-weight:500;}
+.abp15 p{margin:0 0 10px;}
+.abp15 :focus-visible{outline:2px solid var(--abp15-accent);outline-offset:2px;}
+.abp15 .required{color:inherit;font-weight:inherit;}
+.abp15 .image{border:0;padding:0;display:block;}
+/* Page header + breadcrumb */
+.abp15 .page-header{margin:0 -24px 18px;padding:18px 24px 10px;background:#fff;border-bottom:1px solid var(--abp15-line);}
+.abp15 .page-header h1{margin:0 0 6px;font-size:22px;font-weight:600;line-height:1.3;color:var(--abp15-ink);}
+.abp15 .page-header h1 small{font-size:13px;font-weight:400;color:var(--abp15-muted);}
+.abp15 ul.breadcrumb{display:flex;flex-wrap:wrap;list-style:none;margin:0;padding:0;background:none;font-size:12px;color:var(--abp15-muted);}
+.abp15 ul.breadcrumb li{display:inline;}
+.abp15 ul.breadcrumb li+li:before{content:"\203A";padding:0 8px;color:#94a3b8;}
+.abp15 ul.breadcrumb a{color:var(--abp15-muted);font-size:12px;}
+.abp15 .container-fluid{padding:0;}
+.abp15 .container-fluid:after,.abp15 .clearfix:after,.abp15 .form-group:after,.abp15 .panel-heading:after{content:"";display:table;clear:both;}
+.abp15 .pull-right{float:right!important;}
+.abp15 .pull-left{float:left!important;}
+.abp15 .text-right{text-align:right;}
+.abp15 .text-center{text-align:center;}
+.abp15 .text-danger{color:#b91c1c;font-size:12px;margin-top:4px;}
+.abp15 .text-warning{color:#92400e;}
+.abp15 .help-block{display:block;margin:5px 0 0;}
+/* Grid + horizontal forms */
+.abp15 .row{margin:0 -10px;}
+.abp15 .row:after{content:"";display:table;clear:both;}
+.abp15 [class*="col-sm-"]{position:relative;min-height:1px;padding:0 10px;}
+.abp15 .form-horizontal .form-group{margin:0 -10px 16px;}
+.abp15 .form-horizontal .control-label{padding-top:7px;text-align:right;margin:0;color:#334155;}
+.abp15 .form-horizontal .form-group.required .control-label:before{content:"* ";color:#dc2626;font-weight:700;}
+@media (min-width:768px){
+  .abp15 .col-sm-2,.abp15 .col-sm-3,.abp15 .col-sm-9,.abp15 .col-sm-10,.abp15 .col-sm-12{float:left;}
+  .abp15 .col-sm-2{width:16.6667%;}.abp15 .col-sm-3{width:25%;}.abp15 .col-sm-9{width:75%;}.abp15 .col-sm-10{width:83.3333%;}.abp15 .col-sm-12{width:100%;}
+}
+@media (max-width:767px){
+  .abp15 .form-horizontal .control-label{text-align:left;display:block;padding-bottom:4px;}
+  .abp15 .hidden-xs{display:none!important;}
+  #content.abp15{padding:0 12px 30px;}
+  .abp15 .page-header{margin:0 -12px 14px;padding:14px 12px 8px;}
+}
+@media (min-width:768px) and (max-width:991px){.abp15 .hidden-sm{display:none!important;}}
+.abp15 .form-group{margin-bottom:16px;}
+.abp15 .form-control{display:block;width:100%;height:34px;padding:6px 10px;font-size:13px;line-height:1.4;color:var(--abp15-ink);background:#fff;border:1px solid var(--abp15-input);border-radius:7px;box-shadow:inset 0 1px 1px rgba(0,0,0,.03);transition:border-color .15s,box-shadow .15s;}
+.abp15 textarea.form-control{height:auto;min-height:68px;resize:vertical;}
+.abp15 select.form-control{padding:5px 8px;}
+.abp15 .form-control:focus{border-color:var(--abp15-accent);outline:0;box-shadow:0 0 0 3px rgba(37,99,235,.18);}
+.abp15 .form-control[disabled],.abp15 .form-control[readonly]{background:#f1f5f9;}
+.abp15 .form-control-static{padding-top:7px;margin:0;}
+.abp15 input[type=text],.abp15 input[type=password],.abp15 input[type=email],.abp15 input[type=number]{padding:6px 10px;}
+.abp15 .checkbox,.abp15 .radio{display:block;margin:6px 0;min-height:20px;}
+.abp15 .checkbox label,.abp15 .radio label{display:inline-flex;align-items:center;gap:7px;font-weight:400;cursor:pointer;margin:0;}
+.abp15 .checkbox input,.abp15 .radio input{margin:0;width:15px;height:15px;accent-color:var(--abp15-accent);}
+.abp15 .has-error .form-control{border-color:#dc2626;}
+/* Input groups */
+.abp15 .input-group{position:relative;display:flex;width:100%;align-items:stretch;}
+.abp15 .input-group .form-control{flex:1 1 auto;width:1%;min-width:0;}
+.abp15 .input-group>*:not(:first-child),.abp15 .input-group>*:not(:first-child) .btn{border-top-left-radius:0;border-bottom-left-radius:0;}
+.abp15 .input-group>*:not(:last-child),.abp15 .input-group>*:not(:last-child).form-control{border-top-right-radius:0;border-bottom-right-radius:0;}
+.abp15 .input-group>*+*{margin-left:-1px;}
+.abp15 .input-group-addon{display:flex;align-items:center;padding:4px 10px;font-size:13px;color:#475569;background:#f1f5f9;border:1px solid var(--abp15-input);border-radius:7px;white-space:nowrap;}
+.abp15 .input-group-btn{display:flex;}
+.abp15 .input-group-btn .btn{height:34px;}
+/* Buttons */
+.abp15 .btn,.abp15 a.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:6px 13px;font-size:13px;font-weight:500;line-height:1.4;border:1px solid transparent;border-radius:7px;cursor:pointer;text-decoration:none;white-space:nowrap;background:#fff;color:var(--abp15-ink);transition:background-color .15s,border-color .15s,box-shadow .15s;vertical-align:middle;}
+.abp15 .btn:hover{text-decoration:none;}
+.abp15 .btn:focus-visible{outline:0;box-shadow:0 0 0 3px rgba(37,99,235,.35);}
+.abp15 .btn[disabled],.abp15 .btn.disabled{opacity:.5;cursor:not-allowed;}
+.abp15 .btn-sm{padding:4px 10px;font-size:12px;border-radius:6px;}
+.abp15 .btn-xs{padding:2px 7px;font-size:11px;border-radius:5px;}
+.abp15 .btn-default,.abp15 a.btn-default{background:#fff;border-color:var(--abp15-input);color:#334155;}
+.abp15 .btn-default:hover{background:#f8fafc;border-color:#94a3b8;}
+.abp15 .btn-primary,.abp15 a.btn-primary,.abp15 a.btn-primary:visited{background:var(--abp15-accent);border-color:var(--abp15-accent);color:#fff;}
+.abp15 .btn-primary:hover{background:var(--abp15-accent-d);border-color:var(--abp15-accent-d);}
+.abp15 .btn-success{background:#15803d;border-color:#15803d;color:#fff;}
+.abp15 .btn-success:hover{background:#166534;}
+.abp15 .btn-danger{background:#dc2626;border-color:#dc2626;color:#fff;}
+.abp15 .btn-danger:hover{background:#b91c1c;}
+.abp15 .btn-warning{background:#b45309;border-color:#b45309;color:#fff;}
+.abp15 .btn-warning:hover{background:#92400e;}
+.abp15 .btn-info{background:#0369a1;border-color:#0369a1;color:#fff;}
+/* Panels (cards) */
+.abp15 .panel{background:#fff;border:1px solid var(--abp15-line);border-radius:10px;margin-bottom:18px;}
+.abp15 .panel-heading{padding:12px 18px;border-bottom:1px solid var(--abp15-line);border-radius:10px 10px 0 0;}
+.abp15 .panel-body{padding:18px;}
+.abp15 .panel-body:after{content:"";display:table;clear:both;}
+/* Tabs */
+.abp15 .nav-tabs{display:flex;flex-wrap:wrap;gap:4px;list-style:none;margin:0 0 16px;padding:0;border-bottom:1px solid var(--abp15-line);}
+.abp15 .nav-tabs>li{margin-bottom:-1px;}
+.abp15 .nav-tabs>li>a{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border:1px solid transparent;border-radius:8px 8px 0 0;color:#475569;font-weight:500;text-decoration:none;}
+.abp15 .nav-tabs>li>a:hover{background:#eef2f7;text-decoration:none;}
+.abp15 .nav-tabs>li.active>a{background:#fff;color:var(--abp15-ink);border-color:var(--abp15-line) var(--abp15-line) #fff;font-weight:600;}
+.abp15 .tab-content>.tab-pane{display:none;}
+.abp15 .tab-content>.tab-pane.active{display:block;}
+.abp15 .badge{display:inline-block;min-width:18px;padding:1px 7px;font-size:11px;font-weight:700;line-height:1.5;color:#fff;text-align:center;background:#64748b;border-radius:9px;}
+/* Tables */
+.abp15 .table-responsive{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.abp15 .table{width:100%;max-width:100%;border-collapse:collapse;margin:0 0 16px;background:#fff;}
+.abp15 .table>thead>tr>td,.abp15 .table>thead>tr>th{padding:9px 10px;font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:var(--abp15-muted);border-bottom:1px solid var(--abp15-line);background:#f8fafc;vertical-align:bottom;}
+.abp15 .table>tbody>tr>td{padding:10px;border-top:1px solid #eef0f3;vertical-align:middle;}
+.abp15 .table-condensed>tbody>tr>td,.abp15 .table-condensed>thead>tr>td{padding:6px 8px;}
+.abp15 .table-hover>tbody>tr:hover>td{background:#f8fafc;}
+/* Alerts, wells */
+.abp15 .alert{position:relative;padding:11px 38px 11px 14px;margin:0 0 14px;border:1px solid transparent;border-radius:8px;font-size:13px;}
+.abp15 .alert .fa{margin-right:6px;}
+.abp15 .alert-danger{background:#fef2f2;border-color:#fecaca;color:#991b1b;}
+.abp15 .alert-success{background:#f0fdf4;border-color:#bbf7d0;color:#166534;}
+.abp15 .alert-warning{background:#fffbeb;border-color:#fde68a;color:#92400e;}
+.abp15 .alert-info{background:#eff6ff;border-color:#bfdbfe;color:#1e40af;}
+.abp15 .alert .close{position:absolute;top:7px;right:10px;padding:0 4px;font-size:20px;line-height:1;color:inherit;opacity:.6;background:none;border:0;cursor:pointer;}
+.abp15 .alert .close:hover{opacity:1;}
+.abp15 .well{padding:14px;margin-bottom:16px;background:#f8fafc;border:1px solid var(--abp15-line);border-radius:8px;}
+.abp15 .well-sm{padding:10px;}
+.abp15 .img-thumbnail{display:inline-block;padding:4px;background:#fff;border:1px solid var(--abp15-line);border-radius:8px;line-height:0;}
+.abp15 .img-thumbnail img{max-width:100px;height:auto;}
+.abp15 .abp15-image-clear{margin-left:8px;vertical-align:top;}
+/* jQuery UI pickers / dialog of OpenCart 1.5 above the sticky preview */
+.ui-datepicker,.ui-dialog{z-index:1050!important;}
+.abp15 .abp-preview-card{z-index:5;}
