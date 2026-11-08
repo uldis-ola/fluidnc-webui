@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Announcement Bar Pro — Premium
  * Description:       Premium add-on for the free Announcement Bar Pro plugin: bottom bar and boxes in the cart, under the product price and in the mini-cart, targeting, reward tiers, coupons, A/B tests with statistics, a GDPR e-mail sign-up (optional Cloudflare Turnstile), templates and more.
- * Version:           1.0.0
+ * Version:           1.0.1
  * Requires at least: 6.2
  * Requires PHP:      7.4
  * Requires Plugins:  announcement-bar-pro
@@ -19,7 +19,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'ABPRO_PREMIUM_VERSION', '1.0.0' );
+define( 'ABPRO_PREMIUM_VERSION', '1.0.1' );
 define( 'ABPRO_PREMIUM_FILE', __FILE__ );
 define( 'ABPRO_PREMIUM_DIR', plugin_dir_path( __FILE__ ) );
 define( 'ABPRO_PREMIUM_URL', plugin_dir_url( __FILE__ ) );

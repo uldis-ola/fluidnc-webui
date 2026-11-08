@@ -5,7 +5,7 @@ Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
 Requires Plugins: announcement-bar-pro
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -49,6 +49,10 @@ The key is checked on your site only (format and checksum); the add-on makes no 
 Coming from the single-plugin build 1.0.0 (licence key inside the plugin)? Update that plugin to the free WordPress.org version (same folder), then install this add-on: messages, statistics, subscribers, settings and the licence key are kept (same options and tables).
 
 == Changelog ==
+
+= 1.0.1 =
+* The help text of the placement field now names both mini-carts: the classic mini-cart and the drawer of the Mini-Cart block (English, Latvian, Russian).
+* Works with the free plugin 1.0.1 (shared storefront script 2.4.2).
 
 = 1.0.0 =
 * First release as an add-on of the free plugin: every Pro feature of the single-plugin build 1.0.0, plus the optional Cloudflare Turnstile check of the e-mail sign-up, and the re-subscribe rule (an unsubscribe is never overwritten by a new sign-up; only the owner's confirmation subscribes the address again).

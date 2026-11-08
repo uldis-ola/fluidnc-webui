@@ -1,4 +1,4 @@
-# Announcement Bar Pro — WordPress / WooCommerce edition 1.0.0
+# Announcement Bar Pro — WordPress / WooCommerce edition 1.0.1
 
 Two plugins, both GPL-2.0-or-later, seller 3DP SIA, support extension@3dp.lv:
 
@@ -60,7 +60,7 @@ public for add-ons. `Frontend::inline_html( $placement )` prints the box of an a
 ## Build and checks
 
 ```bash
-bash build.sh                       # dist/announcement-bar-pro-1.0.0.zip + dist/announcement-bar-pro-premium-1.0.0.zip
+bash build.sh                       # dist/announcement-bar-pro-1.0.1.zip + dist/announcement-bar-pro-premium-1.0.1.zip
 php tests/unit/run.php              # options, sanitizer, features, licence, Turnstile (mocked), tokens, no premium code in the free plugin
 phpcs --standard=phpcs.xml.dist          # free plugin: WordPress Coding Standards 3 + PHPCompatibilityWP 7.4+
 phpcs --standard=phpcs-premium.xml.dist  # add-on

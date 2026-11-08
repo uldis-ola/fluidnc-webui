@@ -1,5 +1,9 @@
 # Changelog — Announcement Bar Pro Embed
 
+## 1.0.1 — 2026-11-08
+- Runtime: the shared storefront script, pre-script and CSS of Announcement Bar Pro 2.4.2 (only change for the embed:
+  the version in their headers; the new OpenCart 1.5 mini-cart rule needs jQuery AJAX and does not apply to embeds).
+
 ## 1.0.0 — 2026-11-08
 - First release of the universal JS embed: one `<script>` for any site, config as inline JSON or a JSON file.
 - Runtime = the shared storefront script, pre-script and CSS of Announcement Bar Pro 2.4.1 (byte-identical to the

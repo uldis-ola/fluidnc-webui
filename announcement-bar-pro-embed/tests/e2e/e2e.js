@@ -1,11 +1,11 @@
 /* E2E of the embed on local static pages (never a live site). Needs Playwright (chromium):
-     NODE_PATH=<folder with playwright> node tests/e2e/e2e.js
+     NODE_PATH=<folder with playwright> [ABP_PORT=8766] node tests/e2e/e2e.js
    Screenshots: ABP_SHOTS (default C:\Users\Admin\abp-testenv\shots\embed). Run build.sh first. */
 'use strict';
 var path = require('path'), fs = require('fs');
 var chromium = require('playwright').chromium;
 var srv = require('./server.js');
-var PORT = 8766, BASE = 'http://127.0.0.1:' + PORT + '/tests/e2e/pages/';
+var PORT = +process.env.ABP_PORT || 8766, BASE = 'http://127.0.0.1:' + PORT + '/tests/e2e/pages/';
 var SHOTS = process.env.ABP_SHOTS || 'C:\\Users\\Admin\\abp-testenv\\shots\\embed';
 var ROOT = path.resolve(__dirname, '../..');
 fs.mkdirSync(SHOTS, { recursive: true });
@@ -74,7 +74,7 @@ var visibleIds = function () { return Array.prototype.filter.call(document.query
       ok(L + ': highest priority first', info.active === '1' && /WELCOME10/.test(info.text), info);
       ok(L + ': countdown running', /\d+\s*d?\s*\d{2}:\d{2}:\d{2}/.test(info.cd || ''), info.cd);
       ok(L + ': labelled region', info.region === 'region|Announcement', info.region);
-      ok(L + ': window.ABP.version', info.embed === '1.0.0', info.embed);
+      ok(L + ': window.ABP.version', info.embed === '1.0.1', info.embed);
       await p.click('#abp-bar .abp-copy');
       await sleep(250);
       var copied = await p.evaluate(function () { return [document.querySelector('#abp-bar .abp-copy-label').textContent, document.querySelector('#abp-bar .abp-sr').textContent]; });

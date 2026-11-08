@@ -7,7 +7,7 @@
   'use strict';
 
   if (window.ABP && window.ABP.version) { return; } // included twice: keep the first
-  var VERSION = '1.0.0', C = ABPCore, doc = document;
+  var VERSION = '1.0.1', C = ABPCore, doc = document;
   var me = doc.currentScript;
   var opt = function (k) { return me ? me.getAttribute('data-' + k) : null; };
   var nonce = (me && me.nonce) || opt('nonce') || '';

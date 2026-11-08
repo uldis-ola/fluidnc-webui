@@ -7,7 +7,7 @@ no tracking, nothing sent to us.
 *Viena skripta rinda jebkurai vietnei: paziņojumu josla augšā / apakšā ar atskaiti, kuponiem, mērķēšanu un bezmaksas
 piegādes progresu. Bez servera, bez konta, bez izsekošanas.* — LV docs: `docs/lv/`.
 
-- **Version:** 1.0.0 · **Seller / support:** 3DP SIA, extension@3dp.lv · **Licence:** MIT (see `LICENSING.md`)
+- **Version:** 1.0.1 · **Seller / support:** 3DP SIA, extension@3dp.lv · **Licence:** MIT (see `LICENSING.md`)
 - **Suggested price:** $29 one-time per domain (no licence key, no enforcement — see LICENSING.md)
 - **Size:** runtime ≈ 20 KB gzipped JS (`build.sh` fails above 20 480 B) + ≈ 4 KB gzipped CSS, loaded with `defer`
 - **Browsers:** current Chrome, Edge, Firefox, Safari (ES2017; tested in Chromium)
@@ -53,7 +53,7 @@ Configurator's interface is in English (docs in EN and LV).
 
 ## Development
 ```
-sh build.sh                       # checks shared files, minifies (esbuild), size budget, Configurator, dist/abp-embed-1.0.0.zip
+sh build.sh                       # checks shared files, minifies (esbuild), size budget, Configurator, dist/abp-embed-1.0.1.zip
 node tests/unit/run.js            # sanitiser, URLs, CSS, page rules, language, time zones, selection, free shipping
 NODE_PATH=<playwright> node tests/e2e/e2e.js   # local pages: static, fake Shopify + adapter, strict CSP, nonce, hostile config, rules, Configurator (file://)
 ```

@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Announcement Bar Pro
  * Description:       Announcement bars with rotating messages, schedules, countdowns and a WooCommerce free-shipping progress bar. Fast, accessible, privacy-friendly.
- * Version:           1.0.0
+ * Version:           1.0.1
  * Requires at least: 6.2
  * Requires PHP:      7.4
  * Author:            3DP SIA
@@ -18,7 +18,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'ABPRO_VERSION', '1.0.0' );
+define( 'ABPRO_VERSION', '1.0.1' );
 define( 'ABPRO_SCHEMA', 1 );
 define( 'ABPRO_API', 1 ); // Version of the hooks for add-ons (README.md, "Hooks for add-ons").
 define( 'ABPRO_FILE', __FILE__ );

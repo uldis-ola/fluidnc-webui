@@ -684,7 +684,7 @@ class Pro_Admin {
 
 		$form->group( __( 'Placement and priority', 'announcement-bar-pro-premium' ) );
 		echo '<div class="abp-row2">';
-		$form->select( 'placement', __( 'Placement', 'announcement-bar-pro-premium' ), $m['placement'], $places, array( 'help' => __( 'Boxes appear in the cart (classic page and cart block), under the price of the product page and in the classic mini-cart.', 'announcement-bar-pro-premium' ) ) );
+		$form->select( 'placement', __( 'Placement', 'announcement-bar-pro-premium' ), $m['placement'], $places, array( 'help' => __( 'Boxes appear in the cart (classic page and cart block), under the price of the product page and in the mini-cart (classic mini-cart and the drawer of the Mini-Cart block).', 'announcement-bar-pro-premium' ) ) );
 		$form->input(
 			'priority',
 			__( 'Priority (0–100)', 'announcement-bar-pro-premium' ),

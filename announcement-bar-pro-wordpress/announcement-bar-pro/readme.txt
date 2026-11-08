@@ -4,7 +4,7 @@ Tags: announcement bar, notification bar, free shipping bar, countdown, woocomme
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -92,10 +92,16 @@ Tick "Delete all messages and settings when the plugin is deleted" under Setting
 
 == Changelog ==
 
+= 1.0.1 =
+* Storefront script (shared with the other Announcement Bar Pro editions, version 2.4.2): also reacts to the mini-cart reload of OpenCart 1.5 shops; no change for WordPress sites apart from the new asset version.
+
 = 1.0.0 =
 * First release on WordPress.org: top bar, rotating or stacked messages, schedules, countdowns, WooCommerce free-shipping progress, buttons, icons, three styles, device targeting, closable bars, live preview, several languages, hooks for add-ons.
 
 == Upgrade Notice ==
+
+= 1.0.1 =
+Maintenance release: shared storefront script updated. No settings change.
 
 = 1.0.0 =
 First release.
